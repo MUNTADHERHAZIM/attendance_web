@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير وسجلات الرقابة - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="border-b border-slate-100 pb-4">
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">التقارير وسجلات الرقابة (Audit Trail)</h1>
+        <p class="text-xs text-slate-400 font-semibold mt-1">المؤسسة: {{ institution.name }}</p>
+    </div>
+
+    <!-- Attendance Sessions Log -->
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-4">سجل جلسات التحضير المفتوحة</h2>
+        
+        <div class="overflow-x-auto">
+            {% if attendance_sessions %}
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead>
+                        <tr class="bg-slate-50 text-right">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الشعبة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">مُنشئ الجلسة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">إجراءات التقرير</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium">
+                        {% for att_sess in attendance_sessions %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-bold text-slate-900">{{ att_sess.session.course.name }}</div>
+                                    <div class="text-xs text-slate-400">{{ att_sess.session.course.code }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                                    {{ att_sess.session.class_section.level }} - {{ att_sess.session.class_section.name }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-550 text-center">
+                                    {{ att_sess.date }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
+                                    {{ att_sess.created_by.get_full_name|default:att_sess.created_by.username }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold 
+                                          {% if att_sess.is_active %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-650{% endif %}">
+                                        {{ att_sess.is_active|yesno:"نشط,منتهي" }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm space-x-reverse space-x-2">
+                                    <a href="/attendance/session/{{ att_sess.id }}/" 
+                                       class="text-xs font-bold text-brand-600 hover:text-brand-700">عرض التفاصيل</a>
+                                    <span class="text-slate-200">|</span>
+                                    <a href="{% url 'reports:export_excel' att_sess.id %}" 
+                                       class="text-xs font-bold text-emerald-600 hover:text-emerald-700">تنزيل Excel</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center py-10 text-slate-400 font-semibold text-sm">
+                    لا يوجد أي جلسات حضور مسجلة حالياً.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- System Audit Log Trail -->
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-4">سجل العمليات وحركات التدقيق (Audit Logs)</h2>
+        
+        <div class="overflow-x-auto">
+            {% if audit_logs %}
+                <table class="min-w-full divide-y divide-slate-100 text-right">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">المستخدم</th>
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">العملية</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">عنوان IP</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">الوقت والتاريخ</th>
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">التفاصيل</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium text-sm">
+                        {% for log in audit_logs %}
+                            <tr>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ log.user.get_full_name|default:log.user.username }}</div>
+                                    <div class="text-xs text-slate-400">{{ log.user.get_role_display|default:"النظام" }}</div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-slate-700">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-800">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center text-slate-500 font-mono">
+                                    {{ log.ip_address|default:"-" }}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center text-slate-400">
+                                    {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                                </td>
+                                <td class="px-4 py-3 text-xs text-slate-500 max-w-xs truncate" title="{{ log.details }}">
+                                    {{ log.details }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center py-10 text-slate-400 font-semibold text-sm">
+                    سجل العمليات فارغ حالياً.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

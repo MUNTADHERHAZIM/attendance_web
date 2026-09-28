@@ -1,0 +1,45 @@
+# نظام الحضور والغياب - متطلبات الإنتاج على PythonAnywhere
+# تم التحديث: 2026-09-28
+
+Django>=5.1,<6.0
+djangorestframework>=3.15.0
+djangorestframework-simplejwt>=5.3.0
+django-environ>=0.11.0
+
+# Channels / WebSocket (سيعمل InMemory على PythonAnywhere بدون Redis)
+channels>=4.2.0
+daphne>=4.1.0
+
+# channels-redis مطلوب فقط إذا توفر Redis
+# channels-redis>=4.2.0
+
+# Redis & Celery (اختياري على PythonAnywhere)
+# redis>=5.0.0
+# celery>=5.3.0
+# django-celery-beat>=2.5.0
+# django-celery-results>=2.5.0
+
+# معالجة البيانات والتصدير
+pandas>=2.0.0
+openpyxl>=3.1.0
+reportlab>=4.0.0
+
+# الأمان والمصادقة
+pyjwt>=2.8.0
+cryptography>=41.0.0
+
+# توليد QR Code
+qrcode[pil]>=7.4.2
+pillow>=10.0.0
+
+# توثيق API
+drf-spectacular>=0.26.0
+
+# دعم PWA
+django-pwa>=1.0.10
+
+# HTTP
+requests>=2.31.0
+
+# إنتاج فقط
+gunicorn>=21.0.0

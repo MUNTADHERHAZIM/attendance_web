@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الإدارة الشاملة - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="{ showCodeModal: false }">
+    
+    <!-- Messages / Alerts -->
+    {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+                <div class="p-4 rounded-xl text-sm font-bold flex items-center justify-between {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
+                    <div class="flex items-center gap-2">
+                        <span>{% if message.tags == 'success' %}✅{% else %}ℹ️{% endif %}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Header & Super Admin Direct Bar -->
+    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
+                    👑 صلاحيات الإدارة الكاملة (Super Admin)
+                </span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    🟢 الخادم متصل
+                </span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1.5">لوحة الإدارة والتحكم المركزي</h1>
+            <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">المؤسسة التعليمية: {{ institution.name|default:"جامعة بغداد" }}</p>
+        </div>
+        
+        <!-- Direct Master Actions -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <a href="/admin/" 
+               target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 shadow-md transition-all group"
+               title="فتح لوحة تحكم دجانغو الإدارية الشاملة بكل الصلاحيات">
+                <span>⚙️</span>
+                <span>لوحة التحكم المركزية الشاملة (Admin)</span>
+                <span class="text-xs text-indigo-300 group-hover:translate-x-[-2px] transition-transform">↗</span>
+            </a>
+            
+            <a href="{% url 'reports:admin_import_web' %}" 
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 transition-colors">
+                <span>📥</span>
+                <span>استيراد إكسل</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Stat Card 1: Students -->
+        <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">إجمالي الطلاب المسجلين</p>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ total_students }}</h3>
+                <a href="/admin/accounts/studentprofile/" class="text-[11px] font-bold text-indigo-600 hover:underline mt-1 inline-block">إدارة الطلاب ←</a>
+            </div>
+            <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl shrink-0">
+                👥
+            </div>
+        </div>
+        
+        <!-- Stat Card 2: Teachers -->
+        <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الكادر التدريسي</p>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ total_teachers }}</h3>
+                <a href="/admin/accounts/teacherprofile/" class="text-[11px] font-bold text-emerald-600 hover:underline mt-1 inline-block">إدارة الأساتذة ←</a>
+            </div>
+            <div class="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl shrink-0">
+                👨‍🏫
+            </div>
+        </div>
+
+        <!-- Stat Card 3: Classes & Courses -->
+        <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الشعب والمواد</p>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-800 mt-1">{{ total_classes }} <span class="text-xs font-normal text-slate-400">شعبة</span> / {{ total_courses }} <span class="text-xs font-normal text-slate-400">مادة</span></h3>
+                <a href="/admin/academics/classsection/" class="text-[11px] font-bold text-amber-600 hover:underline mt-1 inline-block">إدارة الشعب والمواد ←</a>
+            </div>
+            <div class="h-12 w-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl shrink-0">
+                🏫
+            </div>
+        </div>
+
+        <!-- Stat Card 4: Attendance Rate Today -->
+        <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">نسبة حضور اليوم</p>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ attendance_rate_today }}%</h3>
+                <span class="text-[11px] font-medium text-slate-400 mt-1 inline-block">{{ active_sessions_today }} جلسة نشطة حالياً</span>
+            </div>
+            <div class="h-12 w-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center text-xl shrink-0">
+                📊
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Section: Left 2 Cols & Right Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left 2 Cols -->
+        <div class="space-y-8 lg:col-span-2">
+            
+            <!-- 🌟 MASTER ACCOUNTS & PERMISSIONS HUB (مركز إدارة الحسابات والصلاحيات) -->
+            <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🛡️</span>
+                        <div>
+                            <h2 class="text-base font-black text-slate-900">مركز إدارة الحسابات والصلاحيات الشاملة</h2>
+                            <p class="text-xs text-slate-400 font-medium">كل الصلاحيات متاحة لك للتحكم بجميع المستخدمين والبيانات</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono font-bold px-2 py-0.5 bg-slate-100 rounded text-slate-600">
+                        {{ total_users }} مستخدم مسجل
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    <!-- 1. All Users -->
+                    <a href="/admin/accounts/user/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-brand-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            👤
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-brand-600 transition-colors">إدارة حسابات المستخدمين (Users)</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">تغيير كلمات المرور، تفعيل/تعطيل الحسابات، تعيين الصلاحيات</p>
+                        </div>
+                    </a>
+
+                    <!-- 2. Teachers -->
+                    <a href="/admin/accounts/teacherprofile/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-emerald-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            👨‍🏫
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">إدارة الكادر التدريسي (Teachers)</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">بيانات الأساتذة، التخصصات، والأقسام التابعة لهم</p>
+                        </div>
+                    </a>
+
+                    <!-- 3. Students -->
+                    <a href="/admin/accounts/studentprofile/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-sky-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            🎓
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-sky-700 transition-colors">إدارة الطلاب والملفات الأكاديمية</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">الأرقام الجامعية، الدراسة الصباحية/المسائية، ونقل الشعب</p>
+                        </div>
+                    </a>
+
+                    <!-- 4. Class Sections -->
+                    <a href="/admin/academics/classsection/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-amber-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            🏫
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-amber-700 transition-colors">إدارة الشعب الدراسية (Sections)</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">إضافة شعب جديدة (أ، ب، ج)، وتحديد المراحل الدراسية</p>
+                        </div>
+                    </a>
+
+                    <!-- 5. Courses -->
+                    <a href="/admin/academics/course/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-purple-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            📚
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors">المواد الدراسية والمقررات (Courses)</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">إضافة مقررات جديدة وربطها بالأقسام الأكاديمية</p>
+                        </div>
+                    </a>
+
+                    <!-- 6. Attendance Sessions -->
+                    <a href="/admin/attendance/attendancesession/" target="_blank" class="p-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-rose-300 transition-all flex items-start gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            📋
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-rose-700 transition-colors">جلسات وسجلات الحضور والغياب</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">تعديل سجلات حضور أي طالب يدوياً أو حذف جلسات</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Warning list of absence (20% Limit) -->
+            <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-base font-black text-slate-900">الطلاب الأكثر غياباً (تحذير تجاوز 20%)</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">الطلاب المعرضون لخطر الحرمان وفق اللائحة الأكاديمية</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-rose-50 text-rose-700 text-xs font-bold rounded-lg border border-rose-200">
+                        مخالفة اللائحة الأكاديمية
+                    </span>
+                </div>
+
+                {% if critical_students %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <thead>
+                                <tr class="text-slate-500 text-xs font-black uppercase">
+                                    <th class="px-4 py-3 text-right">اسم الطالب</th>
+                                    <th class="px-4 py-3 text-center">الرقم الجامعي</th>
+                                    <th class="px-4 py-3 text-center">مجموع الغيابات</th>
+                                    <th class="px-4 py-3 text-center">نسبة الغياب</th>
+                                    <th class="px-4 py-3 text-center">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium text-xs sm:text-sm">
+                                {% for item in critical_students %}
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-900">{{ item.student.user.get_full_name }}</td>
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-slate-500 text-center font-mono font-bold">{{ item.student.student_id }}</td>
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-slate-800 text-center">{{ item.absences }} محاضرات</td>
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800">
+                                                {{ item.pct }}%
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                            <a href="{% url 'reports:admin_student_detail' item.student.id %}" class="inline-flex items-center px-3 py-1 bg-brand-50 text-brand-600 rounded-lg font-bold text-xs hover:bg-brand-100 transition-colors">
+                                                عرض التقرير ←
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-10 text-slate-400 font-semibold text-sm">
+                        لا يوجد أي طلاب تجاوزوا الحد الحرج للغياب! 👍
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Right Column: Security Codes & Quick Tools -->
+        <div class="space-y-6">
+            
+            <!-- 🔑 TEACHER REGISTRATION CODE MANAGEMENT (إدارة كود تسجيل الأساتذة) -->
+            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-indigo-800/50 space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-wider text-indigo-300">أمان التسجيل الأكاديمي</span>
+                    <span class="text-lg">🔐</span>
+                </div>
+                
+                <div>
+                    <h3 class="text-base font-black text-white">رمز توثيق تسجيل الأساتذة</h3>
+                    <p class="text-xs text-indigo-200 mt-1">يُطلب هذا الكود السري حصراً من الأساتذة عند فتح حساب تدريسي لمنع تسجيل أي مستخدم غير مصرح به.</p>
+                </div>
+
+                <div class="p-3.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/15 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] text-indigo-300 font-bold uppercase">الرمز السري الفعّال حالياً:</p>
+                        <p class="text-xl font-black font-mono tracking-widest text-amber-300 mt-0.5" id="currentTeacherCode">{{ teacher_code }}</p>
+                    </div>
+                    <button type="button" 
+                            onclick="navigator.clipboard.writeText('{{ teacher_code }}'); alert('تم نسخ رمز الأساتذة بنجاح: {{ teacher_code }}');" 
+                            class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-bold text-white transition-colors"
+                            title="نسخ الرمز">
+                        📋 نسخ
+                    </button>
+                </div>
+
+                <!-- Update Code Form -->
+                <form method="POST" action="/" class="pt-2 border-t border-white/10 space-y-2.5">
+                    {% csrf_token %}
+                    <label class="block text-xs font-bold text-indigo-200">تغيير رمز الأساتذة وتحديثه:</label>
+                    <div class="flex gap-2">
+                        <input type="text" 
+                               name="new_teacher_code" 
+                               placeholder="اكتب الرمز الجديد (مثال: UOB2026)" 
+                               required
+                               class="flex-1 px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300/60 focus:outline-hidden focus:ring-2 focus:ring-amber-400">
+                        <button type="submit" 
+                                class="px-3.5 py-2 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition-colors shrink-0 shadow-xs">
+                            حفظ الرمز
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick administrative links -->
+            <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
+                <h3 class="text-sm font-black text-slate-900 border-b border-slate-100 pb-2.5">أدوات إدارية سريعة</h3>
+                
+                <div class="space-y-2.5">
+                    <a href="{% url 'reports:admin_import_web' %}" class="flex items-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-right justify-between group">
+                        <div class="flex items-center space-x-reverse space-x-3">
+                            <span class="text-lg">📥</span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">استيراد الطلاب من Excel</p>
+                                <p class="text-[11px] text-slate-400 font-medium">إضافة قوائم الطلاب دفعة واحدة</p>
+                            </div>
+                        </div>
+                        <span class="text-slate-300 group-hover:text-slate-500">←</span>
+                    </a>
+                    
+                    <a href="{% url 'reports:admin_reports_overview' %}" class="flex items-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-right justify-between group">
+                        <div class="flex items-center space-x-reverse space-x-3">
+                            <span class="text-lg">📊</span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">سجل عمليات التدقيق (Audit)</p>
+                                <p class="text-[11px] text-slate-400 font-medium">مراقبة التعديلات والعمليات الحساسة</p>
+                            </div>
+                        </div>
+                        <span class="text-slate-300 group-hover:text-slate-500">←</span>
+                    </a>
+
+                    <a href="/admin/" target="_blank" class="flex items-center p-3 border border-indigo-100 bg-indigo-50/50 rounded-xl hover:bg-indigo-100/50 transition-colors text-right justify-between group">
+                        <div class="flex items-center space-x-reverse space-x-3">
+                            <span class="text-lg">👑</span>
+                            <div>
+                                <p class="text-xs font-bold text-indigo-950">لوحة إدارة دجانغو الكاملة</p>
+                                <p class="text-[11px] text-indigo-600 font-medium">تحكم شامل بقاعدة البيانات والإعدادات</p>
+                            </div>
+                        </div>
+                        <span class="text-indigo-400 group-hover:text-indigo-600">↗</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer / Developer Info -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-400 space-y-1">
+                <p class="font-bold text-slate-600">جامعة بغداد - نظام الحضور الذكي</p>
+                <p>المطور: MUNTADHER HAZIM | 07724978301</p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}

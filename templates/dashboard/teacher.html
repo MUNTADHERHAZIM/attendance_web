@@ -1,0 +1,1007 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الأستاذ الجامعي - {{ teacher.institution.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8" 
+     x-data="{ 
+         showAddCourseModal: false, 
+         showAddSectionModal: false, 
+         showProfileModal: false,
+         activeTab: 'sessions' 
+     }">
+
+    <!-- 🏛️ INSTITUTIONAL & PROFESSOR PROFILE HEADER BANNER -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-brand-950 to-indigo-950 p-6 sm:p-8 text-white shadow-xl border border-slate-800">
+        <!-- Background Decorative Glows -->
+        <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-brand-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <!-- Left Profile & Institution Info -->
+            <div class="flex items-start sm:items-center space-x-reverse space-x-4">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-brand-500/30 shrink-0 border-2 border-white/20">
+                    {{ user.first_name|first|default:user.username|first|upper }}
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                            <span>👨‍🏫</span>
+                            <span>لوحة الأستاذ الجامعي المستقلة</span>
+                        </span>
+                        <span class="text-xs font-mono text-slate-400 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
+                            {{ teacher.teacher_id }}
+                        </span>
+                    </div>
+
+                    <h1 class="text-2xl sm:text-3xl font-black text-white mt-1.5 tracking-tight flex items-center gap-2">
+                        <span>أ. {{ user.get_full_name|default:user.username }}</span>
+                    </h1>
+
+                    <div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs sm:text-sm text-slate-300 font-semibold mt-1.5">
+                        <span class="flex items-center gap-1.5 text-white">
+                            <span>🏛️</span>
+                            <span>{{ teacher.institution.name }}</span>
+                        </span>
+                        <span class="text-slate-500">•</span>
+                        <span class="flex items-center gap-1.5 text-indigo-300">
+                            <span>🎓</span>
+                            <span>{{ teacher.department.name|default:teacher.specialization|default:"القسم الأكاديمي" }}</span>
+                        </span>
+                        <span class="text-slate-500">•</span>
+                        <span class="text-slate-400">
+                            {{ teacher.specialization|default:"عضو هيئة التدريس" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Profile Switcher / Actions -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button @click="showProfileModal = true" 
+                        class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all shadow-xs backdrop-blur-xs">
+                    <span>✏️</span>
+                    <span>تعديل الجامعة والقسم</span>
+                </button>
+                <a href="{% url 'attendance:create_custom_session' %}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 transition-all shadow-md shadow-brand-500/25 hover:scale-[1.02] active:scale-95">
+                    <span>⚡</span>
+                    <span>بدء محاضرة ذكية فورية</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚡ ACTION COMMAND CENTER (QUICK ACCESS CARDS) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Action 1: Add Student -->
+        <a href="{% url 'accounts:teacher_students' %}" 
+           class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shrink-0">
+                👥
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400">إدارة الطلاب</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">+ إضافة طلاب للشعب</p>
+            </div>
+        </a>
+
+        <!-- Action 2: Add Subject / Course -->
+        <button @click="showAddCourseModal = true" 
+                class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all group flex items-center gap-3.5 text-right w-full">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shrink-0">
+                📚
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400">المناهج والمقررات</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-indigo-700 transition-colors">+ إضافة مادة دراسية</p>
+            </div>
+        </button>
+
+        <!-- Action 3: Add Section / Group -->
+        <button @click="showAddSectionModal = true" 
+                class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-md transition-all group flex items-center gap-3.5 text-right w-full">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shrink-0">
+                🏛️
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400">الشعب والمراحل</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-blue-700 transition-colors">+ إضافة شعبة جديدة</p>
+            </div>
+        </button>
+
+        <!-- Action 4: Reports -->
+        <a href="{% url 'reports:admin_reports_overview' %}" 
+           class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-purple-300 hover:shadow-md transition-all group flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shrink-0">
+                📊
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400">التقارير وسجلات الغياب</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-purple-700 transition-colors">تقارير إكسل والنسب</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- 📊 TEACHER KPI METRICS OVERVIEW -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: My Courses -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">المواد الدراسية</span>
+                <span class="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-base">📚</span>
+            </div>
+            <div class="mt-4">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ my_courses.count }}</span>
+                    <span class="text-xs font-bold text-slate-400">مقرراً</span>
+                </div>
+                <div class="text-[11px] text-indigo-600 font-bold mt-1">خاصة بجامعتك وقسمك</div>
+            </div>
+        </div>
+
+        <!-- Card 2: My Sections -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">الشُعب والمراحل</span>
+                <span class="p-2 bg-blue-50 text-blue-600 rounded-xl text-base">🏛️</span>
+            </div>
+            <div class="mt-4">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ my_sections.count }}</span>
+                    <span class="text-xs font-bold text-slate-400">شعبة</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px] font-bold">
+                    <span class="text-amber-700">☀️ صباحي</span>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-indigo-700">🌙 مسائي</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: My Students -->
+        <a href="{% url 'accounts:teacher_students' %}" 
+           class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between group">
+            <div class="flex items-center justify-between text-slate-400">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700 transition-colors">إجمالي الطلاب المسجلين</span>
+                <span class="p-2 bg-emerald-50 text-emerald-600 rounded-xl text-base group-hover:scale-110 transition-transform">🎓</span>
+            </div>
+            <div class="mt-4">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-emerald-700 transition-colors">{{ total_students_count }}</span>
+                    <span class="text-xs font-bold text-emerald-600">طالباً</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px] font-bold text-slate-500">
+                    <span class="text-amber-700">☀️ {{ morning_students_count }}</span>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-indigo-700">🌙 {{ evening_students_count }}</span>
+                    <span class="text-emerald-600 underline mr-auto">إدارة ➔</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card 4: Overall Attendance Rate -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">معدل الحضور العام</span>
+                <span class="p-2 bg-purple-50 text-purple-600 rounded-xl text-base">📈</span>
+            </div>
+            <div class="mt-4">
+                <div class="flex items-baseline justify-between">
+                    <div class="text-2xl sm:text-3xl font-black text-brand-700">{{ overall_attendance_rate }}%</div>
+                    <span class="text-xs font-bold text-slate-400">{{ total_lectures_held }} محاضرة سابقة</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
+                    <div class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full rounded-full transition-all duration-700"
+                         style="width: {{ overall_attendance_rate }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔴 ACTIVE ATTENDANCE SESSIONS RIGHT NOW -->
+    {% if active_attendance_sessions %}
+        <div class="space-y-3">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                <h2 class="text-lg font-black text-slate-900">جلسات التحضير المباشرة النشطة الآن</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for att_session in active_attendance_sessions %}
+                    <div class="bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/50 p-6 border-2 border-emerald-400 shadow-md rounded-2xl relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                        
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    جلسة نشطة قيد التحضير
+                                </span>
+                                {% if att_session.shift == 'MORNING' %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                {% elif att_session.shift == 'EVENING' %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                {% endif %}
+                            </div>
+                            
+                            <h3 class="text-xl font-black text-slate-900 mt-2">{{ att_session.session.course.name }}</h3>
+                            <p class="text-xs font-bold text-slate-500 mt-0.5">
+                                {{ att_session.session.class_section.level }} - {{ att_session.session.class_section.name }}
+                            </p>
+                            
+                            <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600 font-semibold bg-white/80 p-3 rounded-xl border border-emerald-100">
+                                <span>🏛️ {{ att_session.session.room|default:"القاعة الذكية" }}</span>
+                                <span>⏰ البدء: {{ att_session.start_time|date:"H:i" }}</span>
+                                {% if att_session.quick_otp %}
+                                    <span>🔢 OTP: <strong class="font-mono text-indigo-600 font-black text-sm">{{ att_session.quick_otp }}</strong></span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-5">
+                            <a href="/attendance/session/{{ att_session.id }}/" 
+                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-black rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200">
+                                <span>📱</span>
+                                <span>فتح شاشة الـ QR المباشرة ومتابعة الطلاب</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🚨 ACADEMIC RISK RADAR (رادار الخطر الأكاديمي والإنذار المبكر) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 space-y-6 relative overflow-hidden">
+        
+        <!-- Ambient Background Glow -->
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-rose-600/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Radar Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800/80 pb-5">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-600 flex items-center justify-center text-2xl font-black shadow-lg shadow-rose-600/30 shrink-0">
+                    🚨
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-black text-white">رادار الخطر الأكاديمي والإنذار المبكر</h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                            استشعار فوري
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">
+                        رصد استباقي للطلبة المهددين بالحرمان الأكاديمي مع دعم الإنذار المباشر عبر WhatsApp ومقارنة الالتزام بين الدراستين
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Quick Stats Pills -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <div class="px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center gap-2">
+                    <span class="text-slate-400">حرمان وشيك:</span>
+                    <span class="font-black text-rose-400 font-mono text-sm">{{ critical_count }}</span>
+                </div>
+                <div class="px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center gap-2">
+                    <span class="text-slate-400">إنذار أولي:</span>
+                    <span class="font-black text-amber-400 font-mono text-sm">{{ warning_count }}</span>
+                </div>
+                <div class="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-800/80 flex items-center gap-2 text-emerald-300">
+                    <span>نسبة الأمان:</span>
+                    <span class="font-black font-mono text-sm">{{ safe_rate }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radar Middle Grid: Shift Comparison & Top Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Card 1: Morning Shift Gauge -->
+            <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/70 space-y-3">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-300">
+                    <span class="flex items-center gap-1.5">
+                        <span>☀️</span>
+                        <span>الدراسة الصباحية</span>
+                    </span>
+                    <span class="font-mono text-base font-black text-white">{{ morning_rate }}%</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                    <div class="bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full transition-all duration-700" 
+                         style="width: {{ morning_rate }}%;"></div>
+                </div>
+                <div class="text-[11px] text-slate-400 flex justify-between">
+                    <span>الطلاب المسجلون: <strong class="text-white">{{ morning_students_count }}</strong></span>
+                    <span class="text-amber-300/80 font-medium">حضور تراكمي</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Evening Shift Gauge -->
+            <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/70 space-y-3">
+                <div class="flex items-center justify-between text-xs font-bold text-indigo-300">
+                    <span class="flex items-center gap-1.5">
+                        <span>🌙</span>
+                        <span>الدراسة المسائية</span>
+                    </span>
+                    <span class="font-mono text-base font-black text-white">{{ evening_rate }}%</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-400 h-full rounded-full transition-all duration-700" 
+                         style="width: {{ evening_rate }}%;"></div>
+                </div>
+                <div class="text-[11px] text-slate-400 flex justify-between">
+                    <span>الطلاب المسجلون: <strong class="text-white">{{ evening_students_count }}</strong></span>
+                    <span class="text-indigo-300/80 font-medium">حضور تراكمي</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Best Section Honor -->
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/80 to-purple-950/50 border border-indigo-500/30 flex flex-col justify-between space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-indigo-300">
+                    <span class="flex items-center gap-1.5">
+                        <span>🏆</span>
+                        <span>الشعبة الأكثر التزاماً</span>
+                    </span>
+                    {% if best_section_rate > 0 %}
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono font-bold">{{ best_section_rate }}%</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-base font-black text-white truncate">
+                        {{ best_section_name|default:"لا توجد بيانات كافية" }}
+                    </p>
+                    <p class="text-[11px] text-indigo-200/70 mt-0.5">أعلى نسبة حضور وانتظام في قاعات المحاضرات</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Radar Bottom: At-Risk Students List Table -->
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>الطلاب الأكثر غياباً المهددون بالحرمان (أعلى أولويات المتابعة)</span>
+                </h3>
+                <span class="text-[11px] text-slate-400">إجمالي الحالات المرصودة: <strong class="text-amber-400 font-mono">{{ at_risk_total_count }}</strong></span>
+            </div>
+
+            {% if at_risk_students %}
+                <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60 shadow-inner">
+                    <table class="w-full text-right text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 bg-slate-900/80 text-slate-400 font-bold">
+                                <th class="p-3.5">اسم الطالب</th>
+                                <th class="p-3.5 text-center">الرقم الجامعي</th>
+                                <th class="p-3.5 text-center">الدراسة</th>
+                                <th class="p-3.5 text-center">مرات الغياب</th>
+                                <th class="p-3.5 text-center">نسبة الغياب</th>
+                                <th class="p-3.5 text-center">مستوى الخطورة</th>
+                                <th class="p-3.5 text-center">إجراء فوري</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80 font-medium">
+                            {% for std in at_risk_students %}
+                                <tr class="hover:bg-slate-800/40 transition-colors">
+                                    <td class="p-3.5 font-bold text-white whitespace-nowrap">
+                                        {{ std.name }}
+                                    </td>
+                                    <td class="p-3.5 text-center font-mono text-slate-300 whitespace-nowrap">
+                                        {{ std.student_id }}
+                                    </td>
+                                    <td class="p-3.5 text-center whitespace-nowrap">
+                                        {% if std.shift == 'MORNING' %}
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">☀️ صباحي</span>
+                                        {% elif std.shift == 'EVENING' %}
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">🌙 مسائي</span>
+                                        {% else %}
+                                            <span class="text-slate-500">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-3.5 text-center font-black font-mono text-sm whitespace-nowrap text-rose-400">
+                                        {{ std.absent_count }} غيابات
+                                    </td>
+                                    <td class="p-3.5 text-center whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-1.5 font-mono font-bold text-amber-300">
+                                            <span>{{ std.absence_rate }}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-3.5 text-center whitespace-nowrap">
+                                        {% if std.risk_level == 'CRITICAL' %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                حرمان وشيك
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                                إنذار أولي
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-3.5 text-center whitespace-nowrap">
+                                        {% if std.wa_url %}
+                                            <a href="{{ std.wa_url }}" target="_blank"
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-xs shadow-emerald-900/50 hover:scale-105 active:scale-95"
+                                               title="إرسال إنذار رسمي فوري عبر WhatsApp لرقم الطالب: {{ std.phone }}">
+                                                <span>💬</span>
+                                                <span>إنذار واتساب</span>
+                                            </a>
+                                        {% else %}
+                                            <span class="text-slate-500 text-[11px]">بدون رقم هاتف</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-6 rounded-2xl bg-emerald-950/20 border border-emerald-800/40 text-center space-y-1 text-xs">
+                    <span class="text-2xl">🎉</span>
+                    <p class="font-black text-emerald-400">رادار الأمان: جميع الطلاب ملتزمون ونسب الغياب ضمن الحدود الطبيعية!</p>
+                    <p class="text-slate-400 text-[11px]">لا يوجد أي طالب تجاوز حد الإنذار الأكاديمي حتى الآن.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- 📑 TEACHER MANAGEMENT TABS & WORKSPACE -->
+    <div class="bg-white border border-slate-200/90 shadow-sm rounded-2xl overflow-hidden">
+        
+        <!-- Tab Navigation Bar -->
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-200 bg-slate-50/70 p-4 gap-3">
+            <div class="inline-flex rounded-xl border border-slate-200 p-1 bg-white shadow-2xs" role="tablist">
+                <button @click="activeTab = 'sessions'" 
+                        :class="activeTab === 'sessions' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
+                    🗓️ جدول المحاضرات الأسبوعي
+                </button>
+                <button @click="activeTab = 'courses'" 
+                        :class="activeTab === 'courses' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
+                    📚 موادي الدراسية ({{ my_courses.count }})
+                </button>
+                <button @click="activeTab = 'sections'" 
+                        :class="activeTab === 'sections' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
+                    🏛️ الشُعب والمراحل ({{ my_sections.count }})
+                </button>
+                <button @click="activeTab = 'recent'" 
+                        :class="activeTab === 'recent' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
+                    ⏱️ الجلسات السابقة ({{ recent_sessions.count }})
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 1: WEEKLY TIMETABLE SESSIONS -->
+        <div x-show="activeTab === 'sessions'" class="p-5 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black text-slate-900">جدول المحاضرات والحصص المقررة</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">يمكنك إطلاق أي جلسة تحضير ذكية بضغطة زر واحدة</p>
+                </div>
+                <a href="{% url 'attendance:create_custom_session' %}" class="text-xs font-bold text-brand-600 hover:underline">
+                    + إنشاء حصة جديدة
+                </a>
+            </div>
+
+            {% if sessions %}
+                <div class="overflow-x-auto rounded-xl border border-slate-200/80">
+                    <table class="min-w-full divide-y divide-slate-100 text-right">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5">المادة الدراسية</th>
+                                <th class="px-4 py-3.5">الشعبة / المرحلة</th>
+                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
+                                <th class="px-4 py-3.5 text-center">اليوم</th>
+                                <th class="px-4 py-3.5 text-center">الوقت</th>
+                                <th class="px-4 py-3.5 text-center">القاعة</th>
+                                <th class="px-4 py-3.5 text-center">إطلاق التحضير الذكي</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
+                            {% for sess in sessions %}
+                                <tr class="hover:bg-slate-50/70 transition-colors">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-black text-slate-900">{{ sess.course.name }}</div>
+                                        <div class="text-[11px] text-slate-400 font-mono">{{ sess.course.code }}</div>
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-700">
+                                        {{ sess.class_section.level }} - {{ sess.class_section.name }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        {% if sess.shift == 'MORNING' or sess.class_section.shift == 'MORNING' %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-slate-800">
+                                        {{ sess.get_day_of_week_display }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-mono font-bold text-slate-600">
+                                        {{ sess.start_time|time:"H:i" }} - {{ sess.end_time|time:"H:i" }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center text-slate-500">
+                                        {{ sess.room|default:"-" }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <form method="POST" action="/attendance/session/start-web/">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="session_id" value="{{ sess.id }}">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <label class="inline-flex items-center text-[11px] text-slate-600 font-bold bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 cursor-pointer" title="حماية GPS">
+                                                    <input type="checkbox" name="requires_geofence" checked class="rounded border-slate-300 text-brand-600 ml-1">
+                                                    <span>📍 GPS</span>
+                                                </label>
+                                                <button type="submit" 
+                                                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-xs flex items-center gap-1">
+                                                    <span>بدء التحضير 🚀</span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80">
+                    <span class="text-3xl">🗓️</span>
+                    <p class="font-bold text-slate-700 text-sm mt-2">لا توجد محاضرات مجدولة حالياً.</p>
+                    <p class="text-xs text-slate-400 mt-1">ابدأ بإنشاء مادة دراسية وشعبة ثم حدد أوقاتها الأسبوعية بسهولة.</p>
+                    <div class="mt-4 flex justify-center gap-3">
+                        <button @click="showAddCourseModal = true" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50">
+                            + إضافة مادة
+                        </button>
+                        <a href="{% url 'attendance:create_custom_session' %}" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700">
+                            + جدولة محاضرة
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB 2: MY COURSES -->
+        <div x-show="activeTab === 'courses'" class="p-5 sm:p-6 space-y-4" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black text-slate-900">المواد والمقررات الدراسية الخاصة بك</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">معزولة تماماً في مؤسستك وقسمك الأكاديمي</p>
+                </div>
+                <button @click="showAddCourseModal = true" class="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-xs">
+                    + إضافة مادة جديدة
+                </button>
+            </div>
+
+            {% if my_courses %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for crs in my_courses %}
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <span class="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                        {{ crs.code }}
+                                    </span>
+                                    <span class="text-xs font-bold text-slate-400">
+                                        {{ crs.department.name|default:"قسمك الأكاديمي" }}
+                                    </span>
+                                </div>
+                                <h4 class="text-base font-black text-slate-900 mt-2.5">{{ crs.name }}</h4>
+                                <p class="text-xs text-slate-400 font-medium mt-1">
+                                    {{ crs.sessions.count }} حصص أسبوعية مجدولة
+                                </p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <a href="{% url 'attendance:create_custom_session' %}?course_id={{ crs.id }}" class="text-xs font-bold text-indigo-600 hover:underline">
+                                    ⚡ بدء تحضير فوري
+                                </a>
+                                <span class="text-[11px] text-slate-400">مقرر نشط ✓</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                    <p class="font-bold text-slate-600 text-sm">لم تقم بإضافة أي مواد دراسية بعد.</p>
+                    <button @click="showAddCourseModal = true" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700">
+                        + إضافة أول مادة دراسية
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB 3: MY SECTIONS -->
+        <div x-show="activeTab === 'sections'" class="p-5 sm:p-6 space-y-4" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black text-slate-900">الشُعب والفصول الدراسية</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">مفصولة بالكامل بين الدوام الصباحي والمسائي</p>
+                </div>
+                <button @click="showAddSectionModal = true" class="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs">
+                    + إضافة شعبة جديدة
+                </button>
+            </div>
+
+            {% if my_sections %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for sec in my_sections %}
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                        {{ sec.level }}
+                                    </span>
+                                    {% if sec.shift == 'MORNING' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                    {% endif %}
+                                </div>
+                                <h4 class="text-base font-black text-slate-900 mt-2.5">{{ sec.name }}</h4>
+                                <p class="text-xs text-slate-400 font-medium mt-1">
+                                    👥 {{ sec.students.count }} طلاب مسجلون في الشعبة
+                                </p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <a href="{% url 'accounts:teacher_students' %}?section_id={{ sec.id }}" class="text-xs font-bold text-blue-600 hover:underline">
+                                    عرض وتعديل الطلاب ➔
+                                </a>
+                                <a href="{% url 'attendance:create_custom_session' %}?section_id={{ sec.id }}" class="text-xs font-bold text-slate-600 hover:text-slate-900">
+                                    + جلسة للشعبة
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                    <p class="font-bold text-slate-600 text-sm">لم يتم تسجيل أي شعب بعد.</p>
+                    <button @click="showAddSectionModal = true" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700">
+                        + إضافة شعبة دراسية
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB 4: RECENT SESSIONS -->
+        <div x-show="activeTab === 'recent'" class="p-5 sm:p-6 space-y-4" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black text-slate-900">سجل آخر الجلسات والمحاضرات المنعقدة</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">يمكنك مراجعة تقرير وتفاصيل حضور كل جلسة</p>
+                </div>
+                <a href="{% url 'reports:admin_reports_overview' %}" class="text-xs font-bold text-brand-600 hover:underline">
+                    عرض جميع التقارير الشاملة ➔
+                </a>
+            </div>
+
+            {% if recent_sessions %}
+                <div class="overflow-x-auto rounded-xl border border-slate-200/80">
+                    <table class="min-w-full divide-y divide-slate-100 text-right">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase">
+                                <th class="px-5 py-3.5">المادة والشعبة</th>
+                                <th class="px-4 py-3.5 text-center">التاريخ والوقت</th>
+                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
+                                <th class="px-4 py-3.5 text-center">الحضور</th>
+                                <th class="px-4 py-3.5 text-center">نسبة الحضور</th>
+                                <th class="px-4 py-3.5 text-center">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
+                            {% for rec in recent_sessions %}
+                                <tr class="hover:bg-slate-50/70 transition-colors">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-black text-slate-900">{{ rec.session.course.name }}</div>
+                                        <div class="text-xs text-slate-500">{{ rec.session.class_section.level }} - {{ rec.session.class_section.name }}</div>
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-mono text-slate-600">
+                                        {{ rec.date|date:"Y-m-d" }} ({{ rec.start_time|time:"H:i" }})
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        {% if rec.shift == 'MORNING' %}
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                        {% else %}
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-emerald-700">
+                                        {{ rec.present_count|default:rec.records.count }} حاضر
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-black text-brand-700">
+                                        {{ rec.attendance_rate|default:0 }}%
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <a href="/attendance/session/{{ rec.id }}/" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+                                            عرض السجل 👁️
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                    <p class="font-bold text-slate-600 text-sm">لا توجد جلسات سابقة مسجلة بعد.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 1: ADD COURSE / SUBJECT (إضافة مادة دراسية جديدة) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showAddCourseModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 text-right"
+             @click.outside="showAddCourseModal = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold">
+                        📚
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">إضافة مادة دراسية جديدة</h3>
+                        <p class="text-xs text-slate-400 font-semibold">{{ teacher.institution.name }}</p>
+                    </div>
+                </div>
+                <button @click="showAddCourseModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
+                    ✕
+                </button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_add_course' %}" class="space-y-4">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المادة الدراسية *</label>
+                    <input type="text" 
+                           name="name" 
+                           required 
+                           placeholder="مثال: الذكاء الاصطناعي، تراكيب البيانات..."
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز المادة (Course Code) - اختياري</label>
+                    <input type="text" 
+                           name="code" 
+                           placeholder="مثال: CS301 أو AI202 (يتم التوليد تلقائياً إذا ترك فارغاً)"
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ربط المادة بشعبة دراسية (اختياري)</label>
+                    <select name="section_id" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">-- بدون ربط فوري (ربط لاحقاً) --</option>
+                        {% for sec in my_sections %}
+                            <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" @click="showAddCourseModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">
+                        ✓ حفظ المادة الدراسية
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 2: ADD SECTION (إضافة شعبة جديدة مع خيار صباحي/مسائي) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showAddSectionModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 text-right"
+             @click.outside="showAddSectionModal = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">
+                        🏛️
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">إضافة شعبة دراسية جديدة</h3>
+                        <p class="text-xs text-slate-400 font-semibold">{{ teacher.institution.name }}</p>
+                    </div>
+                </div>
+                <button @click="showAddSectionModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
+                    ✕
+                </button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_add_section' %}" class="space-y-4">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المرحلة / الصف الدراسي *</label>
+                    <select name="level" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="المرحلة الأولى">المرحلة الأولى</option>
+                        <option value="المرحلة الثانية">المرحلة الثانية</option>
+                        <option value="المرحلة الثالثة">المرحلة الثالثة</option>
+                        <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                        <option value="الدراسات العليا">الدراسات العليا (ماجستير/دكتوراه)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الشعبة / المجموعة *</label>
+                    <input type="text" 
+                           name="name" 
+                           required 
+                           placeholder="مثال: شعبة أ، شعبة B، المجموعة 1..."
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Study Shift Choice -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">نوع الدراسة (صباحي / مسائي) *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-3 border border-amber-200 rounded-xl bg-amber-50/60 cursor-pointer hover:bg-amber-100/50 transition-colors">
+                            <input type="radio" name="shift" value="MORNING" checked class="text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-black text-amber-900 block">☀️ دراسة صباحية</span>
+                                <span class="text-[10px] text-amber-700">الفترة الصباحية</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-indigo-200 rounded-xl bg-indigo-50/60 cursor-pointer hover:bg-indigo-100/50 transition-colors">
+                            <input type="radio" name="shift" value="EVENING" class="text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <span class="text-xs font-black text-indigo-900 block">🌙 دراسة مسائية</span>
+                                <span class="text-[10px] text-indigo-700">الفترة المسائية</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ربط بمادة دراسية قائمة (اختياري)</label>
+                    <select name="course_id" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- بدون ربط مادة الآن --</option>
+                        {% for crs in my_courses %}
+                            <option value="{{ crs.id }}">{{ crs.name }} ({{ crs.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" @click="showAddSectionModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm">
+                        ✓ حفظ الشعبة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 3: EDIT UNIVERSITY & DEPARTMENT (تخصيص بيانات الجامعة والقسم) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showProfileModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 space-y-5 text-right"
+             @click.outside="showProfileModal = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg font-bold">
+                        🏛️
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">تخصيص الجامعة والقسم الأكاديمي</h3>
+                        <p class="text-xs text-slate-400 font-semibold">عزل تام لبياناتك وموادك وطلابك عن باقي الجامعات</p>
+                    </div>
+                </div>
+                <button @click="showProfileModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
+                    ✕
+                </button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_update_profile' %}" class="space-y-4">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسمك الكامل (الأستاذ / الدكتور) *</label>
+                    <input type="text" 
+                           name="first_name" 
+                           value="{{ user.first_name|default:user.username }}" 
+                           required 
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الجامعة والكلية *</label>
+                    <input type="text" 
+                           name="institution_name" 
+                           value="{{ teacher.institution.name }}" 
+                           required 
+                           placeholder="مثال: جامعة البصرة - كلية الهندسة، أو جامعة بغداد - كلية العلوم..."
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-400 mt-1">يحدد المؤسسة التي يتبع لها حسابك ويعزل جميع بيانات الطلاب والشعب تحتها.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">القسم الأكاديمي أو التخصص *</label>
+                    <input type="text" 
+                           name="department_name" 
+                           value="{{ teacher.department.name|default:teacher.specialization|default:'قسم علوم الحاسوب' }}" 
+                           required 
+                           placeholder="مثال: قسم هندسة النفط، قسم البرمجيات، قسم القانون..."
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">اللقب العلمي / التخصص الدقيق</label>
+                        <input type="text" 
+                               name="specialization" 
+                               value="{{ teacher.specialization|default:'أستاذ مساعد' }}" 
+                               placeholder="مثال: أستاذ مساعد دكتور"
+                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف العراقي</label>
+                        <input type="text" 
+                               name="phone" 
+                               value="{{ user.phone|default:'' }}" 
+                               placeholder="07724978301"
+                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" @click="showProfileModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-sm">
+                        ✓ حفظ التعديلات وتحديث النظام
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

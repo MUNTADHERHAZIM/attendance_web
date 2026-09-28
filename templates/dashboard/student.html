@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الطالب - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">مرحباً بك، {{ user.get_full_name|default:user.username }}</h1>
+            <p class="text-sm text-slate-500 font-medium mt-1">الرقم الجامعي: {{ student.student_id }} | المؤسسة: {{ student.institution.name }}</p>
+        </div>
+        
+        <a href="/attendance/checkin/" 
+           class="inline-flex items-center justify-center px-6 py-3.5 border border-transparent text-base font-bold rounded-2xl text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-lg shadow-brand-200">
+            📸 فتح الكاميرا لمسح الـ QR وتسجيل حضوري
+        </a>
+    </div>
+
+    <!-- Attendance Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Rate Card -->
+        <div class="bg-white p-6 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">معدل الحضور العام</p>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ attendance_rate }}%</h3>
+            </div>
+            <div class="h-12 w-12 rounded-xl flex items-center justify-center text-xl font-bold
+                 {% if attendance_rate >= 85 %}bg-emerald-50 text-emerald-600{% elif attendance_rate >= 75 %}bg-amber-50 text-amber-600{% else %}bg-rose-50 text-rose-600{% endif %}">
+                📈
+            </div>
+        </div>
+
+        <!-- Present Card -->
+        <div class="bg-white p-6 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الحاضرة</p>
+                <h3 class="text-3xl font-bold text-emerald-600 mt-2">{{ present }}</h3>
+            </div>
+            <div class="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                ✔
+            </div>
+        </div>
+
+        <!-- Late Card -->
+        <div class="bg-white p-6 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">المتأخرة</p>
+                <h3 class="text-3xl font-bold text-amber-600 mt-2">{{ late }}</h3>
+            </div>
+            <div class="h-12 w-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                ⏳
+            </div>
+        </div>
+
+        <!-- Absent Card -->
+        <div class="bg-white p-6 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الغيابات (بدون عذر)</p>
+                <h3 class="text-3xl font-bold text-rose-600 mt-2">{{ absent }}</h3>
+            </div>
+            <div class="h-12 w-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+                ✖
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning limit alert (if rate < 80%) -->
+    {% if attendance_rate < 80 and total > 0 %}
+        <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center space-x-reverse space-x-3 text-rose-800">
+            <span class="text-xl">⚠</span>
+            <div>
+                <h4 class="font-bold text-sm">إنذار حرمان أكاديمي حرج!</h4>
+                <p class="text-xs font-semibold text-rose-600 mt-1">نسبة حضورك الإجمالية تقل عن 80%، يرجى تقديم الأعذار لإدارة الكلية لتفادي الحرمان التلقائي.</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Attendance History Log -->
+    <div class="space-y-4">
+        <h2 class="text-xl font-bold text-slate-800">سجل حضوري الأخير</h2>
+        
+        <div class="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+            {% if recent_records %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">المادة</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">وقت تسجيل الحضور</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الطريقة</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                            {% for rec in recent_records %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-bold text-slate-900">{{ rec.attendance_session.session.course.name }}</div>
+                                        <div class="text-xs text-slate-400">{{ rec.attendance_session.session.course.code }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-650 text-center">
+                                        {{ rec.attendance_session.date }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
+                                        {{ rec.timestamp|date:"H:i:s" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold 
+                                              {% if rec.status == 'PRESENT' %}bg-emerald-100 text-emerald-800
+                                              {% elif rec.status == 'LATE' %}bg-amber-100 text-amber-800
+                                              {% else %}bg-rose-100 text-rose-800{% endif %}">
+                                            {{ rec.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 text-center">
+                                        {{ rec.get_method_display }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-10 text-slate-400 font-semibold text-sm">
+                    لا يوجد أي سجلات حضور مسجلة لك حالياً.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

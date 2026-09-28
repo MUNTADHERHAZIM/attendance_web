@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}تسجيل الحضور الذكي - نظام الحضور والغياب{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-6 space-y-6 text-center"
+     x-data="{ 
+        mode: 'qr', // 'qr' or 'otp'
+        isLoggedIn: {{ is_logged_in|yesno:'true,false' }},
+        studentUserName: '{{ user_student_name|default:'' }}',
+        guestStudentName: '',
+        scanning: true,
+        loading: false,
+        resultMessage: '',
+        resultType: '', // 'success' or 'error'
+        otpCode: '',
+        sessionId: '',
+        gpsCoords: null,
+        gpsStatus: 'جاري التحقق من الموقع...',
+
+        init() {
+            this.requestGPS();
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+            if (urlToken) {
+                this.scanning = false;
+                // If logged in, submit immediately. If guest, let them enter their name first or submit if provided.
+                if (this.isLoggedIn) {
+                    this.loading = true;
+                    setTimeout(() => { this.submitToken(urlToken); }, 200);
+                } else {
+                    this.pendingToken = urlToken;
+                }
+            } else {
+                this.initCamera();
+            }
+            this.initOfflineSync();
+        },
+
+        pendingToken: '',
+
+        async requestGPS() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                        this.gpsStatus = '📍 تم تحديد موقعك الجغرافي بنجاح';
+                    },
+                    (err) => {
+                        this.gpsStatus = '⚠️ لم يتم تفعيل الـ GPS (يرجى السماح بالوصول للموقع)';
+                        console.warn('Geolocation error:', err);
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                this.gpsStatus = 'المتصفح لا يدعم تحديد الموقع';
+            }
+        },
+
+        initCamera() {
+            if (this.mode !== 'qr') return;
+            const video = document.getElementById('preview');
+            const canvasElement = document.getElementById('canvas');
+            if (!video || !canvasElement) return;
+            const canvas = canvasElement.getContext('2d');
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    video.play();
+                    requestAnimationFrame(tick.bind(this));
+                })
+                .catch((err) => {
+                    this.scanning = false;
+                    this.resultType = 'error';
+                    this.resultMessage = 'تعذر تشغيل الكاميرا: يرجى إعطاء صلاحية الكاميرا للمتصفح، أو استخدم خيار كود التحضير السريع (OTP).';
+                    console.error(err);
+                });
+
+            const tick = () => {
+                if (this.mode !== 'qr') return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA && this.scanning && !this.loading) {
+                    canvasElement.hidden = false;
+                    canvasElement.height = video.videoHeight;
+                    canvasElement.width = video.videoWidth;
+                    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                    
+                    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'dontInvert',
+                    });
+                    
+                    if (code) {
+                        const stream = video.srcObject;
+                        if (stream) {
+                            const tracks = stream.getTracks();
+                            tracks.forEach(track => track.stop());
+                        }
+
+                        if (!this.isLoggedIn && !this.guestStudentName.trim()) {
+                            this.pendingToken = code.data;
+                            this.scanning = false;
+                            alert('تم مسح الرمز بنجاح! يرجى إدخال اسمك الكامل أو رقمك الجامعي بالأسفل لتثبيت الحضور.');
+                            return;
+                        }
+
+                        this.loading = true;
+                        this.submitToken(code.data);
+                        return;
+                    }
+                }
+                if (this.scanning && this.mode === 'qr') {
+                    requestAnimationFrame(tick.bind(this));
+                }
+            };
+        },
+        
+        async submitToken(token) {
+            if (!this.isLoggedIn && !this.guestStudentName.trim()) {
+                alert('يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور');
+                return;
+            }
+
+            this.loading = true;
+            if (!this.gpsCoords && 'geolocation' in navigator) {
+                await new Promise((res) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => { this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; res(); },
+                        () => res(),
+                        { timeout: 3000, enableHighAccuracy: true }
+                    );
+                });
+            }
+
+            const payload = {
+                token: token,
+                student_name: this.guestStudentName.trim() || null,
+                latitude: this.gpsCoords?.latitude || null,
+                longitude: this.gpsCoords?.longitude || null,
+            };
+
+            await this.sendCheckinPayload(payload);
+        },
+
+        async submitOTP() {
+            if (!this.otpCode || this.otpCode.length < 4) {
+                alert('يرجى إدخال كود التحضير المكون من 6 أرقام');
+                return;
+            }
+            if (!this.isLoggedIn && !this.guestStudentName.trim()) {
+                alert('يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور');
+                return;
+            }
+
+            this.loading = true;
+            if (!this.gpsCoords && 'geolocation' in navigator) {
+                await new Promise((res) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => { this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; res(); },
+                        () => res(),
+                        { timeout: 3000, enableHighAccuracy: true }
+                    );
+                });
+            }
+
+            const payload = {
+                otp: this.otpCode.trim(),
+                student_name: this.guestStudentName.trim() || null,
+                session_id: this.sessionId || null,
+                latitude: this.gpsCoords?.latitude || null,
+                longitude: this.gpsCoords?.longitude || null,
+            };
+
+            await this.sendCheckinPayload(payload);
+        },
+
+        async sendCheckinPayload(payload) {
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                let response = await fetch('/attendance/api/checkin/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                let data = await response.json();
+                this.loading = false;
+                this.scanning = false;
+                
+                if (response.ok) {
+                    this.resultType = 'success';
+                    this.resultMessage = data.message || 'تم تسجيل الحضور بنجاح!';
+                } else {
+                    this.resultType = 'error';
+                    this.resultMessage = data.error || 'فشلت عملية التحضير.';
+                }
+            } catch (e) {
+                // Offline fallback (Queue locally)
+                this.storeOfflineRecord(payload);
+                this.loading = false;
+                this.scanning = false;
+                this.resultType = 'success';
+                this.resultMessage = 'أنت غير متصل بالإنترنت حالياً! تم حفظ عملية التحضير بأمان في جهازك، وستتم المزامنة تلقائياً عند عودة الاتصال. 📡';
+                console.error(e);
+            }
+        },
+
+        storeOfflineRecord(payload) {
+            try {
+                let queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+                payload.queued_at = new Date().toISOString();
+                queue.push(payload);
+                localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+            } catch (err) {
+                console.error('Failed to cache offline record:', err);
+            }
+        },
+
+        initOfflineSync() {
+            window.addEventListener('online', async () => {
+                let queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+                if (!queue.length) return;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                while (queue.length > 0) {
+                    let item = queue.shift();
+                    try {
+                        await fetch('/attendance/api/checkin/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                            body: JSON.stringify(item)
+                        });
+                    } catch (e) {
+                        queue.unshift(item);
+                        break;
+                    }
+                }
+                localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+            });
+        },
+        
+        resetScanner() {
+            this.scanning = true;
+            this.loading = false;
+            this.resultMessage = '';
+            this.resultType = '';
+            this.pendingToken = '';
+            if (this.mode === 'qr') {
+                this.$nextTick(() => { this.initCamera(); });
+            }
+        }
+     }"
+     x-init="init()">
+
+    {% csrf_token %}
+
+    <!-- Top Badge / Header -->
+    <div class="space-y-1">
+        <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">تسجيل حضور المحاضرة</h2>
+        <template x-if="isLoggedIn">
+            <p class="text-xs text-emerald-600 font-bold">مرحباً بك: <span x-text="studentUserName"></span></p>
+        </template>
+        <template x-if="!isLoggedIn">
+            <p class="text-xs text-slate-400 font-semibold">تحضير سريع للطلاب بدون حساب عبر مطابقة الاسم الذكية</p>
+        </template>
+    </div>
+
+    <!-- Student Name Input (For Guests who don't have an account) -->
+    <div x-show="!isLoggedIn && !resultType" class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-right space-y-2">
+        <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-indigo-900">
+                👤 اسم الطالب الكامل أو الرقم الجامعي *
+            </label>
+            <span class="text-[10px] bg-indigo-200/80 text-indigo-800 px-2 py-0.5 rounded font-bold">مطابقة ذكية للغة العربية</span>
+        </div>
+        <input type="text" x-model="guestStudentName" 
+               placeholder="مثال: فاطمة علي حسن أو 20261055"
+               class="w-full text-sm font-bold h-11 px-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none bg-white">
+        <p class="text-[11px] text-indigo-700 leading-relaxed font-medium">
+            💡 يتعرف النظام على الأسماء بدقة ويتجاهل الفروقات الإملائية تلقائياً مثل التاء المربوطة والهاء (فاطمة = فاطمه) والألف والهمزات (أحمد = احمد) وحركات التشكيل.
+        </p>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl text-xs font-bold" x-show="!resultType">
+        <button type="button" @click="mode = 'qr'; resetScanner()" 
+                class="py-2.5 rounded-lg transition-all"
+                :class="mode === 'qr' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            📷 مسح الـ QR
+        </button>
+        <button type="button" @click="mode = 'otp'; scanning = false" 
+                class="py-2.5 rounded-lg transition-all"
+                :class="mode === 'otp' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            🔢 كود الطوارئ (OTP)
+        </button>
+    </div>
+
+    <!-- GPS Location Banner -->
+    <div class="p-2.5 rounded-xl text-xs font-bold text-right flex items-center justify-between"
+         :class="gpsCoords ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'">
+        <span x-text="gpsStatus"></span>
+        <button type="button" @click="requestGPS()" class="text-[11px] underline">تحديث 🔄</button>
+    </div>
+
+    <!-- Pending Token Notice (When scanned before entering name) -->
+    <div x-show="pendingToken && !resultType" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-right text-xs text-emerald-800 space-y-2">
+        <p class="font-bold">✔ تم قراءة رمز المحاضرة بنجاح!</p>
+        <button type="button" @click="submitToken(pendingToken)" 
+                class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm">
+            تأكيد تسجيل الحضور الآن 🚀
+        </button>
+    </div>
+
+    <!-- Scanner Preview Frame (QR Mode) -->
+    <div x-show="mode === 'qr' && !resultType && !pendingToken" class="relative w-full aspect-square max-w-[320px] mx-auto rounded-2xl overflow-hidden bg-slate-900 flex items-center justify-center border-4 border-slate-100 shadow-inner">
+        <video id="preview" class="hidden"></video>
+        <canvas id="canvas" class="w-full h-full object-cover"></canvas>
+
+        <div x-show="scanning && !loading" class="absolute inset-0 border-[30px] border-black/40 pointer-events-none flex items-center justify-center">
+            <div class="w-full h-1 bg-indigo-500 absolute animate-pulse" style="animation: scan 2s infinite linear;"></div>
+            <div class="w-full h-full border-2 border-indigo-500 rounded-lg"></div>
+        </div>
+
+        <div x-show="loading" class="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white space-y-3">
+            <svg class="animate-spin h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm font-bold">جاري مطابقة الاسم والموقع...</span>
+        </div>
+    </div>
+
+    <!-- OTP Input Form (OTP Mode) -->
+    <div x-show="mode === 'otp' && !resultType" class="space-y-4 py-2 text-right">
+        <div class="p-3 bg-indigo-50/70 border border-indigo-150 rounded-xl text-xs text-indigo-900 leading-relaxed font-medium">
+            💡 أدخل كود التحضير السريع (6 أرقام) المعروض على شاشة الأستاذ لتسجيل الحضور فورياً.
+        </div>
+
+        <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700">رمز التحضير السريع (OTP) *</label>
+            <input type="text" x-model="otpCode" 
+                   maxlength="6"
+                   placeholder="مثال: 849201"
+                   dir="ltr"
+                   class="w-full text-center tracking-widest text-2xl font-black font-mono h-14 border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none">
+        </div>
+
+        <button type="button" @click="submitOTP()" 
+                :disabled="loading || !otpCode"
+                class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-md shadow-indigo-100">
+            <span x-show="!loading">تسجيل الحضور بالكود 🚀</span>
+            <span x-show="loading">جاري التحقق...</span>
+        </button>
+    </div>
+
+    <!-- Results Panel -->
+    <div x-show="resultType" class="space-y-6">
+        <div class="p-6 rounded-2xl border"
+             :class="resultType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'">
+            <div class="text-4xl mb-3" x-text="resultType === 'success' ? '✔' : '✖'"></div>
+            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'عملية ناجحة' : 'تعذر تسجيل الحضور'"></h3>
+            <p class="text-sm font-bold mt-2" x-text="resultMessage"></p>
+        </div>
+
+        <div class="flex space-x-reverse space-x-3">
+            <button @click="resetScanner()" 
+                    class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                إعادة المحاولة 🔄
+            </button>
+            <a href="/" 
+               class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
+                الرئيسية
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- QR Scanner Library CDN -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<style>
+    @keyframes scan {
+        0% { top: 10%; }
+        50% { top: 90%; }
+        100% { top: 10%; }
+    }
+</style>
+{% endblock %}

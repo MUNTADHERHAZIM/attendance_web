@@ -1,0 +1,1317 @@
+{% extends "base.html" %}
+
+{% block title %}جلسة تحضير: {{ attendance_session.session.course.name }} - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div id="session-manager-root"
+     x-data="sessionDetailManager()"
+     data-token="{{ initial_qr_token|default:''|escapejs }}"
+     data-session-id="{{ attendance_session.id }}"
+     data-is-frozen="{% if attendance_session.is_frozen_qr %}true{% else %}false{% endif %}"
+     data-present-count="{{ present_count|default:0 }}"
+     data-primary-ip="{{ primary_hotspot_ip|default:'127.0.0.1'|escapejs }}"
+     data-server-port="{{ server_port|default:'8001'|escapejs }}"
+     data-quick-otp="{{ attendance_session.quick_otp|default:'849201'|escapejs }}"
+     data-csrf-token="{{ csrf_token }}"
+     class="space-y-6 no-print">
+
+<script>
+function sessionDetailManager() {
+    var rootEl = document.getElementById('session-manager-root');
+    var ds = (rootEl && rootEl.dataset) ? rootEl.dataset : {};
+
+    return {
+        token: ds.token || '',
+        qrTimestamp: Date.now(),
+        expiresIn: 15,
+        sessionId: parseInt(ds.sessionId || '0', 10),
+        isFrozen: ds.isFrozen === 'true',
+        qrSize: 'lg',
+        layoutMode: localStorage.getItem('session_table_layout') || 'split',
+        projectorMode: false,
+        soundEnabled: true,
+        filterStatus: 'ALL',
+        searchQuery: '',
+        quickOfflineQuery: '',
+        offlineMessage: '',
+        lastPresentCount: parseInt(ds.presentCount || '0', 10),
+        copiedOtp: false,
+        copiedLink: false,
+        showBulkModal: false,
+        showCheckinQr: false,
+        projectorViewMode: 'qr_only',
+        qrZoomLevel: 2,
+        hotspotModalOpen: false,
+        localIps: [],
+        primaryIp: ds.primaryIp || '127.0.0.1',
+        selectedIp: localStorage.getItem('hotspot_selected_ip') || (ds.primaryIp || '127.0.0.1'),
+        serverPort: ds.serverPort || '8001',
+        isHotspotActive: (localStorage.getItem('hotspot_is_active') === 'true'),
+        quickOtp: ds.quickOtp || '849201',
+        csrfToken: ds.csrfToken || '',
+
+        zoomQrIn: function() {
+            if (this.qrZoomLevel < 4) {
+                this.qrZoomLevel++;
+            }
+        },
+
+        zoomQrOut: function() {
+            if (this.qrZoomLevel > 1) {
+                this.qrZoomLevel--;
+            }
+        },
+
+        getCheckinUrl: function() {
+            if (this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1') {
+                return 'http://' + this.selectedIp + ':' + this.serverPort + '/attendance/checkin/';
+            }
+            return window.location.origin + '/attendance/checkin/';
+        },
+
+        getCheckinQrUrl: function() {
+            var url = '/attendance/qr-image/?size=12';
+            if (this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1') {
+                url += '&host=' + encodeURIComponent(this.selectedIp + ':' + this.serverPort);
+            }
+            return url;
+        },
+
+        handleKeydown: function(e) {
+            var activeEl = document.activeElement;
+            var isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+            if (isTyping) return;
+
+            var isFKey = (e.code === 'KeyF' || e.key === 'f' || e.key === 'F' || e.key === 'ب' || e.key === 'ء');
+            if (isFKey) {
+                e.preventDefault();
+                this.projectorMode = !this.projectorMode;
+                if (this.projectorMode) {
+                    this.toggleFullscreen();
+                } else {
+                    if (document.fullscreenElement && document.exitFullscreen) {
+                        document.exitFullscreen().catch(function() {});
+                    }
+                }
+                return;
+            }
+
+            if (e.key === 'Escape' && this.projectorMode) {
+                e.preventDefault();
+                this.projectorMode = false;
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(function() {});
+                }
+                return;
+            }
+
+            if (this.projectorMode) {
+                if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+                    e.preventDefault();
+                    this.zoomQrIn();
+                } else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+                    e.preventDefault();
+                    this.zoomQrOut();
+                } else if (e.key === '1') {
+                    this.projectorViewMode = 'qr_only';
+                } else if (e.key === '2') {
+                    this.projectorViewMode = 'dual';
+                } else if (e.key === '3') {
+                    this.projectorViewMode = 'otp_only';
+                }
+            }
+        },
+
+        toggleLayout: function() {
+            this.layoutMode = (this.layoutMode === 'split') ? 'full' : 'split';
+            localStorage.setItem('session_table_layout', this.layoutMode);
+        },
+
+        getQrUrl: function(boxSize) {
+            var size = boxSize || 10;
+            var url = '/attendance/qr-image/?token=' + encodeURIComponent(this.token || '') + '&size=' + size + '&v=' + this.qrTimestamp;
+            if (this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1') {
+                url += '&host=' + encodeURIComponent(this.selectedIp + ':' + this.serverPort);
+            }
+            return url;
+        },
+
+        openHotspotModal: function() {
+            var self = this;
+            self.hotspotModalOpen = true;
+            fetch('/attendance/api/hotspot-info/')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        self.localIps = data.all_ips || [];
+                        self.primaryIp = data.primary_ip;
+                        self.serverPort = data.port;
+                        if (!self.selectedIp || self.selectedIp === '127.0.0.1') {
+                            self.selectedIp = data.primary_ip;
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Failed to load hotspot info', err);
+                });
+        },
+
+        applyHotspotMode: function(enable) {
+            this.isHotspotActive = enable;
+            localStorage.setItem('hotspot_is_active', enable ? 'true' : 'false');
+            localStorage.setItem('hotspot_selected_ip', this.selectedIp);
+            this.qrTimestamp = Date.now();
+            this.hotspotModalOpen = false;
+        },
+
+        copyHotspotCheckinLink: function() {
+            navigator.clipboard.writeText(this.getCheckinUrl());
+            this.copiedHotspotUrl = true;
+            var self = this;
+            setTimeout(function() { self.copiedHotspotUrl = false; }, 2500);
+        },
+
+        toggleFreeze: function() {
+            var self = this;
+            fetch('/attendance/api/session/' + self.sessionId + '/toggle-freeze/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': self.csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    self.isFrozen = data.is_frozen;
+                    if (data.token) {
+                        self.token = data.token;
+                        self.qrTimestamp = Date.now();
+                    }
+                }
+            })
+            .catch(function(e) {
+                console.error('Failed to toggle freeze', e);
+            });
+        },
+
+        submitQuickOfflineCheckin: function() {
+            var self = this;
+            if (!self.quickOfflineQuery.trim()) return;
+            var formData = new FormData();
+            formData.append('session_id', self.sessionId);
+            formData.append('student_query', self.quickOfflineQuery.trim());
+            fetch('/attendance/api/record/quick-offline-checkin/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': self.csrfToken
+                },
+                body: formData
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    self.offlineMessage = data.message;
+                    self.quickOfflineQuery = '';
+                    self.playChime();
+                    if (window.htmx) {
+                        htmx.trigger('#student-list-container', 'every 3s');
+                    }
+                    setTimeout(function() { self.offlineMessage = ''; }, 5000);
+                } else {
+                    alert(data.error || 'فشل تسجيل الطالب');
+                }
+            })
+            .catch(function(err) {
+                alert('حدث خطأ أثناء التسجيل السريع للطالب');
+            });
+        },
+
+        refreshToken: function() {
+            var self = this;
+            if (self.isFrozen) return;
+            var headers = {};
+            var jwtToken = localStorage.getItem('token');
+            if (jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined') {
+                headers['Authorization'] = 'Bearer ' + jwtToken;
+            }
+            fetch('/attendance/api/session/' + self.sessionId + '/qr/', {
+                headers: headers,
+                credentials: 'same-origin'
+            })
+            .then(function(response) {
+                if (response.status === 401 && jwtToken) {
+                    localStorage.removeItem('token');
+                    return fetch('/attendance/api/session/' + self.sessionId + '/qr/', {
+                        credentials: 'same-origin'
+                    });
+                }
+                return response;
+            })
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP error ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                if (data.token) {
+                    self.token = data.token;
+                    self.qrTimestamp = Date.now();
+                }
+                self.expiresIn = data.expires_in_seconds || 15;
+            })
+            .catch(function(e) {
+                console.error('Failed to rotate QR Token', e);
+                self.expiresIn = 15;
+            });
+        },
+
+        playChime: function() {
+            if (!this.soundEnabled) return;
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var now = ctx.currentTime;
+                
+                var osc1 = ctx.createOscillator();
+                var gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, now);
+                gain1.gain.setValueAtTime(0.12, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.35);
+
+                var osc2 = ctx.createOscillator();
+                var gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(987.77, now + 0.12);
+                gain2.gain.setValueAtTime(0.15, now + 0.12);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.12);
+                osc2.stop(now + 0.55);
+            } catch (err) {
+                console.log('Audio chime not permitted yet:', err);
+            }
+        },
+
+        toggleFullscreen: function() {
+            if (!document.fullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(function(err) { console.log(err); });
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(function() {});
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        },
+
+        copyOtp: function() {
+            navigator.clipboard.writeText(this.quickOtp);
+            this.copiedOtp = true;
+            var self = this;
+            setTimeout(function() { self.copiedOtp = false; }, 2500);
+        },
+
+        copyCheckinLink: function() {
+            navigator.clipboard.writeText(this.getCheckinUrl());
+            this.copiedLink = true;
+            var self = this;
+            setTimeout(function() { self.copiedLink = false; }, 2500);
+        },
+
+        filterRows: function() {
+            var query = this.searchQuery.trim().toLowerCase();
+            var status = this.filterStatus;
+            var rows = document.querySelectorAll('.student-row');
+            rows.forEach(function(row) {
+                var name = row.getAttribute('data-name') || '';
+                var id = row.getAttribute('data-id') || '';
+                var rowStatus = row.getAttribute('data-status') || '';
+                
+                var matchesQuery = !query || name.indexOf(query) !== -1 || id.indexOf(query) !== -1;
+                var matchesStatus = (status === 'ALL') || 
+                                      (status === 'PRESENT' && (rowStatus === 'PRESENT' || rowStatus === 'LATE')) ||
+                                      (status === 'ABSENT' && rowStatus === 'ABSENT');
+
+                if (matchesQuery && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        },
+
+        init: function() {
+            var self = this;
+            window.__sessionManager = self;
+            self.refreshToken();
+            setInterval(function() {
+                if (!self.isFrozen) {
+                    self.expiresIn--;
+                    if (self.expiresIn <= 0) {
+                        self.refreshToken();
+                    }
+                }
+            }, 1000);
+
+            var savedTableScrollLeft = null;
+            document.body.addEventListener('htmx:beforeSwap', function(evt) {
+                if (evt.detail.target.id === 'student-list-container') {
+                    var scroller = evt.detail.target.querySelector('#students-table-scroller') || evt.detail.target.querySelector('.overflow-x-auto');
+                    if (scroller) {
+                        savedTableScrollLeft = scroller.scrollLeft;
+                    }
+                }
+            });
+
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                if (evt.detail.target.id === 'student-list-container') {
+                    if (savedTableScrollLeft !== null) {
+                        var scroller = evt.detail.target.querySelector('#students-table-scroller') || evt.detail.target.querySelector('.overflow-x-auto');
+                        if (scroller) {
+                            scroller.scrollLeft = savedTableScrollLeft;
+                        }
+                    }
+
+                    self.filterRows();
+                    var meta = document.getElementById('attendance-poll-meta');
+                    if (meta) {
+                        var currentPresent = parseInt(meta.getAttribute('data-present') || '0', 10);
+                        if (currentPresent > self.lastPresentCount) {
+                            self.playChime();
+                        }
+                        self.lastPresentCount = currentPresent;
+                    }
+                }
+            });
+        }
+    };
+}
+
+window.addEventListener('keydown', function(e) {
+    if (window.__sessionManager) {
+        window.__sessionManager.handleKeydown(e);
+    }
+});
+</script>
+
+    <!-- 🌟 Top Navigation & Action Banner -->
+    <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            
+            <!-- Left Info -->
+            <div class="flex items-center space-x-reverse space-x-4">
+                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all shadow-xs" title="العودة للرئيسية">
+                    <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            جلسة تحضير ذكية نشطة
+                        </span>
+                        <span class="text-xs font-mono font-bold text-slate-400">#{{ attendance_session.id }}</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                        {{ attendance_session.session.course.name }}
+                        <span class="text-sm font-semibold text-slate-500 font-mono">({{ attendance_session.session.course.code }})</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium flex items-center gap-3 mt-0.5">
+                        <span>🏛️ {{ attendance_session.session.room|default:"القاعة الذكية - مختبر الحاسوب" }}</span>
+                        <span>•</span>
+                        <span>👨‍🏫 {{ attendance_session.session.teacher.user.get_full_name|default:request.user.get_full_name }}</span>
+                        <span>•</span>
+                        <span>📅 {{ attendance_session.date|date:"Y-m-d" }}</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Actions Toolbar -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Projector Mode (Cinema Mode) Button with Glow -->
+                <button @click="projectorMode = true" 
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 shadow-md shadow-brand-200 transition-all hover:scale-[1.02] active:scale-95">
+                    <span>🖥️</span>
+                    <span>نمط العرض بالقاعة (F)</span>
+                </button>
+
+                <!-- 🚀 Zero-Internet Local Hotspot Button -->
+                <button @click="openHotspotModal()" 
+                        :class="isHotspotActive ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-200 border-emerald-600 ring-2 ring-emerald-300' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black border transition-all shadow-xs"
+                        title="تفعيل وضع شبكة القاعة المحلية والعمل بدون إنترنت نهائياً عبر نقطة اتصال الهوت سبوت">
+                    <span class="text-sm">🚀</span>
+                    <span x-show="!isHotspotActive">شبكة القاعة (بدون نت)</span>
+                    <span x-show="isHotspotActive" class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                        <span>شبكة محلية نشطة (<span class="font-mono text-[10px]" x-text="selectedIp"></span>)</span>
+                    </span>
+                </button>
+
+                <!-- 📶 Offline Emergency Mode Button -->
+                <a href="{% url 'attendance:offline_emergency' attendance_session.id %}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all shadow-xs"
+                   title="وضع الطوارئ الكامل — تسجيل الحضور لكل طالب بنقرة واحدة بدون إنترنت نهائياً">
+                    <span>📶</span>
+                    <span>وضع الطوارئ</span>
+                </a>
+
+                <!-- Freeze QR Toggle Button -->
+                <button @click="toggleFreeze()" 
+                        :class="isFrozen ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200 border-amber-600 ring-2 ring-amber-300' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all shadow-xs"
+                        :title="isFrozen ? 'الرمز مثبت حالياً، انقر لإلغاء التثبيت وتفعيل التدوير كل 15 ثانية' : 'تثبيت الرمز لمنع تجدده كل 15 ثانية وتسهيل عرضه أو طباعته مسبقاً'">
+                    <span x-show="!isFrozen">🔒 تثبيت رمز الـ QR</span>
+                    <span x-show="isFrozen" class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                        <span>🔓 الرمز مثبت (إلغاء التثبيت)</span>
+                    </span>
+                </button>
+
+                <!-- Printable Poster (A4) Button -->
+                <a href="{% url 'attendance:printable_qr_sheet' attendance_session.id %}" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all shadow-xs"
+                   title="طباعة لوحة وبوستر QR و OTP رسمي بحجم A4 مسبقاً قبل المحاضرة لعدم ضياع الوقت">
+                    <span>🖨️ بوستر QR للطباعة (A4)</span>
+                </a>
+
+                <!-- Copy Check-in Link Button -->
+                <button @click="copyCheckinLink()" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
+                    <span x-show="!copiedLink">🔗 نسخ الرابط المباشر</span>
+                    <span x-show="copiedLink" class="text-emerald-600 font-black">✓ تم نسخ الرابط!</span>
+                </button>
+
+                <!-- Sound Chime Toggle -->
+                <button @click="soundEnabled = !soundEnabled; if(soundEnabled) playChime();" 
+                        :class="soundEnabled ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-400'"
+                        class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all shadow-xs" 
+                        title="تفعيل/تعطيل التنبيه الصوتي عند تسجيل حضور الطلاب">
+                    <span x-text="soundEnabled ? '🔔 التنبيه مفعّل' : '🔕 التنبيه صامت'"></span>
+                </button>
+
+                <!-- Bulk Present Modal Button -->
+                <button @click="showBulkModal = true"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all shadow-xs">
+                    <span>⚡ تحضير الكل</span>
+                </button>
+
+                <!-- Excel Export -->
+                <a href="{% url 'reports:export_excel' attendance_session.id %}" 
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs shadow-emerald-200">
+                    <span>📥 Excel</span>
+                </a>
+
+                <!-- Print Report -->
+                <button onclick="window.print()" 
+                        class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-all shadow-xs">
+                    <span>🖨️ طباعة</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📊 Live Attendance KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Total -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400">إجمالي طلاب الشعبة</p>
+                <p class="text-2xl font-black text-slate-900 mt-1" id="live-total-counter">{{ total_count }}</p>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">مسجلون في القائمة</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl font-bold">
+                👥
+            </div>
+        </div>
+
+        <!-- Card 2: Present -->
+        <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-emerald-800">الحاضرون الآن</p>
+                <div class="flex items-baseline gap-1 mt-1">
+                    <span class="text-2xl font-black text-emerald-700" id="live-present-counter">{{ present_count }}</span>
+                    <span class="text-xs font-bold text-emerald-600">طالب</span>
+                </div>
+                <p class="text-[11px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    تحديث فوري تلقائي
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl font-bold shadow-sm shadow-emerald-200">
+                ✓
+            </div>
+        </div>
+
+        <!-- Card 3: Absent -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400">الغائبون حتى الآن</p>
+                <div class="flex items-baseline gap-1 mt-1">
+                    <span class="text-2xl font-black text-rose-600" id="live-absent-counter">{{ absent_count }}</span>
+                    <span class="text-xs font-bold text-rose-500">طالب</span>
+                </div>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">لم يسجلوا بعد</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold">
+                ✕
+            </div>
+        </div>
+
+        <!-- Card 4: Attendance Rate -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400">نسبة حضور المحاضرة</p>
+                    <p class="text-2xl font-black text-brand-700 mt-1" id="live-rate-counter">{{ attendance_rate }}%</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-bold">
+                    📈
+                </div>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-3">
+                <div id="live-rate-bar" class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full transition-all duration-700 rounded-full" 
+                     style="width: {{ attendance_rate }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 Main Live Session Layout (Grid with Full-Width Toggle) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- 📱 Dynamic QR & Emergency OTP Panel -->
+        <div :class="layoutMode === 'full' ? 'hidden' : 'lg:col-span-4'" class="space-y-5 transition-all duration-300">
+            
+            <!-- QR Code Card -->
+            <div class="bg-white border border-slate-200/90 shadow-sm rounded-2xl p-6 text-center space-y-5 relative overflow-hidden">
+                <!-- Top Accent Line -->
+                <div class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600"></div>
+
+                <!-- Header & Size Controls -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="text-right">
+                        <h3 class="text-base font-black text-slate-900 flex items-center gap-1.5 flex-wrap">
+                            <span>📱 رمز التحضير الذكي (Dynamic QR)</span>
+                            <span x-show="isFrozen" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                🔒 الرمز مثبت
+                            </span>
+                            <span x-show="isHotspotActive" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                🚀 شبكة محلية
+                            </span>
+                        </h3>
+                        <p class="text-xs text-slate-400 font-semibold mt-0.5">امسح الكود عبر كاميرا الهاتف للتسجيل</p>
+                    </div>
+
+                    <!-- Size Switcher Buttons -->
+                    <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
+                        <button @click="qrSize = 'md'" 
+                                :class="qrSize === 'md' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-2 py-1 rounded-md transition-all">عادي</button>
+                        <button @click="qrSize = 'lg'" 
+                                :class="qrSize === 'lg' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-2 py-1 rounded-md transition-all">كبير</button>
+                        <button @click="qrSize = 'xl'" 
+                                :class="qrSize === 'xl' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-2 py-1 rounded-md transition-all">مكبّر</button>
+                    </div>
+                </div>
+
+                <!-- QR Display Container with Zoom Transition -->
+                <div class="relative flex items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100/70 rounded-2xl border-2 border-slate-200/80 shadow-inner group">
+                    <template x-if="token">
+                        <div class="relative transition-all duration-300 transform">
+                            <!-- Dynamic image with custom size binding -->
+                            <img :src="getQrUrl(qrSize === 'xl' ? 14 : (qrSize === 'lg' ? 10 : 8))" 
+                                 alt="QR Code" 
+                                 :class="{
+                                     'w-56 h-56': qrSize === 'md',
+                                     'w-72 h-72 sm:w-80 sm:h-80': qrSize === 'lg',
+                                     'w-80 h-80 sm:w-96 sm:h-96': qrSize === 'xl'
+                                 }"
+                                 class="mx-auto rounded-xl bg-white p-2 shadow-md transition-all duration-300">
+                            
+                            <!-- Quick Fullscreen Projector Hover Button -->
+                            <button @click="projectorMode = true" 
+                                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity gap-2 cursor-pointer font-bold">
+                                <span class="p-3 bg-white/20 rounded-full text-2xl">⛶</span>
+                                <span class="text-sm">تكبير بشاشة كاملة للقاعة (F)</span>
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="!token">
+                        <div class="w-64 h-64 flex flex-col items-center justify-center text-slate-400 gap-2">
+                            <span class="animate-spin text-3xl">⚙️</span>
+                            <span class="text-xs font-bold animate-pulse">جاري تشفير وتوليد الرمز الذكي...</span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Animated Countdown Progress Bar -->
+                <div class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-600 px-1">
+                        <span class="flex items-center gap-1.5" x-show="!isFrozen">
+                            <span class="w-2 h-2 rounded-full bg-brand-500 animate-ping"></span>
+                            صلاحية الرمز وتجديده:
+                        </span>
+                        <span class="flex items-center gap-1.5 text-amber-800" x-show="isFrozen">
+                            <span>🔒</span>
+                            الرمز مثبت (بدون تدوير):
+                        </span>
+                        <span class="font-mono text-brand-700 font-black text-sm" x-show="!isFrozen" x-text="expiresIn + ' ثانية'">15 ثانية</span>
+                        <span class="text-amber-800 font-black text-xs" x-show="isFrozen">صالح طوال المحاضرة</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden" x-show="!isFrozen">
+                        <div class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full transition-all duration-1000 ease-linear rounded-full"
+                             :style="'width: ' + (expiresIn / 15 * 100) + '%'"></div>
+                    </div>
+                    <div class="p-1.5 bg-amber-50 rounded text-[11px] text-amber-800 font-medium text-center border border-amber-200" x-show="isFrozen">
+                        ⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً.
+                    </div>
+                    <div class="p-1.5 bg-emerald-50 rounded text-[11px] text-emerald-800 font-medium text-center border border-emerald-200" x-show="isHotspotActive">
+                        🚀 الرمز مبرمج للعمل عبر شبكة القاعة المحلية (<span class="font-mono font-bold" x-text="selectedIp + ':' + serverPort"></span>) بدون أي إنترنت خارجي.
+                    </div>
+                </div>
+
+                <!-- Emergency OTP Card with High Contrast & Copy Button -->
+                <div class="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/60 rounded-xl border border-indigo-200 text-right w-full text-indigo-900 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-indigo-800 flex items-center gap-1">
+                            <span>🔢</span> كود التحضير السريع (OTP للطوارئ)
+                        </span>
+                        <span class="text-[10px] bg-indigo-200/90 text-indigo-900 px-2 py-0.5 rounded-md font-bold">بدون كاميرا</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200/80 shadow-xs">
+                        <div class="flex-1 text-center">
+                            <span class="text-3xl font-black tracking-widest text-indigo-700 font-mono select-all">
+                                {{ attendance_session.quick_otp|default:"849201" }}
+                            </span>
+                        </div>
+                        <button @click="copyOtp()" 
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+                                title="نسخ الكود">
+                            <span x-show="!copiedOtp">📋 نسخ</span>
+                            <span x-show="copiedOtp" class="text-emerald-600 font-black">✓ تم!</span>
+                        </button>
+                    </div>
+
+                    <p class="text-[11px] text-indigo-700/90 font-medium leading-relaxed">
+                        للطلاب الذين يواجهون ضعفاً في الإنترنت أو تعذر في قراءة الكاميرا؛ يمكنهم إدخال هذا الرمز مباشرة في صفحة التحضير.
+                    </p>
+                </div>
+
+                <!-- Security & Geofence Status -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-right w-full text-xs space-y-1.5">
+                    <div class="flex items-center justify-between font-bold text-slate-700">
+                        <span class="flex items-center gap-1">🔒 نظام الحماية متعدد العوامل:</span>
+                        {% if attendance_session.requires_geofence %}
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">📍 GPS مفعل ({{ attendance_session.radius_meters|default:50 }}م)</span>
+                        {% else %}
+                            <span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-bold">حماية سحابية</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        يتجدد رمز الـ QR كل 15 ثانية مشفراً بتوقيع رقمي فريد لمنع تسجيل الحضور بالنيابة والتحقق من حساب الطالب.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- 📋 STUDENT ATTENDANCE TABLE (Dynamic 8-Col or 12-Col Full-Width) -->
+        <div :class="layoutMode === 'full' ? 'lg:col-span-12' : 'lg:col-span-8'" 
+             class="bg-white border border-slate-200/90 shadow-sm rounded-2xl p-5 sm:p-6 space-y-4 transition-all duration-300">
+            
+            <!-- Table Header Toolbar: Title + Layout Switcher + Search + Filters -->
+            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-lg">
+                        📋
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-lg font-black text-slate-900">سجل حضور الطلاب المباشر</h2>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        </div>
+                        <p class="text-xs text-slate-400 font-semibold mt-0.5">تحديث لحظي كل 3 ثوانٍ تلقائياً عبر السحابة</p>
+                    </div>
+                </div>
+
+                <!-- Right Toolbar: Layout Expander + Filter Tabs -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- ⛶ Full Width / Split View Toggle -->
+                    <button @click="toggleLayout()" 
+                            :class="layoutMode === 'full' ? 'bg-brand-600 text-white shadow-sm shadow-brand-200 border-brand-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all"
+                            title="توسيع السجل لملء الشاشة بالكامل لرؤية جميع البيانات بدون تداخل">
+                        <span x-show="layoutMode !== 'full'">⛶ توسيع السجل بالكامل (Full Width)</span>
+                        <span x-show="layoutMode === 'full'">⊟ عرض متوازن (مع رمز QR)</span>
+                    </button>
+
+                    <!-- Quick Filter Tabs -->
+                    <div class="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
+                        <button @click="filterStatus = 'ALL'; filterRows()" 
+                                :class="filterStatus === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-3 py-1.5 rounded-lg transition-all">الكل</button>
+                        <button @click="filterStatus = 'PRESENT'; filterRows()" 
+                                :class="filterStatus === 'PRESENT' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:text-emerald-900'"
+                                class="px-3 py-1.5 rounded-lg transition-all">الحاضرون</button>
+                        <button @click="filterStatus = 'ABSENT'; filterRows()" 
+                                :class="filterStatus === 'ABSENT' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-700 hover:text-rose-900'"
+                                class="px-3 py-1.5 rounded-lg transition-all">الغائبون</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full-Width Mode Info & QR Banner -->
+            <div x-show="layoutMode === 'full'" 
+                 x-transition
+                 class="p-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs border border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="text-xs font-bold">بث رمز التحضير الذكي (Dynamic QR) متزامن بالخلفية</span>
+                    <span class="text-xs font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">OTP السريع: {{ attendance_session.quick_otp }}</span>
+                    <span class="text-xs text-slate-300">| يتجدد كل: <span class="font-mono text-emerald-400 font-bold" x-text="expiresIn + 'ث'"></span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="projectorMode = true" class="px-3 py-1 rounded-lg text-xs font-black bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-xs flex items-center gap-1.5">
+                        <span>🖥️</span>
+                        <span>عرض الرمز بالقاعة (F)</span>
+                    </button>
+                    <button @click="toggleLayout()" class="px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-slate-200 transition-colors">
+                        إظهار رمز QR الجانبي
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📶 Quick Check-in for Student with NO INTERNET (طالب لا يملك إنترنت) -->
+            <div class="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                <div class="flex items-center gap-2.5 text-right w-full sm:w-auto">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                        📶
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                            <span>تسجيل فوري مباشر (طالب لا يملك إنترنت)</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200/80 text-amber-900">حل استثنائي</span>
+                        </div>
+                        <div class="text-[11px] text-amber-800 font-medium mt-0.5">أدخل الرقم الجامعي أو اسم الطالب لتحضيره بضغطة واحدة دون الحاجة لهاتفه</div>
+                    </div>
+                </div>
+                
+                <form @submit.prevent="submitQuickOfflineCheckin()" class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <input type="text" 
+                           x-model="quickOfflineQuery"
+                           placeholder="الرقم الجامعي أو اسم الطالب..." 
+                           class="px-3 py-2 text-xs font-bold border border-amber-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-60 text-slate-800 shadow-2xs">
+                    <button type="submit" 
+                            :disabled="!quickOfflineQuery.trim()"
+                            class="px-4 py-2 rounded-xl text-xs font-black text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-40 transition-all shadow-xs shrink-0 active:scale-95">
+                        ⚡ تحضير فوري
+                    </button>
+                </form>
+            </div>
+
+            <!-- Offline Checkin Toast Notification -->
+            <div x-show="offlineMessage" 
+                 x-transition 
+                 class="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 font-bold text-xs rounded-xl flex items-center justify-between shadow-xs">
+                <span class="flex items-center gap-2">
+                    <span class="text-base">✅</span>
+                    <span x-text="offlineMessage"></span>
+                </span>
+                <button @click="offlineMessage = ''" class="text-emerald-700 hover:text-emerald-950 font-black px-1.5">✕</button>
+            </div>
+
+            <!-- Instant Search Input & Bulk Action -->
+            <div class="flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">
+                        🔍
+                    </span>
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @input="filterRows()"
+                           placeholder="بحث بالاسم أو الرقم الجامعي في الجدول..." 
+                           class="w-full pr-9 pl-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all bg-slate-50/50">
+                </div>
+                <button @click="searchQuery = ''; filterStatus = 'ALL'; filterRows()" 
+                        class="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors">
+                    إعادة ضبط
+                </button>
+            </div>
+
+            <!-- HTMX polling container for Student Table -->
+            <div id="student-list-container" 
+                 hx-get="{% url 'attendance:session_students_list' attendance_session.id %}" 
+                 hx-trigger="every 3s" 
+                 hx-swap="innerHTML"
+                 class="min-h-[300px]">
+                {% include "attendance/partials/students_list.html" %}
+            </div>
+
+            <!-- Bottom Note / Iraq University branding -->
+            <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+                <span>جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
+                <span class="font-bold text-slate-500">المطور: MUNTADHER HAZIM | 07724978301</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🖥️ CINEMA / PROJECTOR FULLSCREEN OVERLAY (نمط العرض بالقاعة والبروجكتر) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="projectorMode" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col justify-between p-6 sm:p-10 select-none overflow-y-auto"
+         style="display: none;">
+        
+        <!-- Projector Top Bar -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-5">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-2xl font-black shadow-lg shadow-brand-500/30">
+                    🎓
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            جلسة تحضير ذكية بالقاعة
+                        </span>
+                        <span class="text-xs text-slate-400 font-mono">جامعة بغداد</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">
+                        {{ attendance_session.session.course.name }}
+                        <span class="text-lg font-medium text-slate-400 font-mono">({{ attendance_session.session.course.code }})</span>
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Projector Controls & Live Attendee Counter -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                
+                <!-- Display Mode Switcher (Zero Distraction) -->
+                <div class="inline-flex rounded-2xl bg-slate-900 p-1 border border-slate-800 text-xs font-bold">
+                    <button type="button" 
+                            @click="projectorViewMode = 'qr_only'" 
+                            :class="projectorViewMode === 'qr_only' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
+                            title="عرض باركود الحضور فقط دون أي مشتتات">
+                        <span>🎯 باركود الحضور فقط</span>
+                    </button>
+                    <button type="button" 
+                            @click="projectorViewMode = 'dual'" 
+                            :class="projectorViewMode === 'dual' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
+                            title="عرض الباركود وكود الطوارئ معاً">
+                        <span>🔲 عرض مزدوج</span>
+                    </button>
+                    <button type="button" 
+                            @click="projectorViewMode = 'otp_only'" 
+                            :class="projectorViewMode === 'otp_only' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
+                            title="عرض كود الطوارئ والـ OTP فقط">
+                        <span>📶 كود OTP والرابط</span>
+                    </button>
+                </div>
+
+                <!-- QR Zoom Controller -->
+                <div class="inline-flex items-center rounded-2xl bg-slate-900 border border-slate-800 p-1 text-xs" x-show="projectorViewMode !== 'otp_only'">
+                    <button type="button" @click="zoomQrOut()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" title="تصغير الباركود">
+                        🔍-
+                    </button>
+                    <span class="px-2 font-mono text-[11px] text-brand-300 font-bold" x-text="['صغير', 'عادي', 'كبير', 'عملاق'][qrZoomLevel - 1]"></span>
+                    <button type="button" @click="zoomQrIn()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" title="تكبير الباركود">
+                        🔍+
+                    </button>
+                </div>
+
+                <!-- Live Counter Badge -->
+                <div class="hidden sm:flex items-center gap-3 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-2xl">
+                    <span class="text-xs text-slate-400 font-bold">الحاضرون:</span>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-black text-emerald-400 font-mono" id="projector-present-counter">{{ present_count }}</span>
+                        <span class="text-xs text-slate-500 font-bold">/</span>
+                        <span class="text-xs font-bold text-slate-400 font-mono" id="projector-total-counter">{{ total_count }}</span>
+                    </div>
+                    <span class="text-xs font-bold bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-800" id="projector-rate-counter">
+                        {{ attendance_rate }}%
+                    </span>
+                </div>
+
+                <!-- Freeze QR Toggle in Projector -->
+                <button type="button" @click="toggleFreeze()" 
+                        :class="isFrozen ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30' : 'bg-slate-900 hover:bg-slate-800 text-slate-300'"
+                        class="px-3 py-2 rounded-2xl border border-slate-700 text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+                        :title="isFrozen ? 'الرمز مثبت حالياً' : 'تثبيت الرمز لمنع الاهتزاز والتغير'">
+                    <span x-show="!isFrozen">🔒 تثبيت</span>
+                    <span x-show="isFrozen">🔓 مثبت</span>
+                </button>
+
+                <!-- Fullscreen Toggle -->
+                <button type="button" @click="toggleFullscreen()" 
+                        class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 hover:text-white transition-all shadow-md" 
+                        title="ملء شاشة البروجكتر بالكامل">
+                    ⛶
+                </button>
+
+                <!-- Sound Chime Toggle -->
+                <button type="button" @click="soundEnabled = !soundEnabled; if(soundEnabled) playChime();" 
+                        class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 hover:text-white transition-all shadow-md"
+                        :title="soundEnabled ? 'صوت التنبيه مفعل' : 'صوت التنبيه صامت'">
+                    <span x-text="soundEnabled ? '🔔' : '🔕'"></span>
+                </button>
+
+                <!-- Close Projector Mode Button -->
+                <button type="button" @click="projectorMode = false" 
+                        class="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-black rounded-2xl transition-all shadow-md flex items-center gap-1.5">
+                    <span>✕</span>
+                    <span>خروج (Esc)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Projector Center Display (Mode Aware & Scalable) -->
+        <div class="my-auto py-6 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-14 transition-all duration-300">
+            
+            <!-- 1. Giant Glowing Dynamic QR Code Section -->
+            <div class="flex flex-col items-center text-center space-y-4"
+                 x-show="projectorViewMode === 'qr_only' || projectorViewMode === 'dual'"
+                 x-transition>
+                
+                <div class="space-y-1" x-show="projectorViewMode === 'qr_only'">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                        مسح الحضور المباشر
+                    </span>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white">امسح الكود عبر كاميرا هاتفك</h3>
+                </div>
+
+                <div class="relative p-5 sm:p-7 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-brand-500/40 shadow-2xl shadow-brand-500/20 transition-all duration-300">
+                    <template x-if="token">
+                        <img :src="getQrUrl(18)" 
+                             alt="QR Code Projector" 
+                             :class="{
+                                 'w-64 h-64 sm:w-80 sm:h-80': qrZoomLevel === 1,
+                                 'w-80 h-80 sm:w-96 sm:h-96 md:w-[440px] md:h-[440px]': qrZoomLevel === 2,
+                                 'w-96 h-96 sm:w-[480px] sm:h-[480px] md:w-[540px] md:h-[540px]': qrZoomLevel === 3,
+                                 'w-[420px] h-[420px] sm:w-[540px] sm:h-[540px] md:w-[640px] md:h-[640px]': qrZoomLevel === 4
+                             }"
+                             class="rounded-2xl bg-white p-3 shadow-2xl transition-all duration-300 object-contain">
+                    </template>
+                    <template x-if="!token">
+                        <div class="w-80 h-80 sm:w-96 sm:h-96 md:w-[440px] md:h-[440px] flex flex-col items-center justify-center text-slate-400 gap-3">
+                            <span class="animate-spin text-5xl">⚙️</span>
+                            <span class="text-sm font-bold animate-pulse text-white">جاري تجهيز الرمز فائق الدقة...</span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Timer Indicator Bar -->
+                <div class="w-full max-w-md space-y-2">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-400 px-2">
+                        <span class="flex items-center gap-2" x-show="!isFrozen">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                            رمز ديناميكي مشفر يتغير تلقائياً
+                        </span>
+                        <span class="flex items-center gap-2 text-amber-400 font-bold" x-show="isFrozen">
+                            <span>🔒</span>
+                            رمز الـ QR مثبت ومستقر طوال المحاضرة
+                        </span>
+                        <span class="font-mono text-brand-400 font-black text-sm" x-show="!isFrozen" x-text="'متبقي: ' + expiresIn + ' ثانية'">15 ثانية</span>
+                        <span class="text-amber-300 font-black text-xs" x-show="isFrozen">شاشة مستقرة</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700" x-show="!isFrozen">
+                        <div class="bg-gradient-to-r from-brand-500 via-indigo-500 to-purple-500 h-full transition-all duration-1000 ease-linear rounded-full"
+                             :style="'width: ' + (expiresIn / 15 * 100) + '%'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Instructions & Emergency OTP / Check-in QR Section -->
+            <div class="flex flex-col items-center lg:items-start text-center lg:text-right space-y-5 max-w-md w-full"
+                 x-show="projectorViewMode === 'otp_only' || projectorViewMode === 'dual'"
+                 x-transition>
+                
+                <div class="space-y-1.5" x-show="projectorViewMode === 'dual'">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        طريقة بديلة
+                    </span>
+                    <h3 class="text-2xl font-black text-white">كود الطوارئ السريع</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        للطلاب بدون كاميرا أو في حال ضعف شبكة الهاتف.
+                    </p>
+                </div>
+
+                <!-- Emergency OTP Card for Poor Connection -->
+                <div class="w-full bg-slate-900/90 border border-indigo-500/40 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                            <span>📶</span> كود الطوارئ السريع (OTP)
+                        </span>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md font-bold">بديل فوري</span>
+                    </div>
+
+                    <div class="py-4 px-6 bg-slate-950 rounded-2xl border border-indigo-500/30 text-center">
+                        <span class="text-4xl sm:text-5xl font-black text-indigo-400 font-mono tracking-widest select-all">
+                            {{ attendance_session.quick_otp|default:"849201" }}
+                        </span>
+                    </div>
+
+                    <!-- Action button to show/hide Check-in QR code -->
+                    <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-800/80">
+                        <span class="text-xs text-slate-300 font-bold">فتح صفحة التحضير بالهاتف:</span>
+                        <button type="button" 
+                                @click="showCheckinQr = !showCheckinQr"
+                                class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
+                            <span x-text="showCheckinQr ? '✕ إخفاء الباركود' : '📱 إظهار باركود (QR) الرابط'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Large QR Code for Checkin Page -->
+                    <div x-show="showCheckinQr" x-transition class="p-4 bg-slate-950 rounded-2xl border border-indigo-500/40 flex flex-col items-center justify-center text-center space-y-3 shadow-inner">
+                        <div class="p-2.5 bg-white rounded-2xl shadow-2xl border-2 border-indigo-400">
+                            <img :src="getCheckinQrUrl()" alt="Check-in QR Code" class="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl">
+                        </div>
+                        <div class="space-y-1">
+                            <p class="font-black text-indigo-300 text-sm">امسح الباركود لفتح صفحة التحضير فوراً</p>
+                            <p class="text-[11px] text-slate-400 leading-relaxed max-w-xs">وجّه كاميرا الهاتف نحو الباركود لفتح الصفحة مباشرة ثم اكتب الكود أعلاه.</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-400 space-y-1">
+                        <p class="font-medium text-[11px]">أو كتابة الرابط في المتصفح:</p>
+                        <p class="font-mono text-indigo-300 font-bold break-all text-[11px] text-left select-all bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800" dir="ltr" x-text="getCheckinUrl()"></p>
+                    </div>
+                </div>
+
+                <!-- Security guarantee pill -->
+                <div class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-4 py-2 rounded-xl w-full justify-center">
+                    <span>🛡️</span>
+                    <span>نظام الحضور المباشر مشفر ومحمي ضد التزوير</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Projector Bottom Footer -->
+        <div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+            <span>جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
+            <span class="font-mono text-slate-400 font-bold">المطور: MUNTADHER HAZIM | هاتف: 07724978301</span>
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- ⚡ BULK ATTENDANCE CONFIRMATION MODAL -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showBulkModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="showBulkModal = false" 
+             class="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-100 text-right">
+            
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl font-black mx-auto">
+                ⚡
+            </div>
+
+            <div class="text-center space-y-2">
+                <h3 class="text-lg font-black text-slate-900">تحضير جميع الطلاب كحاضرين؟</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    سيتم تعيين حالة جميع طلاب هذه الشعبة ({{ total_count }} طالب) كـ <strong class="text-emerald-700">حاضر</strong> دفعة واحدة وحفظها في قاعدة البيانات.
+                </p>
+            </div>
+
+            <div class="flex gap-2">
+                <button hx-post="{% url 'attendance:bulk_update_web' %}"
+                        hx-vals='{"session_id": "{{ attendance_session.id }}", "status": "PRESENT"}'
+                        hx-target="#student-list-container"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        @click="showBulkModal = false; playChime();"
+                        class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200">
+                    تأكيد تحضير الجميع
+                </button>
+                <button @click="showBulkModal = false" 
+                        class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🚀 LOCAL HOTSPOT / ZERO-INTERNET CONFIGURATION MODAL -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="hotspotModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+         style="display: none;">
+        
+        <div @click.away="hotspotModalOpen = false" 
+             class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-slate-100 text-right relative my-8">
+            
+            <!-- Close Button -->
+            <button @click="hotspotModalOpen = false" class="absolute top-5 left-5 text-slate-400 hover:text-slate-700 font-bold p-1 rounded-lg">
+                ✕
+            </button>
+
+            <!-- Header -->
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center text-2xl font-black shadow-md shadow-emerald-200 shrink-0">
+                    🚀
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-black text-slate-900">شبكة القاعة المحلية المصغرة</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">Zero Internet</span>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium">تسجيل حضور الطلاب عبر شبكة Wi-Fi / Hotspot المحلية دون الحاجة لإنترنت خارجي</p>
+                </div>
+            </div>
+
+            <!-- Current Status Card -->
+            <div class="p-4 rounded-2xl border transition-all"
+                 :class="isHotspotActive ? 'bg-emerald-50/80 border-emerald-300' : 'bg-slate-50 border-slate-200'">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-600">حالة وضع عدم الاتصال:</span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black"
+                          :class="isHotspotActive ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-200' : 'bg-slate-200 text-slate-700'">
+                        <span class="w-2 h-2 rounded-full" :class="isHotspotActive ? 'bg-white animate-ping' : 'bg-slate-400'"></span>
+                        <span x-text="isHotspotActive ? 'مفعّل وشغال (الباركود موجه للشبكة المحلية)' : 'غير مفعّل (الوضع الافتراضي)'"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- IP Selector -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-700">عنوان IP لحاسوب الأستاذ / خادم القاعة:</label>
+                <div class="flex gap-2">
+                    <input type="text" 
+                           x-model="selectedIp" 
+                           placeholder="مثال: 192.168.43.1 أو 172.21.67.11" 
+                           class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50/50 text-slate-800">
+                    <select x-model="selectedIp" 
+                            class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-700 focus:ring-2 focus:ring-emerald-500">
+                        <template x-for="ip in localIps" :key="ip">
+                            <option :value="ip" x-text="ip"></option>
+                        </template>
+                    </select>
+                </div>
+                <p class="text-[11px] text-slate-400">
+                    تم رصد العناوين المحلية النشطة تلقائياً. اختر عنوان نقطة الاتصال (Hotspot) أو عنوان الـ Wi-Fi.
+                </p>
+            </div>
+
+            <!-- Checkin URL Preview & Copy -->
+            <div class="p-3.5 bg-slate-900 rounded-2xl text-white space-y-2">
+                <div class="flex items-center justify-between text-xs text-slate-400 font-bold">
+                    <span>🔗 الرابط المحلي الذي سيفتحه الطلاب:</span>
+                    <button @click="copyHotspotCheckinLink()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-400 text-xs font-bold transition-all">
+                        <span x-show="!copiedHotspotUrl">نسخ الرابط</span>
+                        <span x-show="copiedHotspotUrl">✓ تم النسخ!</span>
+                    </button>
+                </div>
+                <div class="font-mono text-emerald-400 font-bold text-xs break-all select-all p-2 bg-slate-950 rounded-xl"
+                     x-text="getCheckinUrl()"></div>
+            </div>
+
+            <!-- 3-Step Simple Guide -->
+            <div class="p-4 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-2 text-xs text-amber-900">
+                <div class="font-black text-amber-950 flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>كيف تشغّل النظام في القاعة خلال دقيقة واحدة وبدون إنترنت؟</span>
+                </div>
+                <ol class="list-decimal list-inside space-y-1.5 font-medium text-amber-800 leading-relaxed">
+                    <li>شغّل <strong>نقطة اتصال الهواتف (Hotspot)</strong> من هاتفك أو اللابتوب (دون الحاجة لتفعيل باقة أو رصيد بيانات).</li>
+                    <li>اطلب من طلاب القاعة الاتصال بشبكة الـ Hotspot الخاصة بك.</li>
+                    <li>اضغط على زر <strong>تفعيل وتحديث الـ QR</strong> بالأسفل؛ سيمسح الطلاب الرمز من الشاشة أو البروجكتر ويسجلون حضورهم فورياً في أجزاء من الثانية!</li>
+                </ol>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100">
+                <button @click="applyHotspotMode(true)" 
+                        class="flex-1 py-3 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 active:scale-95">
+                    <span>🚀</span>
+                    <span>تفعيل وتحديث رمز الـ QR محلياً</span>
+                </button>
+                <button x-show="isHotspotActive" 
+                        @click="applyHotspotMode(false)" 
+                        class="px-4 py-3 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors">
+                    إلغاء الوضع المحلي
+                </button>
+                <button @click="hotspotModalOpen = false" 
+                        class="px-4 py-3 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    إغلاق
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- 🖨️ PRINT ONLY VIEW (Hidden on screen) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div class="hidden print-only p-8">
+    <div class="text-center space-y-2 mb-6 border-b pb-4">
+        <h1 class="text-2xl font-black text-slate-900">تقرير حضور الحصة الدراسية</h1>
+        <p class="text-slate-600 font-bold">مادة: {{ attendance_session.session.course.name }} ({{ attendance_session.session.course.code }})</p>
+        <p class="text-slate-500 text-xs">التاريخ: {{ attendance_session.date }} | المعلم: {{ attendance_session.session.teacher.user.get_full_name }} | القاعة: {{ attendance_session.session.room|default:"-" }}</p>
+        <p class="text-slate-400 text-xs">جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات | المطور: MUNTADHER HAZIM 07724978301</p>
+    </div>
+    
+    <table class="min-w-full border border-slate-300 divide-y divide-slate-300 text-sm">
+        <thead>
+            <tr class="bg-slate-100 font-bold">
+                <th class="border border-slate-300 p-2 text-right">الرقم الجامعي</th>
+                <th class="border border-slate-300 p-2 text-right">اسم الطالب</th>
+                <th class="border border-slate-300 p-2 text-center">الحالة</th>
+                <th class="border border-slate-300 p-2 text-center">طريقة التحضير</th>
+                <th class="border border-slate-300 p-2 text-center">الطابع الزمني</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-300">
+            {% for item in students_list %}
+                <tr>
+                    <td class="border border-slate-300 p-2 font-mono">{{ item.profile.student_id }}</td>
+                    <td class="border border-slate-300 p-2 font-bold">{{ item.profile.user.get_full_name }}</td>
+                    <td class="border border-slate-300 p-2 text-center">{{ item.status_display }}</td>
+                    <td class="border border-slate-300 p-2 text-center">{{ item.record.get_method_display|default:"-" }}</td>
+                    <td class="border border-slate-300 p-2 text-center font-mono">{{ item.record.timestamp|date:"H:i:s"|default:"-" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

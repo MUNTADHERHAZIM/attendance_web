@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}تقرير الطالب: {{ student.user.get_full_name }} - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header Back Button -->
+    <div class="flex justify-between items-center no-print">
+        <a href="/" class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+            ← العودة للرئيسية
+        </a>
+        <button onclick="window.print()" 
+                class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+            🖨 طباعة تقرير الطالب
+        </button>
+    </div>
+
+    <!-- Student Details Card -->
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">بيانات الطالب الأكاديمية</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 font-semibold text-sm">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">الاسم الكامل:</span>
+                <span class="text-slate-800 font-bold">{{ student.user.get_full_name }}</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">الرقم الجامعي:</span>
+                <span class="text-slate-800 font-mono font-bold">{{ student.student_id }}</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">البريد الإلكتروني:</span>
+                <span class="text-slate-700 font-mono text-xs">{{ student.user.email }}</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">رقم الهاتف:</span>
+                <span class="text-slate-800 font-mono">{{ student.user.phone|default:"-" }}</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">المؤسسة / الكلية:</span>
+                <span class="text-slate-800">{{ student.institution.name }}</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span class="text-slate-400 block text-xs mb-1">بطاقة RFID:</span>
+                <span class="text-slate-800 font-mono text-xs">{{ student.rfid_card|default:"غير مربوطة" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <!-- Rate Card -->
+        <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between col-span-1 md:col-span-2">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">معدل الحضور العام</p>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ rate }}%</h3>
+            </div>
+            <div class="h-12 w-12 rounded-xl flex items-center justify-center text-xl font-bold
+                 {% if rate >= 85 %}bg-emerald-50 text-emerald-600{% elif rate >= 75 %}bg-amber-50 text-amber-600{% else %}bg-rose-50 text-rose-600{% endif %}">
+                📈
+            </div>
+        </div>
+
+        <!-- Present Card -->
+        <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الحاضرة</p>
+                <h3 class="text-2xl font-bold text-emerald-600 mt-2">{{ present }}</h3>
+            </div>
+        </div>
+
+        <!-- Late Card -->
+        <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">المتأخرة</p>
+                <h3 class="text-2xl font-bold text-amber-600 mt-2">{{ late }}</h3>
+            </div>
+        </div>
+
+        <!-- Absent Card -->
+        <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">أيام الغياب</p>
+                <h3 class="text-2xl font-bold text-rose-600 mt-2">{{ absent }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Record Logs -->
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-4">سجل حضور وغياب الطالب المفصل</h2>
+        
+        <div class="overflow-x-auto">
+            {% if records %}
+                <table class="min-w-full divide-y divide-slate-100 text-right">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الفصل الدراسي / الشعبة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">وقت تسجيل الحضور</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">طريقة الحضور</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">ملاحظات ومبررات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium text-sm">
+                        {% for rec in records %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ rec.attendance_session.session.course.name }}</div>
+                                    <div class="text-xs text-slate-400">{{ rec.attendance_session.session.course.code }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-600">
+                                    {{ rec.attendance_session.session.class_section.level }} - {{ rec.attendance_session.session.class_section.name }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-550">
+                                    {{ rec.attendance_session.date }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-400">
+                                    {{ rec.timestamp|date:"H:i:s"|default:"-" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold 
+                                          {% if rec.status == 'PRESENT' %}bg-emerald-100 text-emerald-800
+                                          {% elif rec.status == 'LATE' %}bg-amber-100 text-amber-800
+                                          {% elif rec.status == 'EXCUSED' %}bg-slate-100 text-slate-700
+                                          {% else %}bg-rose-100 text-rose-800{% endif %}">
+                                        {{ rec.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-400">
+                                    {{ rec.get_method_display }}
+                                </td>
+                                <td class="px-6 py-4 text-xs text-slate-500 max-w-xs truncate" title="{{ rec.notes }}">
+                                    {{ rec.notes|default:"-" }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center py-10 text-slate-400 font-semibold text-sm">
+                    لا توجد أي سجلات حضور مسجلة للطالب في النظام.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

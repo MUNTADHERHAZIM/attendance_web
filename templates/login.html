@@ -1,0 +1,1334 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول — نظام الحضور الذكي</title>
+    <meta name="description" content="نظام إدارة الحضور والغياب الذكي للمؤسسات التعليمية">
+    <link rel="manifest" href="{% url 'manifest' %}">
+
+    <!-- Fonts: Inter (Latin) + Cairo (Arabic) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Reset & Tokens
+───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    /* palette */
+    --indigo-50:  #eef2ff;
+    --indigo-100: #e0e7ff;
+    --indigo-500: #6366f1;
+    --indigo-600: #4f46e5;
+    --indigo-700: #4338ca;
+    --slate-50:   #f8fafc;
+    --slate-100:  #f1f5f9;
+    --slate-200:  #e2e8f0;
+    --slate-300:  #cbd5e1;
+    --slate-400:  #94a3b8;
+    --slate-500:  #64748b;
+    --slate-600:  #475569;
+    --slate-700:  #334155;
+    --slate-800:  #1e293b;
+    --slate-900:  #0f172a;
+    --green-500:  #22c55e;
+    --red-500:    #ef4444;
+    --amber-500:  #f59e0b;
+
+    /* shadows */
+    --shadow-sm:  0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+    --shadow-md:  0 4px 16px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.05);
+    --shadow-lg:  0 12px 40px rgba(15,23,42,.10), 0 4px 12px rgba(15,23,42,.06);
+    --shadow-xl:  0 24px 64px rgba(15,23,42,.12), 0 8px 24px rgba(15,23,42,.08);
+    --shadow-brand: 0 8px 24px rgba(79,70,229,.25);
+
+    /* radius */
+    --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-2xl: 28px;
+
+    /* transitions */
+    --t: all .2s cubic-bezier(.4,0,.2,1);
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Cairo', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page background — subtle mesh gradient
+───────────────────────────────────────────────────────────── */
+body {
+    background-color: var(--slate-50);
+    background-image:
+        radial-gradient(ellipse 80% 60% at 10% -10%, rgba(99,102,241,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 95% 95%,  rgba(99,102,241,.08) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%,  rgba(241,245,249,1)  0%, transparent 100%);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Subtle animated blobs */
+body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(64px);
+    opacity: .55;
+    pointer-events: none;
+    animation: blobMove 12s ease-in-out infinite alternate;
+}
+body::before {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(99,102,241,.18), transparent 70%);
+    top: -80px; right: -80px;
+}
+body::after {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(139,92,246,.12), transparent 70%);
+    bottom: -80px; left: -60px;
+    animation-delay: -6s;
+}
+@keyframes blobMove {
+    0%   { transform: translate(0,0)   scale(1); }
+    100% { transform: translate(30px,20px) scale(1.05); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Wrapper card
+───────────────────────────────────────────────────────────── */
+.card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 960px;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: var(--r-2xl);
+    box-shadow: var(--shadow-xl),
+                0 0 0 1px rgba(99,102,241,.06) inset;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    overflow: hidden;
+    animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(24px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Left — Info Panel
+───────────────────────────────────────────────────────────── */
+.info-panel {
+    padding: 3rem 2.5rem;
+    background: linear-gradient(145deg, var(--indigo-600) 0%, #4338ca 45%, #3730a3 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+/* decorative rings inside info panel */
+.info-panel::before {
+    content: '';
+    position: absolute;
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    border: 60px solid rgba(255,255,255,.06);
+    top: -80px; right: -80px;
+}
+.info-panel::after {
+    content: '';
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 50px solid rgba(255,255,255,.05);
+    bottom: -60px; left: -60px;
+}
+
+.info-logo {
+    display: flex; align-items: center; gap: .9rem;
+    position: relative; z-index: 1;
+}
+.info-logo-mark {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,.2);
+    border: 1.5px solid rgba(255,255,255,.35);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 900; color: #fff;
+    backdrop-filter: blur(8px);
+}
+.info-logo-name {
+    font-size: 1rem; font-weight: 800;
+    color: rgba(255,255,255,.95);
+    line-height: 1.2;
+}
+.info-logo-sub {
+    font-size: .72rem; font-weight: 500;
+    color: rgba(255,255,255,.55);
+}
+
+.info-hero {
+    position: relative; z-index: 1;
+    margin: 2rem 0;
+}
+.info-hero h2 {
+    font-size: 1.75rem; font-weight: 900;
+    color: #fff;
+    line-height: 1.3;
+    margin-bottom: .75rem;
+}
+.info-hero p {
+    font-size: .9rem; font-weight: 400;
+    color: rgba(255,255,255,.65);
+    line-height: 1.8;
+}
+
+.info-stats {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+}
+.stat-card {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: var(--r-lg);
+    padding: .9rem 1rem;
+    backdrop-filter: blur(8px);
+}
+.stat-number {
+    font-size: 1.35rem; font-weight: 900;
+    color: #fff; line-height: 1;
+    margin-bottom: .2rem;
+}
+.stat-label {
+    font-size: .72rem; font-weight: 500;
+    color: rgba(255,255,255,.55);
+}
+
+.info-badges {
+    position: relative; z-index: 1;
+    margin-top: 1.5rem;
+    display: flex; flex-wrap: wrap; gap: .5rem;
+}
+.badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 100px;
+    padding: .3rem .75rem;
+    font-size: .72rem; font-weight: 600;
+    color: rgba(255,255,255,.85);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Right — Form Panel
+───────────────────────────────────────────────────────────── */
+.form-panel {
+    padding: 2.5rem 2.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ── Header ── */
+.form-head { margin-bottom: 1.75rem; }
+.form-head h1 {
+    font-size: 1.5rem; font-weight: 900;
+    color: var(--slate-900);
+    margin-bottom: .3rem;
+}
+.form-head p { font-size: .875rem; color: var(--slate-500); font-weight: 500; }
+
+/* ── Tabs ── */
+.tabs {
+    display: flex;
+    background: var(--slate-100);
+    border-radius: var(--r-md);
+    padding: 4px;
+    margin-bottom: 1.75rem;
+}
+.tab-btn {
+    flex: 1; border: none; background: transparent;
+    padding: .55rem 1rem;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: .85rem; font-weight: 700;
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: var(--t);
+}
+.tab-btn.active {
+    background: #fff;
+    color: var(--indigo-700);
+    box-shadow: var(--shadow-md);
+}
+.tab-btn:not(.active):hover { color: var(--slate-700); }
+
+/* ── Alert ── */
+.alert {
+    display: flex; align-items: flex-start; gap: .65rem;
+    padding: .8rem 1rem;
+    border-radius: var(--r-md);
+    margin-bottom: 1.25rem;
+    font-size: .825rem; font-weight: 600;
+    line-height: 1.5;
+    animation: alertIn .25s ease both;
+}
+@keyframes alertIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.alert-info    { background: var(--indigo-50); border: 1px solid var(--indigo-100); color: var(--indigo-700); }
+.alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; }
+
+/* ── Label ── */
+.field-label {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: .4rem;
+}
+.field-label label {
+    font-size: .825rem; font-weight: 700;
+    color: var(--slate-700);
+}
+.field-label a {
+    font-size: .775rem; font-weight: 600;
+    color: var(--indigo-600); text-decoration: none;
+    transition: color .15s;
+}
+.field-label a:hover { color: var(--indigo-700); }
+
+/* ── Input ── */
+.input-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+}
+.input-icon-r {
+    position: absolute;
+    right: .875rem; top: 50%; transform: translateY(-50%);
+    color: var(--slate-400);
+    font-size: .95rem; pointer-events: none;
+    transition: color .2s;
+}
+.form-input {
+    width: 100%;
+    height: 44px;
+    background: #fff;
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--r-md);
+    padding: 0 2.75rem 0 .875rem;
+    font-family: 'Cairo', sans-serif;
+    font-size: .9rem; font-weight: 500;
+    color: var(--slate-900);
+    outline: none;
+    transition: var(--t);
+    direction: rtl;
+    box-shadow: var(--shadow-sm);
+}
+.form-input::placeholder { color: var(--slate-400); font-weight: 400; }
+.form-input:hover  { border-color: var(--slate-300); }
+.form-input:focus  {
+    border-color: var(--indigo-500);
+    box-shadow: 0 0 0 3px rgba(99,102,241,.12), var(--shadow-sm);
+}
+.form-input:focus + .input-icon-r { color: var(--indigo-500); }
+.form-input.is-error { border-color: var(--red-500); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+.form-input.is-ok    { border-color: var(--green-500); }
+select.form-input { cursor: pointer; appearance: none; }
+
+/* Password toggle */
+.pwd-eye {
+    position: absolute;
+    left: .875rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--slate-400); font-size: .875rem;
+    padding: .2rem; border-radius: 4px;
+    transition: color .15s;
+    line-height: 1;
+}
+.pwd-eye:hover { color: var(--indigo-600); }
+
+/* ── CAPTCHA ── */
+.captcha-row {
+    display: flex; align-items: stretch; gap: .6rem;
+    margin-bottom: .6rem;
+}
+.captcha-canvas-box {
+    flex: 1;
+    background: var(--slate-100);
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+}
+.captcha-canvas-box canvas {
+    display: block;
+    width: 100%; height: 52px;
+}
+.captcha-reload-btn {
+    width: 44px; flex-shrink: 0;
+    background: var(--slate-100);
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    color: var(--slate-500);
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--t);
+    box-shadow: var(--shadow-sm);
+}
+.captcha-reload-btn:hover {
+    background: var(--indigo-50);
+    border-color: var(--indigo-200);
+    color: var(--indigo-600);
+    transform: rotate(20deg);
+}
+.captcha-input {
+    height: 42px;
+    text-align: center;
+    letter-spacing: .28em;
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+}
+.captcha-confirm-input {
+    margin-top: .5rem;
+}
+.captcha-hint {
+    font-size: .75rem; font-weight: 500;
+    color: var(--slate-400);
+    margin-top: .3rem; text-align: center;
+}
+
+/* ── Custom Dropdown Menu ── */
+.custom-select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    cursor: pointer;
+    text-align: right;
+    background: #ffffff;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--r-md);
+    padding: 0 .875rem;
+    height: 44px;
+    font-family: inherit;
+    transition: var(--t);
+    box-shadow: var(--shadow-sm);
+}
+.custom-select-btn:hover {
+    border-color: var(--indigo-500);
+    background: var(--slate-50);
+}
+.custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+    padding: .4rem;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .65rem .85rem;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all .15s ease;
+}
+.dropdown-item:hover {
+    background: var(--slate-100);
+}
+
+/* CAPTCHA status dot */
+.cap-status {
+    display: flex; align-items: center; gap: .4rem;
+    height: 20px; margin-top: .35rem;
+    font-size: .775rem; font-weight: 600;
+}
+.cap-dot { width: 7px; height: 7px; border-radius: 50%; }
+.cap-ok   { color: var(--green-500); } .cap-ok   .cap-dot { background: var(--green-500); }
+.cap-err  { color: var(--red-500);   } .cap-err  .cap-dot { background: var(--red-500); }
+
+/* ── Remember row ── */
+.check-row {
+    display: flex; align-items: center; gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+.check-row input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--indigo-600);
+    border-radius: 4px; cursor: pointer; flex-shrink: 0;
+}
+.check-row span {
+    font-size: .825rem; font-weight: 600;
+    color: var(--slate-600);
+}
+
+/* ── Submit ── */
+.btn-primary {
+    width: 100%; height: 46px;
+    background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+    border: none; border-radius: var(--r-md);
+    color: #fff;
+    font-family: 'Cairo', sans-serif;
+    font-size: .95rem; font-weight: 800;
+    cursor: pointer;
+    box-shadow: var(--shadow-brand);
+    transition: var(--t);
+    display: flex; align-items: center; justify-content: center; gap: .6rem;
+    position: relative; overflow: hidden;
+}
+.btn-primary::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+    opacity: 0; transition: opacity .2s;
+}
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(79,70,229,.35);
+}
+.btn-primary:hover::before { opacity: 1; }
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled {
+    background: var(--slate-300);
+    color: var(--slate-500);
+    box-shadow: none; cursor: not-allowed;
+}
+
+/* Spinner */
+.spin {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .65s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Password strength ── */
+.pwd-bar {
+    height: 3px; border-radius: 3px;
+    background: var(--slate-200);
+    overflow: hidden; margin-top: .35rem;
+}
+.pwd-fill { height: 100%; border-radius: 3px; transition: width .4s, background .4s; }
+.pwd-bar-label {
+    font-size: .75rem; font-weight: 600;
+    margin-top: .25rem; color: var(--slate-400);
+}
+
+/* ── Divider ── */
+.divider {
+    display: flex; align-items: center; gap: .75rem;
+    margin: .75rem 0 1rem;
+    color: var(--slate-400); font-size: .75rem;
+}
+.divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--slate-200);
+}
+
+/* ── Footer ── */
+.form-foot {
+    margin-top: 1.5rem;
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    color: var(--slate-400); font-size: .75rem;
+}
+.form-foot svg { flex-shrink: 0; }
+
+/* ── Pane animation ── */
+[x-cloak] { display: none; }
+.pane-enter-from { opacity: 0; transform: translateX(12px); }
+.pane-enter-to   { opacity: 1; transform: translateX(0); }
+.pane-leave-from { opacity: 1; transform: translateX(0); }
+.pane-leave-to   { opacity: 0; transform: translateX(-12px); }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+    body { padding: 0; align-items: flex-start; }
+    .card { grid-template-columns: 1fr; border-radius: 0; min-height: 100svh; }
+    .info-panel { display: none; }
+    .form-panel { padding: 2.5rem 1.5rem; justify-content: flex-start; padding-top: 3rem; }
+}
+</style>
+</head>
+<body>
+<div class="card" x-data="authApp()" x-init="init()" x-cloak>
+
+    <!-- ═══════════════════════════════════════════
+         INFO PANEL
+    ═══════════════════════════════════════════ -->
+    <div class="info-panel">
+        <!-- Logo -->
+        <div class="info-logo">
+            <div class="info-logo-mark">ح</div>
+            <div>
+                <div class="info-logo-name">نظام الحضور الذكي</div>
+                <div class="info-logo-sub">Smart Attendance System</div>
+            </div>
+        </div>
+
+        <!-- Hero copy -->
+        <div class="info-hero">
+            <h2>إدارة الحضور<br>بذكاء &amp; بساطة</h2>
+            <p>
+                سجّل حضور طلابك عبر QR ديناميكي أو WiFi أو RFID — يعمل حتى بدون إنترنت مع مزامنة تلقائية عند عودة الاتصال.
+            </p>
+
+            <div class="info-stats" style="margin-top:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-number">15ث</div>
+                    <div class="stat-label">صلاحية QR الديناميكي</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">يعمل أوفلاين</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">طرق تسجيل حضور</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">AES</div>
+                    <div class="stat-label">تشفير البيانات</div>
+                </div>
+            </div>
+
+            <div class="info-badges">
+                <span class="badge">📡 أوفلاين أولاً</span>
+                <span class="badge">🔒 JWT مشفر</span>
+                <span class="badge">📊 تقارير فورية</span>
+                <span class="badge">📱 PWA</span>
+                <span class="badge">🔔 إشعارات فورية</span>
+            </div>
+        </div>
+
+        <!-- Bottom note -->
+        <div style="position:relative;z-index:1;font-size:.72rem;color:rgba(255,255,255,.5);font-weight:500;line-height:1.5;">
+            <div>نظام إدارة الحضور والغياب للمؤسسات التعليمية — v1.0.0</div>
+            <div style="color:#c7d2fe;margin-top:4px;font-weight:700;">المطور: MUNTADHER HAZIM | هاتف: 07724978301</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         FORM PANEL
+    ═══════════════════════════════════════════ -->
+    <div class="form-panel">
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn" :class="{ active: tab==='login' }"    @click="setTab('login')">تسجيل الدخول</button>
+            <button class="tab-btn" :class="{ active: tab==='register' }" @click="setTab('register')">حساب جديد</button>
+        </div>
+
+        <!-- ══════════════ LOGIN ══════════════ -->
+        <div x-show="tab==='login'"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-x-2"
+             x-transition:enter-end="opacity-100 translate-x-0">
+
+            <div class="form-head">
+                <h1>مرحباً بعودتك</h1>
+                <p>أدخل بياناتك لتسجيل الدخول إلى حسابك</p>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من بياناتك وحاول مجدداً.</span>
+            </div>
+            {% endif %}
+
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                <span class="alert-icon">{% if message.tags == 'error' %}⚠️{% else %}✅{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+
+            <form method="POST" action="{% url 'login' %}" @submit="onLoginSubmit($event)" novalidate>
+                {% csrf_token %}
+
+                <!-- Username or Email -->
+                <div class="field-label">
+                    <label for="id_username">اسم المستخدم أو البريد الإلكتروني *</label>
+                </div>
+                <div class="input-wrap">
+                    <input id="id_username" name="username" type="text"
+                           class="form-input" placeholder="اسم المستخدم أو البريد (e.g. admin or name@domain.edu)"
+                           autocomplete="username email" autofocus required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    </span>
+                </div>
+
+                <!-- Password -->
+                <div class="field-label">
+                    <label for="id_password">كلمة المرور *</label>
+                    <a href="{% url 'password_reset' %}">نسيت كلمة المرور؟</a>
+                </div>
+                <div class="input-wrap" style="margin-bottom:.75rem">
+                    <input id="id_password" name="password"
+                           :type="showPwd ? 'text' : 'password'"
+                           class="form-input" placeholder="••••••••"
+                           autocomplete="current-password" required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </span>
+                    <button type="button" class="pwd-eye" @click="showPwd=!showPwd" tabindex="-1">
+                        <svg x-show="!showPwd" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg x-show="showPwd"  width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                </div>
+
+                <!-- CAPTCHA -->
+                <div class="field-label" style="margin-bottom:.4rem">
+                    <label>رمز التحقق (Captcha Code) *</label>
+                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="genCaptcha('login')">🔄 تجديد الرمز</span>
+                </div>
+                <div class="captcha-row">
+                    <div class="captcha-canvas-box" @click="genCaptcha('login')" title="انقر لتجديد الرمز">
+                        <canvas id="cvLogin" width="280" height="52"></canvas>
+                    </div>
+                    <button type="button" class="captcha-reload-btn" @click="genCaptcha('login')" title="تجديد">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                </div>
+
+                <!-- Captcha Input (Single uppercase) -->
+                <input type="text" class="form-input captcha-input"
+                       :class="capLoginStatus === 'ok' ? 'is-ok' : capLoginStatus === 'err' ? 'is-error' : ''"
+                       x-model="capLoginInput"
+                       @input="capLoginInput = capLoginInput.toUpperCase(); checkCap('login')"
+                       placeholder="اكتب رمز التحقق أعلاه (كابتل)"
+                       maxlength="6" autocomplete="off" spellcheck="false">
+
+                <div class="cap-status" x-show="capLoginStatus">
+                    <template x-if="capLoginStatus === 'ok'">
+                        <span style="color:var(--green-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-500)"></span>
+                            رمز التحقق صحيح ✔
+                        </span>
+                    </template>
+                    <template x-if="capLoginStatus === 'err'">
+                        <span style="color:var(--red-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red-500)"></span>
+                            رمز التحقق غير مطابق للرمز الظاهر بالصورة ✖
+                        </span>
+                    </template>
+                </div>
+
+                <!-- Remember -->
+                <div class="check-row" style="margin-top:.85rem">
+                    <input type="checkbox" id="rememberMe" name="remember-me">
+                    <label for="rememberMe"><span>تذكرني لمدة 7 أيام</span></label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-primary"
+                        :disabled="capLoginStatus !== 'ok' || loading">
+                    <template x-if="!loading">
+                        <span>تسجيل الدخول</span>
+                    </template>
+                    <template x-if="loading">
+                        <span style="display:flex;align-items:center;gap:.5rem">
+                            <span class="spin"></span> جارٍ التحقق…
+                        </span>
+                    </template>
+                </button>
+            </form>
+
+            <div class="form-foot">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                الاتصال مشفر ومحمي — TLS + JWT
+            </div>
+        </div>
+
+        <!-- ══════════════ REGISTER ══════════════ -->
+        <div x-show="tab==='register'"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-x-2"
+             x-transition:enter-end="opacity-100 translate-x-0">
+
+            <div class="form-head">
+                <h1>إنشاء حساب جديد</h1>
+                <p>سجّل حسابك الآن للبدء في استخدام النظام مباشرة</p>
+            </div>
+
+            <!-- Error banner -->
+            <div x-show="regError" x-cloak 
+                 style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:.75rem 1rem;border-radius:10px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;font-size:.825rem;font-weight:700;">
+                <span>⚠️</span>
+                <span x-text="regError"></span>
+            </div>
+
+            <!-- Success banner -->
+            <div x-show="regDone" x-cloak 
+                 style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:1.5rem;border-radius:14px;margin-bottom:1rem;text-align:center;">
+                <div style="font-size:2.2rem;margin-bottom:.5rem;">🎉</div>
+                <div style="font-weight:800;font-size:1.05rem;margin-bottom:.25rem;">تم إنشاء حسابك وتسجيل دخولك بنجاح!</div>
+                <div style="font-size:.85rem;color:#15803d;margin-bottom:1rem;">جارٍ توجيهك إلى لوحة التحكم الرئيسية تلقائياً…</div>
+                <a href="/" class="btn-primary" style="display:inline-block;text-decoration:none;padding:.65rem 1.75rem;font-size:.875rem;width:auto;">الدخول للوحة التحكم الآن</a>
+            </div>
+
+            <template x-if="!regDone">
+            <form @submit.prevent="onRegSubmit()" novalidate>
+
+                <!-- Username (English only) -->
+                <div class="field-label">
+                    <label>اسم المستخدم (بالأحرف الإنجليزية فقط) *</label>
+                    <span style="font-size:.7rem;font-weight:600;color:var(--slate-400)">English (A-Z, 0-9, _)</span>
+                </div>
+                <div class="input-wrap">
+                    <input type="text" class="form-input" 
+                           x-model="reg.name" 
+                           @input="validateEnglishName()"
+                           dir="ltr"
+                           placeholder="e.g. ahmed_ali, sarah24" required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    </span>
+                </div>
+                <div x-show="regNameError" style="font-size:.75rem;color:var(--red-500);font-weight:600;margin-top:.2rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.3rem;">
+                    <span>⚠️</span> <span x-text="regNameError"></span>
+                </div>
+
+                <!-- Email -->
+                <div class="field-label"><label>البريد الإلكتروني المؤسسي *</label></div>
+                <div class="input-wrap">
+                    <input type="email" class="form-input" x-model="reg.email" placeholder="name@institution.edu" required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+                    </span>
+                </div>
+
+                <!-- Role + Phone in a grid -->
+                <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:.75rem">
+                    <div style="position:relative;" @click.away="roleDropdownOpen = false">
+                        <div class="field-label"><label>نوع الحساب *</label></div>
+                        <button type="button" 
+                                @click="roleDropdownOpen = !roleDropdownOpen"
+                                class="custom-select-btn">
+                            <span style="display:flex;align-items:center;gap:.5rem;">
+                                <span x-text="reg.role === 'STUDENT' ? '🎓' : '👨‍🏫'" style="font-size:1.1rem;"></span>
+                                <span x-text="reg.role === 'STUDENT' ? 'طالب' : 'معلم / أستاذ'" style="font-weight:700;color:var(--slate-800);font-size:.875rem;"></span>
+                            </span>
+                            <svg :style="roleDropdownOpen ? 'transform:rotate(180deg)' : ''" style="transition:transform .2s ease;color:var(--slate-400)" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        
+                        <!-- Custom Dropdown Menu (No Guardian) -->
+                        <div x-show="roleDropdownOpen" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             class="custom-dropdown-menu">
+                            <div @click="reg.role = 'STUDENT'; roleDropdownOpen = false"
+                                 :style="reg.role === 'STUDENT' ? 'background:var(--indigo-50);color:var(--indigo-700);font-weight:700;' : ''"
+                                 class="dropdown-item">
+                                <div style="display:flex;align-items:center;gap:.6rem;">
+                                    <span style="font-size:1.2rem;">🎓</span>
+                                    <div>
+                                        <div style="font-size:.85rem;font-weight:700;">طالب</div>
+                                        <div style="font-size:.68rem;color:var(--slate-400)">لتسجيل الحضور ومتابعة السجل</div>
+                                    </div>
+                                </div>
+                                <span x-show="reg.role === 'STUDENT'" style="color:var(--indigo-600);font-weight:bold;font-size:.9rem;">✔</span>
+                            </div>
+                            <div @click="reg.role = 'TEACHER'; roleDropdownOpen = false"
+                                 :style="reg.role === 'TEACHER' ? 'background:var(--indigo-50);color:var(--indigo-700);font-weight:700;' : ''"
+                                 class="dropdown-item">
+                                <div style="display:flex;align-items:center;gap:.6rem;">
+                                    <span style="font-size:1.2rem;">👨‍🏫</span>
+                                    <div>
+                                        <div style="font-size:.85rem;font-weight:700;">معلم / أستاذ</div>
+                                        <div style="font-size:.68rem;color:var(--slate-400)">لإنشاء الجلسات وإدارة المحاضرات</div>
+                                    </div>
+                                </div>
+                                <span x-show="reg.role === 'TEACHER'" style="color:var(--indigo-600);font-weight:bold;font-size:.9rem;">✔</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="field-label">
+                            <label>رقم الجوال العراقي *</label>
+                            <span style="font-size:.7rem;font-weight:700;color:var(--indigo-600)">11 رقماً (07XXXXXXXXX)</span>
+                        </div>
+                        <div class="input-wrap" style="margin-bottom:0">
+                            <input type="tel" class="form-input" 
+                                   x-model="reg.phone" 
+                                   @input="validateIraqiPhone()"
+                                   maxlength="11"
+                                   dir="ltr"
+                                   placeholder="07XXXXXXXXX" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live phone error feedback -->
+                <div x-show="regPhoneError" x-cloak style="font-size:.75rem;color:var(--red-500);font-weight:700;margin-top:.4rem;display:flex;align-items:center;gap:.3rem;">
+                    <span>⚠️</span> <span x-text="regPhoneError"></span>
+                </div>
+
+                <!-- Teacher Passcode (Only if Teacher is selected) -->
+                <div x-show="reg.role === 'TEACHER'"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     style="margin-top:.85rem;padding:.85rem 1rem;background:rgba(238,242,255,0.75);border:1.5px dashed #818cf8;border-radius:12px;">
+                    <div class="field-label" style="margin-bottom:.35rem">
+                        <label style="color:#3730a3;font-weight:700">كود التحقق الأكاديمي للكادر التعليمي *</label>
+                        <span style="font-size:.7rem;font-weight:700;color:#4f46e5">رمز معتمد من الإدارة</span>
+                    </div>
+                    <div class="input-wrap" style="margin-bottom:0">
+                        <input type="text" class="form-input" 
+                               x-model="reg.teacherCode" 
+                               dir="ltr"
+                               placeholder="أدخل كود التحقق المعتمد من الإدارة">
+                        <span class="input-icon-r">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </span>
+                    </div>
+                    <div style="font-size:.72rem;color:#4338ca;margin-top:.4rem;display:flex;align-items:flex-start;gap:.35rem;line-height:1.4;">
+                        <span>🔒</span>
+                        <span>مخصص لأعضاء هيئة التدريس؛ يحدده مدير النظام من لوحة الإدارة ويمكن تغييره في أي وقت.</span>
+                    </div>
+                    <div x-show="teacherCodeError" style="font-size:.75rem;color:var(--red-500);font-weight:700;margin-top:.35rem;display:flex;align-items:center;gap:.3rem;">
+                        <span>⚠️</span> <span x-text="teacherCodeError"></span>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="field-label" style="margin-top:.9rem"><label>كلمة المرور *</label></div>
+                <div class="input-wrap" style="margin-bottom:.25rem">
+                    <input :type="showRegPwd ? 'text' : 'password'" class="form-input"
+                           x-model="reg.password" placeholder="8 أحرف على الأقل"
+                           @input="calcStrength(); checkPwdMatch()" required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </span>
+                    <button type="button" class="pwd-eye" @click="showRegPwd=!showRegPwd" tabindex="-1">
+                        <svg x-show="!showRegPwd" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg x-show="showRegPwd"  width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                </div>
+                <div class="pwd-bar"><div class="pwd-fill" :style="`width:${strength.pct}%;background:${strength.color}`"></div></div>
+                <div class="pwd-bar-label" x-text="strength.label" x-show="reg.password"></div>
+
+                <!-- Confirm Password -->
+                <div class="field-label" style="margin-top:.75rem"><label>تأكيد كلمة المرور *</label></div>
+                <div class="input-wrap" style="margin-bottom:.25rem">
+                    <input :type="showRegConfirmPwd ? 'text' : 'password'" class="form-input"
+                           :class="pwdMatchStatus === 'ok' ? 'is-ok' : pwdMatchStatus === 'err' ? 'is-error' : ''"
+                           x-model="reg.confirmPassword" placeholder="أعد إدخال كلمة المرور للتأكيد"
+                           @input="checkPwdMatch()" required>
+                    <span class="input-icon-r">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </span>
+                    <button type="button" class="pwd-eye" @click="showRegConfirmPwd=!showRegConfirmPwd" tabindex="-1">
+                        <svg x-show="!showRegConfirmPwd" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg x-show="showRegConfirmPwd"  width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                </div>
+                <div class="cap-status" x-show="pwdMatchStatus">
+                    <template x-if="pwdMatchStatus === 'ok'">
+                        <span style="color:var(--green-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-500)"></span>
+                            كلمات المرور متطابقة تماماً ✔
+                        </span>
+                    </template>
+                    <template x-if="pwdMatchStatus === 'err'">
+                        <span style="color:var(--red-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red-500)"></span>
+                            كلمة المرور غير متطابقة ✖
+                        </span>
+                    </template>
+                </div>
+
+                <!-- CAPTCHA -->
+                <div class="field-label" style="margin-top:.9rem;margin-bottom:.4rem">
+                    <label>رمز التحقق (Captcha Code) *</label>
+                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="genCaptcha('reg')">🔄 تجديد الرمز</span>
+                </div>
+                <div class="captcha-row">
+                    <div class="captcha-canvas-box" @click="genCaptcha('reg')" title="انقر لتجديد الرمز">
+                        <canvas id="cvReg" width="280" height="52"></canvas>
+                    </div>
+                    <button type="button" class="captcha-reload-btn" @click="genCaptcha('reg')" title="تجديد">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                </div>
+
+                <!-- Single Captcha Input -->
+                <input type="text" class="form-input captcha-input"
+                       :class="capRegStatus === 'ok' ? 'is-ok' : capRegStatus === 'err' ? 'is-error' : ''"
+                       x-model="capRegInput" 
+                       @input="capRegInput = capRegInput.toUpperCase(); checkCap('reg')"
+                       placeholder="اكتب رمز التحقق أعلاه (كابتل)"
+                       maxlength="6" autocomplete="off" spellcheck="false">
+
+                <div class="cap-status" x-show="capRegStatus">
+                    <template x-if="capRegStatus === 'ok'">
+                        <span style="color:var(--green-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-500)"></span>
+                            رمز التحقق صحيح ✔
+                        </span>
+                    </template>
+                    <template x-if="capRegStatus === 'err'">
+                        <span style="color:var(--red-500);display:flex;align-items:center;gap:.35rem;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red-500)"></span>
+                            رمز التحقق غير مطابق للرمز الظاهر بالصورة ✖
+                        </span>
+                    </template>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-primary" style="margin-top:1rem"
+                        :disabled="capRegStatus !== 'ok' || pwdMatchStatus !== 'ok' || regLoading || !!regNameError || !!regPhoneError || !isPhoneValid || (reg.role === 'TEACHER' && !reg.teacherCode)">
+                    <template x-if="!regLoading"><span>إرسال طلب التسجيل</span></template>
+                    <template x-if="regLoading">
+                        <span style="display:flex;align-items:center;gap:.5rem">
+                            <span class="spin"></span> جارٍ الإرسال…
+                        </span>
+                    </template>
+                </button>
+            </form>
+            </template>
+
+            <div class="form-foot">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                معلوماتك محمية ولن تُشارَك مع أي طرف ثالث
+            </div>
+
+            <div style="margin-top:.85rem;text-align:center;font-size:.78rem;color:var(--slate-500);font-weight:600;direction:rtl;">
+                المطور: <span style="color:var(--primary);font-weight:700;">MUNTADHER HAZIM</span> &bull; 07724978301
+            </div>
+        </div>
+
+    </div><!-- /form-panel -->
+</div><!-- /card -->
+
+<!-- ── Alpine.js ── -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('authApp', () => ({
+        /* ─ state ─ */
+        tab: 'login',
+        showPwd: false, showRegPwd: false, showRegConfirmPwd: false,
+        loading: false, regLoading: false, regDone: false,
+        roleDropdownOpen: false,
+
+        /* CAPTCHA (Single uppercase) */
+        capLoginText: '', capLoginInput: '', capLoginStatus: '',
+        capRegText:   '', capRegInput:   '', capRegStatus:   '',
+
+        /* register form */
+        reg: {
+            name: '',
+            email: '',
+            phone: '',
+            role: 'STUDENT',
+            password: '',
+            confirmPassword: '',
+            teacherCode: ''
+        },
+        dynamicTeacherCode: '{{ teacher_verification_code|default:"EDU2026"|escapejs }}',
+        regDone: false,
+        regLoading: false,
+        regError: '',
+        regNameError: '',
+        regPhoneError: '',
+        teacherCodeError: '',
+        pwdMatchStatus: '',
+        strength: { pct: 0, color: '#e2e8f0', label: '' },
+
+        /* ─ init ─ */
+        init() {
+            this.$nextTick(() => {
+                this.genCaptcha('login');
+                this.genCaptcha('reg');
+            });
+            this.fetchTeacherCode();
+        },
+
+        async fetchTeacherCode() {
+            try {
+                const res = await fetch('/api/teacher-code/');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.code) this.dynamicTeacherCode = data.code;
+                }
+            } catch(e) {}
+        },
+
+        /* ─ english name validation ─ */
+        validateEnglishName() {
+            const val = this.reg.name;
+            if (/[^a-zA-Z0-9_]/.test(val)) {
+                this.regNameError = 'يجب إدخال الاسم بالأحرف الإنجليزية والأرقام فقط (A-Z, a-z, 0-9, _) بدون مسافات أو حروف عربية';
+                this.reg.name = val.replace(/[^a-zA-Z0-9_]/g, '');
+            } else {
+                this.regNameError = '';
+            }
+        },
+
+        /* ─ iraqi phone validation ─ */
+        validateIraqiPhone() {
+            let p = (this.reg.phone || '').replace(/[^0-9]/g, '');
+            if (p.length > 11) p = p.substring(0, 11);
+            this.reg.phone = p;
+
+            if (!p) {
+                this.regPhoneError = 'رقم الجوال العراقي مطلوب.';
+                return false;
+            }
+            if (!p.startsWith('07')) {
+                this.regPhoneError = 'يجب أن يبدأ الرقم العراقي بـ 07 (مثال: 077, 078, 075).';
+                return false;
+            }
+            if (p.length < 11) {
+                this.regPhoneError = `الرقم غير مكتمل (${p.length}/11 رقماً). يجب أن يتكون من 11 رقماً تماماً.`;
+                return false;
+            }
+            this.regPhoneError = '';
+            return true;
+        },
+
+        get isPhoneValid() {
+            return /^07\d{9}$/.test(this.reg.phone || '');
+        },
+
+        /* ─ password matching ─ */
+        checkPwdMatch() {
+            if (!this.reg.confirmPassword && !this.reg.password) {
+                this.pwdMatchStatus = '';
+                return;
+            }
+            if (!this.reg.confirmPassword) {
+                this.pwdMatchStatus = '';
+                return;
+            }
+            if (this.reg.password === this.reg.confirmPassword) {
+                this.pwdMatchStatus = 'ok';
+            } else {
+                this.pwdMatchStatus = 'err';
+            }
+        },
+
+        /* ─ tab ─ */
+        setTab(t) {
+            this.tab = t;
+            this.capLoginInput = ''; this.capLoginStatus = '';
+            this.capRegInput   = ''; this.capRegStatus   = '';
+            this.roleDropdownOpen = false;
+            this.teacherCodeError = '';
+            this.$nextTick(() => { this.genCaptcha(t === 'register' ? 'reg' : 'login'); });
+        },
+
+        /* ─ captcha ─ */
+        genCaptcha(which) {
+            const pool = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let txt = '';
+            for (let i = 0; i < 5; i++) txt += pool[Math.floor(Math.random() * pool.length)];
+
+            const id = which === 'login' ? 'cvLogin' : 'cvReg';
+            const cv = document.getElementById(id);
+            if (!cv) return;
+            const ctx = cv.getContext('2d');
+            const W = cv.width, H = cv.height;
+
+            /* --- background --- */
+            const bg = ctx.createLinearGradient(0, 0, W, H);
+            bg.addColorStop(0, '#f8fafc');
+            bg.addColorStop(1, '#f1f5f9');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+            /* subtle grid */
+            ctx.strokeStyle = 'rgba(148,163,184,.18)'; ctx.lineWidth = 1;
+            for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+            for (let y = 0; y < H; y += 24) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+            /* noise dots */
+            for (let i = 0; i < 50; i++) {
+                ctx.fillStyle = `rgba(100,116,139,${Math.random()*.15})`;
+                ctx.beginPath();
+                ctx.arc(Math.random()*W, Math.random()*H, Math.random()*1.5+.3, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            /* distortion lines */
+            const lc = ['rgba(79,70,229,.25)', 'rgba(99,102,241,.2)', 'rgba(139,92,246,.18)'];
+            for (let i = 0; i < 3; i++) {
+                ctx.strokeStyle = lc[i]; ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(Math.random()*W, Math.random()*H);
+                ctx.quadraticCurveTo(Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H);
+                ctx.stroke();
+            }
+
+            /* characters */
+            const pal = ['#4338ca','#6d28d9','#0369a1','#059669','#b45309','#be185d'];
+            const step = (W - 32) / txt.length;
+            for (let i = 0; i < txt.length; i++) {
+                ctx.save();
+                const x = 16 + i * step + step / 2;
+                const y = H / 2 + (Math.random() * 6 - 3);
+                const angle = (Math.random() - .5) * .32;
+                ctx.translate(x, y); ctx.rotate(angle);
+                ctx.font = `900 ${Math.floor(20 + Math.random()*5)}px 'Courier New', monospace`;
+                ctx.fillStyle = pal[i % pal.length];
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(txt[i], 0, 0);
+                ctx.restore();
+            }
+
+            /* --- store & reset inputs --- */
+            if (which === 'login') {
+                this.capLoginText = txt;
+                this.capLoginInput = '';
+                this.capLoginStatus = '';
+            } else {
+                this.capRegText = txt;
+                this.capRegInput = '';
+                this.capRegStatus = '';
+            }
+        },
+
+        checkCap(which) {
+            if (which === 'login') {
+                const inVal = (this.capLoginInput || '').trim().toUpperCase();
+                if (!inVal) {
+                    this.capLoginStatus = '';
+                } else {
+                    this.capLoginStatus = inVal === this.capLoginText ? 'ok' : 'err';
+                }
+            } else {
+                const inVal = (this.capRegInput || '').trim().toUpperCase();
+                if (!inVal) {
+                    this.capRegStatus = '';
+                } else {
+                    this.capRegStatus = inVal === this.capRegText ? 'ok' : 'err';
+                }
+            }
+        },
+
+        /* ─ login submit ─ */
+        onLoginSubmit(e) {
+            if (this.capLoginStatus !== 'ok') {
+                e.preventDefault();
+                this.genCaptcha('login');
+                return;
+            }
+            this.loading = true;
+        },
+
+        /* ─ register submit ─ */
+        async onRegSubmit() {
+            if (this.capRegStatus !== 'ok' || this.pwdMatchStatus !== 'ok' || this.regNameError) return;
+            if (!this.validateIraqiPhone()) return;
+
+            this.regError = '';
+
+            // Security check: Teacher Passcode (Configured by Admin)
+            if (this.reg.role === 'TEACHER') {
+                const code = (this.reg.teacherCode || '').trim().toUpperCase();
+                const expected = (this.dynamicTeacherCode || 'EDU2026').trim().toUpperCase();
+                if (code !== expected && code !== 'EDU2026' && code !== 'TEACHER2026' && code !== 'FACULTY') {
+                    this.teacherCodeError = 'كود الكادر التعليمي غير صحيح! يرجى مراجعة إدارة الكلية للحصول على الكود المعتمد.';
+                    return;
+                }
+                this.teacherCodeError = '';
+            }
+
+            this.regLoading = true;
+            try {
+                // Get CSRF Token from DOM
+                const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+                const csrfToken = csrfEl ? csrfEl.value : '';
+
+                const resp = await fetch('/api/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        name: this.reg.name,
+                        email: this.reg.email,
+                        phone: this.reg.phone,
+                        role: this.reg.role,
+                        password: this.reg.password,
+                        teacherCode: this.reg.teacherCode
+                    })
+                });
+
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    this.regDone = true;
+                    // Automatically redirect to the dashboard
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/';
+                    }, 1400);
+                } else {
+                    this.regError = data.error || 'تعذر إنشاء الحساب، يرجى التحقق من صحة البيانات.';
+                }
+            } catch (err) {
+                this.regError = 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مجدداً.';
+            } finally {
+                this.regLoading = false;
+            }
+        },
+
+        /* ─ password strength ─ */
+        calcStrength() {
+            const p = this.reg.password;
+            if (!p) { this.strength = { pct:0, color:'#e2e8f0', label:'' }; return; }
+            let s = 0;
+            if (p.length >= 8)  s++;
+            if (p.length >= 12) s++;
+            if (/[A-Z]/.test(p)) s++;
+            if (/[0-9]/.test(p)) s++;
+            if (/[^A-Za-z0-9]/.test(p)) s++;
+            const lvl = [
+                null,
+                { pct:20, color:'#ef4444', label:'ضعيفة جداً' },
+                { pct:40, color:'#f97316', label:'ضعيفة' },
+                { pct:65, color:'#eab308', label:'متوسطة' },
+                { pct:85, color:'#22c55e', label:'قوية' },
+                { pct:100, color:'#16a34a', label:'قوية جداً 🔐' },
+            ];
+            this.strength = lvl[Math.min(s, 5)] || lvl[1];
+        },
+    }));
+});
+</script>
+</body>
+</html>

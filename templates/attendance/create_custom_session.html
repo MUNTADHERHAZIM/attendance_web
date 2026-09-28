@@ -1,0 +1,898 @@
+{% extends "base.html" %}
+
+{% block title %}إعداد وبدء محاضرة ذكية - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto" 
+     x-data="{
+        // Course State
+        courses: [
+            {% for course in courses %}
+            { id: '{{ course.id }}', name: '{{ course.name|escapejs }}', code: '{{ course.code|escapejs }}' },
+            {% endfor %}
+        ],
+        selectedCourseId: '',
+        selectedCourseName: '',
+        selectedCourseCode: '',
+        searchCourse: '',
+        openCourseDropdown: false,
+        isCreatingCourse: false,
+        newCourseName: '',
+
+        // Section State with Study Shift (Morning / Evening)
+        sections: [
+            {% for section in sections %}
+            { 
+                id: '{{ section.id }}', 
+                name: '{{ section.name|escapejs }}', 
+                level: '{{ section.level|escapejs }}',
+                shift: '{{ section.shift }}',
+                shiftDisplay: '{{ section.get_shift_display|escapejs }}'
+            },
+            {% endfor %}
+        ],
+        selectedSectionId: '',
+        selectedSectionName: '',
+        searchSection: '',
+        openSectionDropdown: false,
+        newSectionName: '',
+
+        // Study Shift (MORNING / EVENING)
+        shift: 'MORNING',
+
+        // Day, Date, Time & Duration
+        sessionDate: '{{ current_date }}',
+        selectedDay: {{ default_day_enum }},
+        daysList: [
+            { val: 0, label: 'السبت' },
+            { val: 1, label: 'الأحد' },
+            { val: 2, label: 'الإثنين' },
+            { val: 3, label: 'الثلاثاء' },
+            { val: 4, label: 'الأربعاء' },
+            { val: 5, label: 'الخميس' },
+            { val: 6, label: 'الجمعة' }
+        ],
+        startTime: '{{ current_time }}',
+        durationMinutes: 60,
+
+        // Lecture Details
+        lectureType: 'نظري',
+        lectureTypes: [
+            { id: 'نظري', label: '📘 نظري', desc: 'محاضرة قاعة نظرية' },
+            { id: 'عملي / مختبر', label: '🔬 عملي / مختبر', desc: 'تطبيق عملي بالمختبر' },
+            { id: 'إضافية تعويضية', label: '⚡ إضافية / تعويضية', desc: 'تعويض محاضرة فائتة' },
+            { id: 'امتحان / كويز', label: '📝 امتحان / كويز', desc: 'اختبار فصلي أو يومي' }
+        ],
+        topic: '',
+        room: 'القاعة الذكية - مختبر الحاسوب',
+
+        // Security & Constraints
+        requiresWifi: false,
+        allowedWifiSsid: '',
+        allowedIpSubnet: '',
+        requiresGeofence: false,
+        latitude: '{{ institution.latitude|default:'' }}',
+        longitude: '{{ institution.longitude|default:'' }}',
+        radiusMeters: 50,
+        isLocating: false,
+
+        successMessage: '',
+
+        // Realtime Conflict Detection State
+        conflictState: { has_conflict: false, message: '', severity: 'info' },
+        isCheckingConflict: false,
+
+        // Realtime Calculated End Time
+        get calculatedEndTime() {
+            if (!this.startTime) return '';
+            try {
+                const parts = this.startTime.split(':');
+                let h = parseInt(parts[0], 10);
+                let m = parseInt(parts[1], 10);
+                m += parseInt(this.durationMinutes, 10);
+                h += Math.floor(m / 60);
+                m = m % 60;
+                h = h % 24;
+                const period = h >= 12 ? 'م' : 'ص';
+                const displayH = h % 12 || 12;
+                const displayM = m < 10 ? '0' + m : m;
+                return `${displayH}:${displayM} ${period}`;
+            } catch(e) {
+                return '';
+            }
+        },
+
+        // Filter helpers
+        get filteredCourses() {
+            const q = this.searchCourse.trim().toLowerCase();
+            if (!q) return this.courses;
+            return this.courses.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+        },
+
+        get filteredSections() {
+            const q = this.searchSection.trim().toLowerCase();
+            let list = this.sections;
+            if (q) {
+                list = list.filter(s => s.name.toLowerCase().includes(q) || (s.level && s.level.toLowerCase().includes(q)));
+            }
+            return list;
+        },
+
+        async checkConflict() {
+            if (!this.selectedCourseId && !this.selectedSectionId) {
+                this.conflictState = { has_conflict: false, message: '', severity: 'info' };
+                return;
+            }
+            this.isCheckingConflict = true;
+            try {
+                const res = await fetch('/attendance/api/check-conflict/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        course_id: this.selectedCourseId,
+                        class_section_id: this.selectedSectionId,
+                        day_of_week: this.selectedDay,
+                        session_date: this.sessionDate,
+                        start_time: this.startTime,
+                        duration_minutes: this.durationMinutes,
+                        shift: this.shift,
+                        room: this.room
+                    })
+                });
+                const data = await res.json();
+                this.conflictState = data;
+            } catch(e) {
+                console.error('Error evaluating conflicts:', e);
+            } finally {
+                this.isCheckingConflict = false;
+            }
+        },
+
+        selectCourse(course) {
+            this.selectedCourseId = course.id;
+            this.selectedCourseName = course.name;
+            this.selectedCourseCode = course.code;
+            this.newCourseName = '';
+            this.openCourseDropdown = false;
+            this.searchCourse = '';
+            this.checkConflict();
+        },
+
+        selectSection(section) {
+            this.selectedSectionId = section.id;
+            this.selectedSectionName = (section.level ? section.level + ' - ' : '') + section.name;
+            if (section.shift) {
+                this.shift = section.shift;
+            }
+            this.newSectionName = '';
+            this.openSectionDropdown = false;
+            this.searchSection = '';
+            this.checkConflict();
+        },
+
+        setShift(newShift) {
+            this.shift = newShift;
+            // Adjust default start time if outside shift window
+            if (newShift === 'EVENING' && parseInt(this.startTime.split(':')[0]) < 13) {
+                this.startTime = '16:00';
+            } else if (newShift === 'MORNING' && parseInt(this.startTime.split(':')[0]) >= 15) {
+                this.startTime = '09:00';
+            }
+            this.checkConflict();
+        },
+
+        updateDayFromDate() {
+            if (!this.sessionDate) return;
+            const d = new Date(this.sessionDate);
+            const jsDay = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+            const map = { 6: 0, 0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 };
+            if (map[jsDay] !== undefined) {
+                this.selectedDay = map[jsDay];
+            }
+            this.checkConflict();
+        },
+
+        detectCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('المتصفح الحالي لا يدعم ميزة تحديد الموقع الجغرافي.');
+                return;
+            }
+            this.isLocating = true;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    this.latitude = pos.coords.latitude.toFixed(6);
+                    this.longitude = pos.coords.longitude.toFixed(6);
+                    this.requiresGeofence = true;
+                    this.isLocating = false;
+                    this.successMessage = 'تم تثبيت إحداثيات موقعك الحالي للقاعة بنجاح!';
+                    setTimeout(() => this.successMessage = '', 4000);
+                },
+                (err) => {
+                    alert('تعذر تحديد الموقع الجغرافي: ' + err.message);
+                    this.isLocating = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        },
+
+        async quickCreateCourse() {
+            const nameToCreate = this.searchCourse.trim();
+            if (!nameToCreate) return;
+            this.isCreatingCourse = true;
+
+            try {
+                const response = await fetch('/attendance/api/course/quick-create/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ name: nameToCreate })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const newObj = { id: String(data.id), name: data.name, code: data.code };
+                    this.courses.unshift(newObj);
+                    this.selectCourse(newObj);
+                    this.successMessage = `تمت إضافة المادة (${data.name}) واختيارها بنجاح!`;
+                    setTimeout(() => this.successMessage = '', 4000);
+                } else {
+                    this.selectedCourseId = 'new';
+                    this.selectedCourseName = nameToCreate;
+                    this.newCourseName = nameToCreate;
+                    this.selectedCourseCode = 'CS-جديد';
+                    this.openCourseDropdown = false;
+                }
+            } catch (err) {
+                console.error(err);
+                this.selectedCourseId = 'new';
+                this.selectedCourseName = nameToCreate;
+                this.newCourseName = nameToCreate;
+                this.selectedCourseCode = 'CS-جديد';
+                this.openCourseDropdown = false;
+            } finally {
+                this.isCreatingCourse = false;
+                this.checkConflict();
+            }
+        },
+
+        quickCreateSection() {
+            const nameToCreate = this.searchSection.trim();
+            if (!nameToCreate) return;
+            const newObj = { id: 'new', name: nameToCreate, level: 'المستوى العام', shift: this.shift, shiftDisplay: this.shift === 'MORNING' ? 'صباحي' : 'مسائي' };
+            this.sections.unshift(newObj);
+            this.selectSection(newObj);
+            this.newSectionName = nameToCreate;
+        }
+     }">
+
+    <!-- Page Header & Breadcrumbs -->
+    <div class="border-b border-slate-200/80 pb-5 mb-6 text-right">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-xs">
+                        🚀 إنشاء وبدء محاضرة فورية
+                    </span>
+                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                        لوحة تحكم الأستاذ المستقلة
+                    </span>
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full"
+                          :class="shift === 'MORNING' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-indigo-100 text-indigo-900 border border-indigo-200'"
+                          x-text="shift === 'MORNING' ? '☀️ دراسة صباحية' : '🌙 دراسة مسائية'"></span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">إعداد وبدء جلسة تحضير ذكية</h1>
+                <p class="text-xs text-slate-500 font-semibold mt-1">
+                    حدد المادة والشعبة، وحدد موعد ووقت المحاضرة بدقة مع تفعيل حواجز الأمان وفحص منع التضارب بين الأساتذة والطلاب
+                </p>
+            </div>
+            <a href="/" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 text-xs font-black transition-all">
+                <span>✕</span>
+                <span>العودة للرئيسية</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Success Toast Notification -->
+    <div x-show="successMessage" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
+        <span class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs">✓</span>
+            <span x-text="successMessage"></span>
+        </span>
+        <button type="button" @click="successMessage = ''" class="text-emerald-600 hover:text-emerald-900 text-sm">✕</button>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="bg-white border border-slate-200/90 shadow-sm rounded-3xl p-6 md:p-8 space-y-6">
+        
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- 0. STUDY SHIFT: نوع الدراسة (صباحي / مسائي) -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <div class="p-5 rounded-2xl border transition-all"
+             :class="shift === 'MORNING' ? 'bg-amber-50/40 border-amber-200' : 'bg-indigo-950/5 border-indigo-200'">
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-right">
+                    <label class="block text-sm font-black text-slate-800">
+                        نوع الدراسة (الدوام) <span class="text-rose-500">*</span>
+                    </label>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">
+                        فصل صارم بين طلاب الدراسة الصباحية والمسائية لمنع تضارب الجداول والقاعات وسجلات الحضور
+                    </p>
+                </div>
+                <span class="text-xs font-bold px-3 py-1 rounded-full shadow-xs"
+                      :class="shift === 'MORNING' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-indigo-100 text-indigo-900 border border-indigo-300'"
+                      x-text="shift === 'MORNING' ? '☀️ دوام نهاري' : '🌙 دوام مسائي'"></span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Morning Card -->
+                <button type="button" 
+                        @click="setShift('MORNING')"
+                        class="p-4 rounded-2xl border-2 text-right transition-all flex items-start gap-3"
+                        :class="shift === 'MORNING' ? 'border-amber-500 bg-white ring-4 ring-amber-100 shadow-sm' : 'border-slate-200 bg-white/70 hover:border-slate-300 opacity-75'">
+                    <span class="text-2xl p-2.5 rounded-xl bg-amber-50 text-amber-600">☀️</span>
+                    <div>
+                        <p class="text-sm font-black text-slate-900">الدراسة الصباحية</p>
+                        <p class="text-xs text-slate-500 mt-0.5">الدوام الجامعي الاعتيادي (صباحاً حتى 02:00 م)</p>
+                        <span class="inline-block mt-2 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">موصى به للشعب الصباحية</span>
+                    </div>
+                </button>
+
+                <!-- Evening Card -->
+                <button type="button" 
+                        @click="setShift('EVENING')"
+                        class="p-4 rounded-2xl border-2 text-right transition-all flex items-start gap-3"
+                        :class="shift === 'EVENING' ? 'border-indigo-600 bg-white ring-4 ring-indigo-100 shadow-sm' : 'border-slate-200 bg-white/70 hover:border-slate-300 opacity-75'">
+                    <span class="text-2xl p-2.5 rounded-xl bg-indigo-50 text-indigo-600">🌙</span>
+                    <div>
+                        <p class="text-sm font-black text-slate-900">الدراسة المسائية</p>
+                        <p class="text-xs text-slate-500 mt-0.5">الدوام المسائي (من 02:00 م حتى 08:00 م)</p>
+                        <span class="inline-block mt-2 text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded">مخصص لطلاب الشعب المسائية</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- LIVE CONFLICT DETECTION BANNER: محرك كشف التضارب اللحظي -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <div x-show="conflictState.has_conflict" 
+             x-transition
+             class="p-4 rounded-2xl text-xs font-bold shadow-sm border flex items-start gap-3"
+             :class="conflictState.severity === 'error' ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-amber-50 border-amber-300 text-amber-900'">
+            <span class="text-xl" x-text="conflictState.severity === 'error' ? '🚫' : '⚠️'"></span>
+            <div class="flex-1 text-right">
+                <p class="font-black text-sm" x-text="conflictState.severity === 'error' ? 'تم رصد تضارب زمني / أكاديمي مانع' : 'تنبيه جدول المحاضرة'"></p>
+                <p class="mt-1 font-semibold leading-relaxed" x-text="conflictState.message"></p>
+                <p x-show="conflictState.severity === 'error'" class="mt-2 text-[11px] font-bold text-rose-700 bg-rose-100/70 p-2 rounded-lg">
+                    🛡️ نظام منع التضارب نشط: تم إيقاف زر البدء مؤقتاً لحماية جدول الأستاذ والشعبة. يرجى تغيير الوقت أو الشعبة للمتابعة.
+                </p>
+            </div>
+        </div>
+
+        <div x-show="!conflictState.has_conflict && selectedCourseId && selectedSectionId" 
+             x-transition
+             class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
+            <span class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">✓</span>
+                <span>لا يوجد أي تضارب: جدول الأستاذ، شعبة الطلاب، والقاعة متوفرة ومؤكدة بالكامل لهذا الموعد.</span>
+            </span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-mono">جاهز للإطلاق</span>
+        </div>
+
+        <form method="POST" action="{% url 'attendance:create_custom_session' %}" class="space-y-8 text-right">
+            {% csrf_token %}
+
+            <!-- Hidden Bindings -->
+            <input type="hidden" name="course_id" :value="selectedCourseId">
+            <input type="hidden" name="new_course_name" :value="newCourseName">
+            <input type="hidden" name="class_section_id" :value="selectedSectionId">
+            <input type="hidden" name="new_section_name" :value="newSectionName">
+            <input type="hidden" name="duration_minutes" :value="durationMinutes">
+            <input type="hidden" name="day_of_week" :value="selectedDay">
+            <input type="hidden" name="shift" :value="shift">
+            <input type="hidden" name="lecture_type" :value="lectureType">
+            <input type="hidden" name="latitude" :value="latitude">
+            <input type="hidden" name="longitude" :value="longitude">
+            <input type="hidden" name="radius_meters" :value="radiusMeters">
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- 1. ACADEMIC IDENTIFIERS: المادة والشعبة -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-black text-sm">1</span>
+                    <h2 class="text-base font-black text-slate-800">بيانات المادة والشعبة الأكاديمية</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    
+                    <!-- 1.1 Course Combobox -->
+                    <div class="space-y-2 relative" @click.away="openCourseDropdown = false">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-black text-slate-700">
+                                المادة الدراسية <span class="text-rose-500">*</span>
+                            </label>
+                            <span class="text-[11px] text-brand-600 font-bold" x-show="selectedCourseId">
+                                ✓ تم التحديد
+                            </span>
+                        </div>
+
+                        <button type="button" 
+                                @click="openCourseDropdown = !openCourseDropdown; if(openCourseDropdown) $nextTick(() => $refs.courseSearchRef.focus())"
+                                class="w-full px-4 py-3 bg-slate-50/90 border-2 rounded-xl flex items-center justify-between transition-all font-semibold text-xs sm:text-sm text-right focus:outline-none"
+                                :class="openCourseDropdown ? 'border-brand-500 bg-white ring-4 ring-brand-100 shadow-sm' : (selectedCourseId ? 'border-brand-300 bg-brand-50/20 text-slate-900' : 'border-slate-200 text-slate-500 hover:border-slate-300')">
+                            
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="text-base">📚</span>
+                                <template x-if="selectedCourseName">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-900" x-text="selectedCourseName"></span>
+                                        <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-brand-100 text-brand-800" x-text="selectedCourseCode"></span>
+                                    </div>
+                                </template>
+                                <template x-if="!selectedCourseName">
+                                    <span class="text-slate-400 font-normal">اختر أو ابحث عن المادة الدراسية...</span>
+                                </template>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span x-show="selectedCourseId" 
+                                      @click.stop="selectedCourseId = ''; selectedCourseName = ''; newCourseName = ''; checkConflict();" 
+                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="إلغاء التحديد">✕</span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
+                                     :class="openCourseDropdown ? 'rotate-180 text-brand-600' : ''" 
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </button>
+
+                        <!-- Course Dropdown -->
+                        <div x-show="openCourseDropdown" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                             class="absolute z-30 w-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-2 space-y-2 text-right"
+                             style="display: none;">
+                            
+                            <div class="relative">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-xs">🔍</span>
+                                <input type="text" 
+                                       x-ref="courseSearchRef"
+                                       x-model="searchCourse"
+                                       placeholder="اكتب اسم المادة أو رمزها للبحث..." 
+                                       class="w-full pr-8 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-slate-800">
+                            </div>
+
+                            <div class="max-h-52 overflow-y-auto space-y-1 pr-1">
+                                <template x-for="c in filteredCourses" :key="c.id">
+                                    <div @click="selectCourse(c)" 
+                                         class="p-2.5 rounded-xl cursor-pointer flex items-center justify-between text-xs font-bold transition-all"
+                                         :class="selectedCourseId === c.id ? 'bg-brand-50 text-brand-900 border border-brand-200' : 'hover:bg-slate-50 text-slate-700'">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="selectedCourseId === c.id ? 'bg-brand-600' : 'bg-slate-300'"></span>
+                                            <span x-text="c.name"></span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600" x-text="c.code"></span>
+                                            <span x-show="selectedCourseId === c.id" class="text-brand-600 font-black">✓</span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div x-show="filteredCourses.length === 0" class="p-3 text-center space-y-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                    <p class="text-xs text-slate-500 font-semibold">
+                                        لا توجد مادة مسجلة باسم "<span class="font-bold text-slate-800" x-text="searchCourse"></span>"
+                                    </p>
+                                    <template x-if="searchCourse.trim().length > 0">
+                                        <button type="button" 
+                                                @click="quickCreateCourse()" 
+                                                :disabled="isCreatingCourse"
+                                                class="w-full py-2 px-3 rounded-lg text-xs font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 transition-all shadow-sm flex items-center justify-center gap-1.5">
+                                            <span x-show="!isCreatingCourse">➕ إضافة "<span x-text="searchCourse.trim()"></span>" فوراً للنظام</span>
+                                            <span x-show="isCreatingCourse" class="animate-pulse">جاري إنشاء المادة...</span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.2 Section Combobox -->
+                    <div class="space-y-2 relative" @click.away="openSectionDropdown = false">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-black text-slate-700">
+                                الشعبة / المرحلة <span class="text-rose-500">*</span>
+                            </label>
+                            <span class="text-[11px] text-brand-600 font-bold" x-show="selectedSectionId">
+                                ✓ تم التحديد
+                            </span>
+                        </div>
+
+                        <button type="button" 
+                                @click="openSectionDropdown = !openSectionDropdown; if(openSectionDropdown) $nextTick(() => $refs.sectionSearchRef.focus())"
+                                class="w-full px-4 py-3 bg-slate-50/90 border-2 rounded-xl flex items-center justify-between transition-all font-semibold text-xs sm:text-sm text-right focus:outline-none"
+                                :class="openSectionDropdown ? 'border-brand-500 bg-white ring-4 ring-brand-100 shadow-sm' : (selectedSectionId ? 'border-brand-300 bg-brand-50/20 text-slate-900' : 'border-slate-200 text-slate-500 hover:border-slate-300')">
+                            
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="text-base">🏛️</span>
+                                <template x-if="selectedSectionName">
+                                    <span class="font-bold text-slate-900" x-text="selectedSectionName"></span>
+                                </template>
+                                <template x-if="!selectedSectionName">
+                                    <span class="text-slate-400 font-normal">اختر أو ابحث عن الشعبة...</span>
+                                </template>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span x-show="selectedSectionId" 
+                                      @click.stop="selectedSectionId = ''; selectedSectionName = ''; newSectionName = ''; checkConflict();" 
+                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="إلغاء التحديد">✕</span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
+                                     :class="openSectionDropdown ? 'rotate-180 text-brand-600' : ''" 
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </button>
+
+                        <!-- Section Dropdown -->
+                        <div x-show="openSectionDropdown" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                             class="absolute z-20 w-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-2 space-y-2 text-right"
+                             style="display: none;">
+                            
+                            <div class="relative">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-xs">🔍</span>
+                                <input type="text" 
+                                       x-ref="sectionSearchRef"
+                                       x-model="searchSection"
+                                       placeholder="ابحث عن اسم الشعبة أو المرحلة..." 
+                                       class="w-full pr-8 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-slate-800">
+                            </div>
+
+                            <div class="max-h-52 overflow-y-auto space-y-1 pr-1">
+                                <template x-for="s in filteredSections" :key="s.id">
+                                    <div @click="selectSection(s)" 
+                                         class="p-2.5 rounded-xl cursor-pointer flex items-center justify-between text-xs font-bold transition-all"
+                                         :class="selectedSectionId === s.id ? 'bg-brand-50 text-brand-900 border border-brand-200' : 'hover:bg-slate-50 text-slate-700'">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="selectedSectionId === s.id ? 'bg-brand-600' : 'bg-slate-300'"></span>
+                                            <span x-text="s.name"></span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                  :class="s.shift === 'EVENING' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'"
+                                                  x-text="s.shift === 'EVENING' ? 'مسائي' : 'صباحي'"></span>
+                                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600" x-text="s.level || 'عام'"></span>
+                                            <span x-show="selectedSectionId === s.id" class="text-brand-600 font-black">✓</span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div x-show="filteredSections.length === 0" class="p-3 text-center space-y-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                    <p class="text-xs text-slate-500 font-semibold">
+                                        لم يتم العثور على شعبة باسم "<span class="font-bold text-slate-800" x-text="searchSection"></span>"
+                                    </p>
+                                    <template x-if="searchSection.trim().length > 0">
+                                        <button type="button" 
+                                                @click="quickCreateSection()" 
+                                                class="w-full py-2 px-3 rounded-lg text-xs font-black text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-sm">
+                                            ➕ إضافة شعبة "<span x-text="searchSection.trim()"></span>"
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- 2. DATE, DAY & TIME TIMELINE: توقيت وموعد المحاضرة -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm">2</span>
+                    <h2 class="text-base font-black text-slate-800">موعد ووقت المحاضرة بدقة</h2>
+                </div>
+
+                <!-- 2.1 Day Selector Tabs -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black text-slate-700">اليوم الأسبوعي للمحاضرة</label>
+                    <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                        <template x-for="day in daysList" :key="day.val">
+                            <button type="button" 
+                                    @click="selectedDay = day.val; checkConflict()" 
+                                    :class="selectedDay === day.val ? 'bg-indigo-600 text-white font-black shadow-sm ring-2 ring-indigo-300' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'"
+                                    class="py-2.5 px-2 rounded-xl text-xs transition-all text-center flex flex-col items-center gap-1">
+                                <span x-text="day.label"></span>
+                                <span class="text-[9px] opacity-75 font-mono" x-show="selectedDay === day.val">● نشط</span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 2.2 Date, Start Time & Duration in 3-Columns -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    
+                    <!-- Date Input -->
+                    <div class="space-y-1.5">
+                        <label for="session_date" class="block text-xs font-black text-slate-700">تاريخ المحاضرة</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">📅</span>
+                            <input type="date" name="session_date" id="session_date" 
+                                   x-model="sessionDate" 
+                                   @change="updateDayFromDate()"
+                                   class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- Start Time Input -->
+                    <div class="space-y-1.5">
+                        <label for="start_time" class="block text-xs font-black text-slate-700">وقت البدء الفعلي</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">⏰</span>
+                            <input type="time" name="start_time" id="start_time" 
+                                   x-model="startTime" 
+                                   @change="checkConflict()"
+                                   class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- Duration Chips Selector -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-black text-slate-700">مدة صلاحية التحضير</label>
+                        <select x-model="durationMinutes" @change="checkConflict()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 text-xs">
+                            <option value="15">15 دقيقة (كويز / تفقد سريع)</option>
+                            <option value="30">30 دقيقة</option>
+                            <option value="45">45 دقيقة</option>
+                            <option value="60">ساعة كاملة (60 دقيقة)</option>
+                            <option value="90">ساعة ونصف (90 دقيقة)</option>
+                            <option value="120">ساعتان (120 دقيقة - مختبر)</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- 2.3 Live Calculated Time Preview Card -->
+                <div class="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg font-black shadow-xs">
+                            ⏱️
+                        </div>
+                        <div>
+                            <p class="font-black text-indigo-950">
+                                توقيت الجلسة: من <span class="font-mono text-indigo-700" x-text="startTime"></span> حتى <span class="font-mono text-indigo-700 font-black" x-text="calculatedEndTime"></span>
+                            </p>
+                            <p class="text-slate-500 text-[11px] mt-0.5">
+                                سينتهي كود الـ QR وإمكانية التحضير تلقائياً فور بلوغ وقت الانتهاء المحدد
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-indigo-200 text-indigo-800 font-bold text-[11px]">
+                        <span>⏳ المدة:</span>
+                        <span class="font-black" x-text="durationMinutes + ' دقيقة'"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- 3. LECTURE CLASSIFICATION, TOPIC & ROOM -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm">3</span>
+                    <h2 class="text-base font-black text-slate-800">تفاصيل المحاضرة وتصنيفها</h2>
+                </div>
+
+                <!-- 3.1 Lecture Type Chips -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-black text-slate-700">نوع المحاضرة</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <template x-for="t in lectureTypes" :key="t.id">
+                            <button type="button" 
+                                    @click="lectureType = t.id"
+                                    :class="lectureType === t.id ? 'border-brand-500 bg-brand-50/70 text-brand-900 ring-2 ring-brand-300 font-black' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold'"
+                                    class="p-3 border rounded-2xl text-right transition-all flex flex-col justify-between">
+                                <span class="text-xs" x-text="t.label"></span>
+                                <span class="text-[10px] text-slate-400 font-medium mt-1" x-text="t.desc"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 3.2 Topic & Room in 2-Columns -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Topic Input -->
+                    <div class="space-y-1.5">
+                        <label for="topic" class="block text-xs font-black text-slate-700">
+                            موضوع أو عنوان المحاضرة <span class="text-slate-400 font-normal">(اختياري)</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">📝</span>
+                            <input type="text" name="topic" id="topic" x-model="topic"
+                                   placeholder="مثال: هياكل البيانات المتقدمة والأشجار الثنائية"
+                                   class="w-full pr-9 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- Room Input -->
+                    <div class="space-y-1.5">
+                        <label for="room" class="block text-xs font-black text-slate-700">
+                            القاعة الدراسية / المختبر <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">🚪</span>
+                            <input type="text" name="room" id="room" x-model="room"
+                                   @change="checkConflict()"
+                                   class="w-full pr-9 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800 text-xs">
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- 4. SECURITY & ANTI-PROXY CONTROLS: الأمان وضوابط الحضور -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-black text-sm">4</span>
+                    <h2 class="text-base font-black text-slate-800">ضوابط الأمان ومنع الحضور بالنيابة (Anti-Proxy)</h2>
+                </div>
+
+                <!-- 4.1 GPS Geofencing Switch Card -->
+                <div class="p-4 rounded-2xl border transition-all"
+                     :class="requiresGeofence ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50/80 border-slate-200/80'">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="text-right">
+                            <p class="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-2">
+                                <span>📍</span> إلزام التحقق من التواجد الجغرافي داخل الحرم (GPS Geofence)
+                            </p>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">
+                                يشترط وجود الطالب فعلياً داخل القاعة أو الحرم الجامعي بمسافة محددة
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="requires_geofence" class="sr-only peer" x-model="requiresGeofence">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- GPS Sub-settings -->
+                    <div class="mt-4 pt-4 border-t border-amber-200/60 space-y-3" x-show="requiresGeofence" x-transition>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <span class="text-xs font-bold text-slate-700">نطاق السماح الجغرافي:</span>
+                                <div class="inline-flex gap-1.5 mt-1 sm:mt-0 sm:mr-2">
+                                    <button type="button" @click="radiusMeters = 30" :class="radiusMeters === 30 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">30 متر</button>
+                                    <button type="button" @click="radiusMeters = 50" :class="radiusMeters === 50 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">50 متر (موصى به)</button>
+                                    <button type="button" @click="radiusMeters = 100" :class="radiusMeters === 100 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">100 متر</button>
+                                </div>
+                            </div>
+
+                            <button type="button" 
+                                    @click="detectCurrentLocation()" 
+                                    :disabled="isLocating"
+                                    class="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-800 text-xs font-black hover:bg-amber-50 flex items-center gap-1.5 transition-all shadow-xs">
+                                <span x-show="!isLocating">📍 تثبيت إحداثيات موقعي الحالي</span>
+                                <span x-show="isLocating" class="animate-pulse">جاري جلب إحداثيات الـ GPS...</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600">خط العرض (Latitude)</label>
+                                <input type="text" x-model="latitude" placeholder="33.279... (بغداد)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600">خط الطول (Longitude)</label>
+                                <input type="text" x-model="longitude" placeholder="44.376... (بغداد)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-700">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4.2 WiFi / Hotspot Verification Card -->
+                <div class="p-4 rounded-2xl border transition-all"
+                     :class="requiresWifi ? 'bg-brand-50/50 border-brand-200' : 'bg-slate-50/80 border-slate-200/80'">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="text-right">
+                            <p class="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-2">
+                                <span>📶</span> إلزام الاتصال بشبكة WiFi القاعة أو الـ Hotspot
+                            </p>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">
+                                يشترط اتصال هاتف الطالب بالـ WiFi المعين داخل القاعة لتأكيد التواجد
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="requires_wifi" class="sr-only peer" x-model="requiresWifi">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-brand-200/60 space-y-3" x-show="requiresWifi" x-transition>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="allowed_wifi_ssid" class="block text-xs font-bold text-slate-700">اسم شبكة الـ WiFi المسموحة (SSID)</label>
+                                <input type="text" name="allowed_wifi_ssid" id="allowed_wifi_ssid" placeholder="مثال: Baghdad_Uni_CS"
+                                       class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 text-xs font-semibold text-slate-700">
+                            </div>
+                            <div>
+                                <label for="allowed_ip_subnet" class="block text-xs font-bold text-slate-700">نطاق الـ IP المسموح (Subnet)</label>
+                                <input type="text" name="allowed_ip_subnet" id="allowed_ip_subnet" placeholder="مثال: 192.168.1.0/24"
+                                       class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 text-xs font-semibold text-slate-700">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- 5. ACTIVE ATTENDANCE METHODS SUMMARY -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span class="font-bold text-slate-700">طرق التحضير المتاحة في هذه الجلسة تلقائياً:</span>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black">✓ QR ديناميكي متجدد (15 ثانية)</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-800 font-bold">✓ كود OTP للطوارئ</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 font-bold">✓ تحضير يدوي للأستاذ</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold">✓ بطاقات RFID / NFC</span>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <!-- SUBMIT BUTTONS WITH CONFLICT BLOCKING -->
+            <!-- ════════════════════════════════════════════════════════════════ -->
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 space-x-reverse sm:space-x-3 pt-6 border-t border-slate-100">
+                <button type="submit" 
+                        :disabled="conflictState.has_conflict && conflictState.severity === 'error'"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 border border-transparent text-sm sm:text-base font-black rounded-2xl text-white transition-all shadow-lg"
+                        :class="conflictState.has_conflict && conflictState.severity === 'error' ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-gradient-to-r from-brand-600 via-indigo-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 hover:scale-[1.01] active:scale-95 shadow-brand-500/25'">
+                    <span>🚀</span>
+                    <span x-text="conflictState.has_conflict && conflictState.severity === 'error' ? 'تعذر البدء لوجود تضارب (عدّل الوقت أو القاعة)' : 'بدء المحاضرة وتوليد شاشة الـ QR الذكية فوراً'"></span>
+                </button>
+                <a href="/" 
+                   class="inline-flex items-center justify-center px-6 py-4 border border-slate-200 text-xs sm:text-sm font-bold rounded-2xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
+                    إلغاء
+                </a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Institutional & Developer Branding Footer -->
+    <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
+        <p class="font-bold text-slate-600">جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</p>
+        <p class="font-bold text-slate-500 font-mono">المطور: MUNTADHER HAZIM | هاتف: 07724978301</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | نظام الحضور الذكي{% endblock %}
+
+{% block branding %}
+<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.75rem; padding: 0.35rem 0;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="display: inline-flex; width: 34px; height: 34px; background: #ffffff; color: #4338ca; border-radius: 9px; align-items: center; justify-content: center; font-weight: 900; font-size: 1.15rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">ح</span>
+        <div>
+            <h1 id="site-name" style="margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
+                <a href="{% url 'admin:index' %}" style="color: #ffffff; text-decoration: none;">لوحة إدارة نظام الحضور الذكي</a>
+            </h1>
+            <div style="font-size: 0.75rem; color: #c7d2fe; font-weight: 600;">العراق &bull; جامعة بغداد</div>
+        </div>
+    </div>
+    <div style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: 9999px; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>المطور:</span>
+        <strong style="color: #fde047;">MUNTADHER HAZIM</strong>
+        <span style="opacity: 0.8; font-family: monospace;" dir="ltr">07724978301</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    /* ── Global Font & Base ── */
+    body, input, select, textarea, button, .button {
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+
+    /* ── Header Styling ── */
+    #header {
+        background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #4f46e5 100%) !important;
+        color: #ffffff !important;
+        padding: 0.85rem 1.5rem !important;
+        box-shadow: 0 4px 12px rgba(67, 56, 202, 0.18) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ── MODERN SELECT / DROPDOWNS (Fixes native unstyled look) ── */
+    select {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-color: #ffffff !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234f46e5' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: left 0.75rem center !important;
+        background-size: 1.15rem 1.15rem !important;
+        padding: 0.55rem 1rem 0.55rem 2.25rem !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        color: #1e293b !important;
+        min-height: 40px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+        cursor: pointer !important;
+    }
+
+    select:hover {
+        border-color: #818cf8 !important;
+        background-color: #f8fafc !important;
+    }
+
+    select:focus {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18) !important;
+        outline: none !important;
+        background-color: #ffffff !important;
+    }
+
+    select option {
+        padding: 8px 12px !important;
+        font-weight: 500 !important;
+        background: #ffffff !important;
+        color: #1e293b !important;
+    }
+
+    /* ── Modern Form Inputs ── */
+    input[type="text"], input[type="password"], input[type="email"], 
+    input[type="url"], input[type="number"], input[type="tel"], textarea {
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        padding: 0.55rem 0.85rem !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s ease !important;
+        min-height: 38px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    }
+
+    input:focus, textarea:focus {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+        outline: none !important;
+    }
+
+    /* ── Buttons ── */
+    .button, input[type="submit"], input[type="button"], .submit-row input {
+        background: #4f46e5 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        padding: 0.55rem 1.25rem !important;
+        border-radius: 8px !important;
+        border: none !important;
+        cursor: pointer !important;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25) !important;
+        transition: all 0.2s ease !important;
+        min-height: 40px !important;
+    }
+
+    .button:hover, input[type="submit"]:hover, input[type="button"]:hover, .submit-row input:hover {
+        background: #4338ca !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3) !important;
+    }
+
+    .button.default, input[type="submit"].default {
+        background: #4338ca !important;
+    }
+
+    /* ── Tables & List Display ── */
+    #changelist table {
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+    }
+
+    #changelist table thead th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        font-weight: 700 !important;
+        font-size: 0.8rem !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 10px 14px !important;
+    }
+
+    #changelist table tbody tr:hover {
+        background: #f1f5f9 !important;
+    }
+
+    /* ── Breadcrumbs ── */
+    div.breadcrumbs {
+        background: #f8fafc !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 0.65rem 1.5rem !important;
+        font-size: 0.825rem !important;
+        font-weight: 600 !important;
+    }
+
+    div.breadcrumbs a {
+        color: #4f46e5 !important;
+        text-decoration: none !important;
+    }
+
+    /* ── Responsive Fixes for All Devices (Mobile, Tablet, Desktop) ── */
+    @media (max-width: 768px) {
+        #header {
+            padding: 0.75rem 1rem !important;
+        }
+        #site-name {
+            font-size: 1rem !important;
+        }
+        #changelist {
+            overflow-x: auto !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        #changelist table {
+            min-width: 600px !important;
+        }
+        .form-row {
+            padding: 0.75rem 0.5rem !important;
+        }
+        select, input[type="text"], input[type="password"] {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .submit-row {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        .submit-row input {
+            width: 100% !important;
+            text-align: center !important;
+        }
+    }
+</style>
+{% endblock %}

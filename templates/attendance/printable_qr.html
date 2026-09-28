@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تسجيل الحضور الذكية - {{ attendance_session.session.course.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ─── Self-Contained Complete Styling (100% Offline & Print Compatible) ─── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* Top Action Bar */
+        .top-action-bar {
+            width: 100%;
+            max-width: 680px;
+            margin-bottom: 20px;
+            background: #ffffff;
+            padding: 14px 20px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-back:hover {
+            color: #4338ca;
+            background: #eef2ff;
+            border-color: #c7d2fe;
+        }
+        .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
+        }
+        .btn-print:hover {
+            background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+            transform: translateY(-1px);
+        }
+
+        /* Printable Sheet Card */
+        .print-page {
+            width: 100%;
+            max-width: 680px;
+            background: #ffffff;
+            border: 3px solid #0f172a;
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        /* Header Ribbon */
+        .sheet-header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 18px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-col-right {
+            text-align: right;
+        }
+        .country-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .inst-name {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        .dept-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-top: 2px;
+        }
+        .badge-logo {
+            width: 52px;
+            height: 52px;
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-col-left {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            line-height: 1.6;
+            font-family: monospace, sans-serif;
+        }
+        .shift-pill {
+            color: #4f46e5;
+            font-weight: 800;
+        }
+
+        /* Content Section */
+        .sheet-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 800;
+            background: #eef2ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+            margin-bottom: 10px;
+        }
+        .course-title {
+            font-size: 26px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        .course-meta {
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .course-meta span {
+            color: #4f46e5;
+            font-family: monospace;
+        }
+        .teacher-meta {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .teacher-meta strong {
+            color: #0f172a;
+        }
+
+        /* QR Code Container */
+        .qr-wrapper {
+            margin: 22px 0 16px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-box {
+            padding: 14px;
+            background: #ffffff;
+            border: 3px solid #0f172a;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08);
+            display: inline-block;
+        }
+        .qr-image {
+            width: 240px;
+            height: 240px;
+            display: block;
+            object-contain: fit;
+        }
+        .qr-instruction {
+            font-size: 12px;
+            font-weight: 800;
+            color: #334155;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* OTP Code Box */
+        .otp-card {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 12px 20px;
+            max-width: 320px;
+            margin: 0 auto 20px auto;
+        }
+        .otp-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .otp-code {
+            font-size: 28px;
+            font-weight: 900;
+            font-family: monospace;
+            letter-spacing: 4px;
+            color: #4338ca;
+            margin: 4px 0;
+            user-select: all;
+        }
+        .otp-sub {
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        /* Security Footer */
+        .sheet-footer {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 14px;
+            text-align: center;
+        }
+        .warning-text {
+            font-size: 10px;
+            font-weight: 700;
+            color: #e11d48;
+            margin-bottom: 4px;
+        }
+        .branding-text {
+            font-size: 9px;
+            font-weight: 600;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+
+        /* Print Media Setup */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-page {
+                border: 2px solid #0f172a !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 24px 32px !important;
+            }
+            .qr-image {
+                width: 280px !important;
+                height: 280px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Action Bar (hidden when printing) -->
+    <div class="top-action-bar no-print">
+        <a href="{% url 'attendance:session_detail_web' attendance_session.id %}" class="btn-back">
+            <span>➔</span>
+            <span>العودة لشاشة المحاضرة المباشرة</span>
+        </a>
+        <button onclick="window.print()" class="btn-print">
+            <span>🖨️</span>
+            <span>طباعة لوحة الـ QR فوراً (A4)</span>
+        </button>
+    </div>
+
+    <!-- 📄 A4 Printable Sheet Container -->
+    <div class="print-page">
+        
+        <!-- Header Ribbon -->
+        <div class="sheet-header">
+            <div class="header-col-right">
+                <p class="country-title">جمهورية العراق</p>
+                <p class="inst-name">{{ institution.name|default:"جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات" }}</p>
+                <p class="dept-name">{{ attendance_session.session.course.department.name|default:"قسم علوم الحاسوب" }}</p>
+            </div>
+            <div class="badge-logo">
+                🎓
+            </div>
+            <div class="header-col-left">
+                <p>التاريخ: {{ attendance_session.date }}</p>
+                <p>القاعة: {{ attendance_session.session.room|default:"القاعة الذكية" }}</p>
+                <p class="shift-pill">دوام: {% if attendance_session.shift == 'MORNING' %}☀️ صباحي{% else %}🌙 مسائي{% endif %}</p>
+            </div>
+        </div>
+
+        <!-- Lecture Details -->
+        <div>
+            <span class="sheet-badge">
+                لوحة تسجيل الحضور الذكية الرسمية
+            </span>
+            <h1 class="course-title">{{ attendance_session.session.course.name }}</h1>
+            <p class="course-meta">
+                رمز المقرر: <span>{{ attendance_session.session.course.code }}</span> | 
+                الشعبة: {{ attendance_session.session.class_section.level }} - {{ attendance_session.session.class_section.name }}
+            </p>
+            <p class="teacher-meta">
+                أستاذ المادة: <strong>{{ attendance_session.session.teacher.user.get_full_name|default:attendance_session.session.teacher.user.username }}</strong>
+            </p>
+        </div>
+
+        <!-- 📷 HIGH-RES QR CODE -->
+        <div class="qr-wrapper">
+            <div class="qr-box">
+                <img src="/attendance/qr-image/?token={{ token|urlencode }}&size=12" 
+                     alt="QR Code" 
+                     class="qr-image">
+            </div>
+            <p class="qr-instruction">
+                <span>📱</span>
+                <span>امسح الرمز بكاميرا الهاتف لتسجيل الحضور فوراً</span>
+            </p>
+        </div>
+
+        <!-- 🔢 Quick Offline OTP Code -->
+        {% if attendance_session.quick_otp %}
+            <div class="otp-card">
+                <p class="otp-label">للطلاب بدون كاميرا أو في حال ضعف الإنترنت:</p>
+                <div class="otp-code">
+                    {{ attendance_session.quick_otp }}
+                </div>
+                <p class="otp-sub">أدخل كود الـ OTP في شاشة تسجيل الحضور</p>
+            </div>
+        {% endif %}
+
+        <!-- Instructions & Security Footer -->
+        <div class="sheet-footer">
+            <p class="warning-text">
+                ⚠️ يمنع تصوير الرمز أو مشاركته خارج القاعة - النظام مبرمج للتحقق من الموقع الجغرافي وبصمة الهاتف.
+            </p>
+            <p class="branding-text">
+                نظام الحضور الذكي الأكاديمي | تطوير: MUNTADHER HAZIM (07724978301)
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}جدول محاضراتي - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <div>
+            {% if is_admin %}
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">جدول المحاضرات والجلسات الدراسية</h1>
+                <p class="text-xs text-slate-400 font-semibold mt-1">عرض شامل لجميع محاضرات وأوقات المؤسسة</p>
+            {% else %}
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">جدول محاضراتي الدراسي الأسبوعي</h1>
+                <p class="text-xs text-slate-400 font-semibold mt-1">المعلم: أ. {{ user.get_full_name }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <a href="{% url 'attendance:create_custom_session' %}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-md shadow-brand-100">
+                ➕ بدء تحضير لمحاضرة طارئة
+            </a>
+        </div>
+    </div>
+
+    <!-- Table schedule -->
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        {% if sessions %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100 text-right">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            {% if is_admin %}
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المعلم</th>
+                            {% endif %}
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">الفصل الدراسي / الشعبة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">اليوم</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الوقت والمحاضرة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">القاعة</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التحكم بالجلسة</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium text-sm">
+                        {% for sess in sessions %}
+                            <tr>
+                                {% if is_admin %}
+                                    <td class="px-6 py-4 whitespace-nowrap text-slate-800 font-semibold">
+                                        أ. {{ sess.teacher.user.get_full_name|default:sess.teacher.user.username }}
+                                    </td>
+                                {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-900">{{ sess.course.name }}</div>
+                                    <div class="text-xs text-slate-400">{{ sess.course.code }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-650">
+                                    {{ sess.class_section.level }} - {{ sess.class_section.name }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-700">
+                                    {{ sess.get_day_of_week_display }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-500">
+                                    {{ sess.start_time }} - {{ sess.end_time }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-slate-500">
+                                    {{ sess.room|default:"-" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                    <form method="POST" action="/attendance/session/start-web/">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="session_id" value="{{ sess.id }}">
+                                        <div class="flex items-center justify-center space-x-reverse space-x-2">
+                                            <label class="inline-flex items-center text-xs text-slate-500 font-semibold cursor-pointer">
+                                                <input type="checkbox" name="requires_wifi" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 ml-1">
+                                                إلزام WiFi
+                                            </label>
+                                            <button type="submit" 
+                                                    class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-bold rounded-lg text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-sm">
+                                                تفعيل التحضير
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-12 text-slate-400 font-semibold text-sm">
+                جدول المحاضرات فارغ. يرجى مراجعة إدارة الكلية لإضافة الحصص.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

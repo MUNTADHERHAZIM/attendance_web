@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+
+{% block title %}استيراد الطلاب - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6"
+     x-data="{
+        mode: 'file', // 'file' or 'paste'
+        file: null,
+        rawText: '',
+        selectedInstitution: '{{ institution.id|default:'' }}',
+        selectedSection: '',
+        selectedCourse: '',
+        studyShift: 'MORNING',
+        loading: false,
+        successMessage: '',
+        errors: [],
+        
+        // Dynamic Reactive Lists
+        institutionsList: [
+            {% for inst in institutions %}
+                { id: '{{ inst.id }}', name: '{{ inst.name|escapejs }}' },
+            {% endfor %}
+        ],
+        sectionsList: [
+            {% for sec in sections %}
+                { id: '{{ sec.id }}', name: '{{ sec.name|escapejs }}', level: '{{ sec.level|default:''|escapejs }}', shift: '{{ sec.shift|default:''|escapejs }}', display: '{{ sec.name|escapejs }} - {{ sec.level|default:''|escapejs }} ({{ sec.get_shift_display|escapejs }})' },
+            {% endfor %}
+        ],
+        coursesList: [
+            {% for crs in courses %}
+                { id: '{{ crs.id }}', name: '{{ crs.name|escapejs }}', code: '{{ crs.code|escapejs }}', display: '{{ crs.name|escapejs }} ({{ crs.code|escapejs }})' },
+            {% endfor %}
+        ],
+
+        instLabel: '{{ institution.name|default:'اختر المؤسسة / الجامعة'|escapejs }}',
+        secLabel: 'اختر الشعبة لربطهم بها فوراً',
+        courseLabel: 'اختياري: ربط بمادة دراسية',
+
+        // Quick Create Modals
+        showAddInstModal: false,
+        newInstName: '',
+        instLoading: false,
+
+        showAddSecModal: false,
+        newSecName: '',
+        newSecLevel: 'المرحلة الأولى',
+        newSecShift: 'MORNING',
+        secLoading: false,
+
+        showAddCourseModal: false,
+        newCourseName: '',
+        newCourseCode: '',
+        courseLoading: false,
+
+        handleFileSelect(e) {
+            const files = e.target.files || e.dataTransfer.files;
+            if (files.length > 0) {
+                this.file = files[0];
+                this.successMessage = '';
+                this.errors = [];
+            }
+        },
+
+        async submitUpload() {
+            if (this.mode === 'file' && !this.file) {
+                alert('يرجى اختيار ملف Excel أو CSV أولاً');
+                return;
+            }
+            if (this.mode === 'paste' && !this.rawText.trim()) {
+                alert('يرجى كتابة أو لصق أسماء الطلاب أولاً');
+                return;
+            }
+
+            this.loading = true;
+            this.successMessage = '';
+            this.errors = [];
+            
+            const formData = new FormData();
+            if (this.mode === 'file' && this.file) {
+                formData.append('file', this.file);
+            } else if (this.mode === 'paste') {
+                formData.append('raw_text', this.rawText.trim());
+            }
+
+            formData.append('institution_id', this.selectedInstitution);
+            if (this.selectedSection) {
+                formData.append('section_id', this.selectedSection);
+            }
+            formData.append('study_shift', this.studyShift);
+            
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const response = await fetch('/reports/api/students/import/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                this.loading = false;
+                
+                if (response.ok) {
+                    this.successMessage = data.message || 'تم استيراد الطلاب بنجاح!';
+                    this.file = null;
+                    this.rawText = '';
+                    const fileInput = document.getElementById('file-input');
+                    if (fileInput) fileInput.value = '';
+                } else {
+                    this.errors = data.errors || [data.error || 'فشلت عملية الاستيراد.'];
+                }
+            } catch (e) {
+                this.loading = false;
+                this.errors = ['حدث خطأ أثناء الاتصال بالخادم.'];
+                console.error(e);
+            }
+        },
+
+        async createInstitution() {
+            if (!this.newInstName.trim()) {
+                alert('يرجى إدخال اسم الجامعة أو الكلية');
+                return;
+            }
+            this.instLoading = true;
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const res = await fetch('/reports/api/quick-create/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ type: 'institution', name: this.newInstName.trim() })
+                });
+                const data = await res.json();
+                this.instLoading = false;
+                if (data.success) {
+                    this.institutionsList.push(data.entity);
+                    this.selectedInstitution = String(data.entity.id);
+                    this.instLabel = data.entity.name;
+                    this.showAddInstModal = false;
+                    this.newInstName = '';
+                } else {
+                    alert(data.error || 'حدث خطأ أثناء الإضافة');
+                }
+            } catch (err) {
+                this.instLoading = false;
+                alert('فشل الاتصال بالخادم');
+            }
+        },
+
+        async createSection() {
+            if (!this.newSecName.trim()) {
+                alert('يرجى كتابة اسم الشعبة (مثال: شعبة ج)');
+                return;
+            }
+            this.secLoading = true;
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const res = await fetch('/reports/api/quick-create/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        type: 'section',
+                        institution_id: this.selectedInstitution,
+                        name: this.newSecName.trim(),
+                        level: this.newSecLevel,
+                        shift: this.newSecShift
+                    })
+                });
+                const data = await res.json();
+                this.secLoading = false;
+                if (data.success) {
+                    this.sectionsList.push(data.entity);
+                    this.selectedSection = String(data.entity.id);
+                    this.secLabel = data.entity.display;
+                    this.studyShift = data.entity.shift;
+                    this.showAddSecModal = false;
+                    this.newSecName = '';
+                } else {
+                    alert(data.error || 'حدث خطأ أثناء الإضافة');
+                }
+            } catch (err) {
+                this.secLoading = false;
+                alert('فشل الاتصال بالخادم');
+            }
+        },
+
+        async createCourse() {
+            if (!this.newCourseName.trim()) {
+                alert('يرجى إدخال اسم المادة الدراسية');
+                return;
+            }
+            this.courseLoading = true;
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const res = await fetch('/reports/api/quick-create/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        type: 'course',
+                        institution_id: this.selectedInstitution,
+                        name: this.newCourseName.trim(),
+                        code: this.newCourseCode.trim()
+                    })
+                });
+                const data = await res.json();
+                this.courseLoading = false;
+                if (data.success) {
+                    this.coursesList.push(data.entity);
+                    this.selectedCourse = String(data.entity.id);
+                    this.courseLabel = data.entity.display;
+                    this.showAddCourseModal = false;
+                    this.newCourseName = '';
+                    this.newCourseCode = '';
+                } else {
+                    alert(data.error || 'حدث خطأ أثناء الإضافة');
+                }
+            } catch (err) {
+                this.courseLoading = false;
+                alert('فشل الاتصال بالخادم');
+            }
+        }
+     }">
+
+    {% csrf_token %}
+
+    <!-- Header -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800">
+                    ⚡ استيراد مرن وفوري
+                </span>
+                <span class="text-xs text-slate-400 font-medium">يدعم العمود الواحد واللصق المباشر والإضافة الفورية</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight mt-1">استيراد وتضمين قوائم الطلاب</h1>
+            <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+                قم بتحديد الشعبة والمرحلة، أو أنشئ جامعة وشعبة جديدة فوراً من القائمة، وسيقوم النظام بتسجيلهم وتوليد بياناتهم تلقائياً.
+            </p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button type="button" @click="showAddCourseModal = true" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <span>➕</span>
+                <span>إضافة مادة جديدة</span>
+            </button>
+            <a href="{% url 'accounts:teacher_students' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                <span>👥</span>
+                <span>قائمة طلابي والشعب</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert / Feedback -->
+    <div x-show="successMessage" x-cloak class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-bold flex items-center gap-3">
+        <span class="text-xl">✅</span>
+        <span x-text="successMessage"></span>
+    </div>
+
+    <div x-show="errors.length > 0" x-cloak class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold space-y-1">
+        <div class="flex items-center gap-2 text-sm font-black">
+            <span>⚠️</span>
+            <span>تنبيهات أثناء الاستيراد:</span>
+        </div>
+        <ul class="list-disc list-inside space-y-0.5 mr-3">
+            <template x-for="err in errors" :key="err">
+                <li x-text="err"></li>
+            </template>
+        </ul>
+    </div>
+
+    <!-- 1. PRE-SELECTION: Section, Stage & Shift + Quick Add -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-lg">🎯</span>
+                <h3 class="text-sm font-black text-slate-900">الخطوة الأولى: تحديد الشعبة والمرحلة (تضمين الطلاب مسبقاً)</h3>
+            </div>
+            <span class="text-[11px] text-brand-600 font-bold">كل طالب يتم استيراده سينضم لهذه الشعبة فوراً</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- 1. Institution Custom Dropdown with Quick Create -->
+            <div x-data="{ open: false }" class="relative">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700">المؤسسة / الكلية:</label>
+                    <button type="button" @click="showAddInstModal = true" class="text-[11px] font-black text-brand-600 hover:text-brand-800 hover:underline flex items-center gap-1">
+                        <span>➕</span>
+                        <span>جامعة جديدة</span>
+                    </button>
+                </div>
+                <button type="button" 
+                        @click="open = !open" 
+                        @click.away="open = false"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/90 hover:bg-white hover:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 text-xs font-bold text-slate-800 transition-all shadow-2xs">
+                    <span class="truncate" x-text="instLabel"></span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 mr-2" :class="open ? 'rotate-180 text-brand-600' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" 
+                     x-transition
+                     class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
+                    <template x-for="inst in institutionsList" :key="inst.id">
+                        <div @click="selectedInstitution = inst.id; instLabel = inst.name; open = false"
+                             class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                             :class="selectedInstitution == inst.id ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                            <span class="truncate" x-text="inst.name"></span>
+                            <span x-show="selectedInstitution == inst.id" class="text-brand-600">✓</span>
+                        </div>
+                    </template>
+                    <div @click="showAddInstModal = true; open = false" 
+                         class="px-3 py-2 rounded-xl text-brand-700 bg-brand-50 hover:bg-brand-100 font-black cursor-pointer flex items-center justify-center gap-1.5 border-t border-slate-100 mt-1 transition-colors">
+                        <span>➕ إضافة جامعة / كلية جديدة الآن...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Target Section Custom Dropdown with Quick Create -->
+            <div x-data="{ open: false }" class="relative">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700">الشعبة والمرحلة:</label>
+                    <button type="button" @click="showAddSecModal = true" class="text-[11px] font-black text-brand-600 hover:text-brand-800 hover:underline flex items-center gap-1">
+                        <span>➕</span>
+                        <span>شعبة جديدة</span>
+                    </button>
+                </div>
+                <button type="button" 
+                        @click="open = !open" 
+                        @click.away="open = false"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/90 hover:bg-white hover:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 text-xs font-bold text-slate-800 transition-all shadow-2xs">
+                    <span class="truncate" x-text="secLabel"></span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 mr-2" :class="open ? 'rotate-180 text-brand-600' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" 
+                     x-transition
+                     class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
+                    <div @click="selectedSection = ''; secLabel = 'بدون شعبة محددة'; open = false"
+                         class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                         :class="selectedSection === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                        <span>-- اختياري: بدون شعبة محددة --</span>
+                        <span x-show="selectedSection === ''" class="text-brand-600">✓</span>
+                    </div>
+                    <template x-for="sec in sectionsList" :key="sec.id">
+                        <div @click="selectedSection = sec.id; secLabel = sec.display; studyShift = sec.shift || studyShift; open = false"
+                             class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                             :class="selectedSection == sec.id ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                            <span class="truncate" x-text="sec.display"></span>
+                            <span x-show="selectedSection == sec.id" class="text-brand-600">✓</span>
+                        </div>
+                    </template>
+                    <div @click="showAddSecModal = true; open = false" 
+                         class="px-3 py-2 rounded-xl text-brand-700 bg-brand-50 hover:bg-brand-100 font-black cursor-pointer flex items-center justify-center gap-1.5 border-t border-slate-100 mt-1 transition-colors">
+                        <span>➕ إضافة شعبة دراسية جديدة الآن...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Study Shift Custom Dropdown -->
+            <div x-data="{ open: false, label: '☀️ دراسة صباحية' }" class="relative">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700">نوع الدراسة الافتراضي:</label>
+                </div>
+                <button type="button" 
+                        @click="open = !open" 
+                        @click.away="open = false"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/90 hover:bg-white hover:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 text-xs font-bold text-slate-800 transition-all shadow-2xs">
+                    <span class="truncate" x-text="label"></span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 mr-2" :class="open ? 'rotate-180 text-brand-600' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" 
+                     x-transition
+                     class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
+                    <div @click="studyShift = 'MORNING'; label = '☀️ دراسة صباحية'; open = false"
+                         class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                         :class="studyShift === 'MORNING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                        <span>☀️ دراسة صباحية</span>
+                        <span x-show="studyShift === 'MORNING'" class="text-brand-600">✓</span>
+                    </div>
+                    <div @click="studyShift = 'EVENING'; label = '🌙 دراسة مسائية'; open = false"
+                         class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                         :class="studyShift === 'EVENING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                        <span>🌙 دراسة مسائية</span>
+                        <span x-show="studyShift === 'EVENING'" class="text-brand-600">✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-900 text-xs font-medium flex items-start gap-2.5">
+            <span class="text-base shrink-0">💡</span>
+            <p>
+                <strong>المرونة القصوى:</strong> إذا كان ملف الإكسل يحتوي على عمود واحد فقط به أسماء الطلاب (مثل: <em>علي حسن جاسم</em>)، سيقوم النظام تلقائياً بتقسيم الاسم، وتوليد رقم جامعي فريد، وتعيين اسم مستخدم وكلمة مرور، وإلحاقهم بالشعبة المحددة أعلاه دون الحاجة لكتابة أي أعمدة إضافية! كما يمكنك إنشاء جامعة أو شعبة أو مادة جديدة مباشرة دون مغادرة الصفحة.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. DATA INPUT: Upload File OR Paste List -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
+        
+        <!-- Toggle Mode: Upload vs Paste -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-lg">📋</span>
+                <h3 class="text-sm font-black text-slate-900">الخطوة الثانية: إدخال بيانات الطلاب</h3>
+            </div>
+            
+            <div class="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200 text-xs font-bold">
+                <button type="button" 
+                        @click="mode = 'file'" 
+                        :class="mode === 'file' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                    <span>📁</span>
+                    <span>رفع ملف إكسل / CSV</span>
+                </button>
+                <button type="button" 
+                        @click="mode = 'paste'" 
+                        :class="mode === 'paste' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                    <span>📝</span>
+                    <span>لصق الأسماء نصياً</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode A: File Upload -->
+        <div x-show="mode === 'file'">
+            <div class="border-2 border-dashed border-slate-200 hover:border-brand-500 rounded-2xl p-8 text-center transition-all bg-slate-50 relative cursor-pointer group"
+                 @dragover.prevent=""
+                 @drop.prevent="handleFileSelect($event)">
+                <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls, .csv" @change="handleFileSelect($event)">
+                
+                <div class="space-y-3">
+                    <span class="text-5xl block group-hover:scale-110 transition-transform">📊</span>
+                    <div class="text-sm font-bold text-slate-700">
+                        <span x-show="!file">اسحب ملف الإكسيل هنا أو انقر لتصفح الجهاز</span>
+                        <span x-show="file" class="text-brand-600 font-extrabold text-base" x-text="file ? file.name : ''"></span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium" x-show="!file">
+                        يقبل ملفات Excel (.xlsx, .xls) أو ملفات CSV (حتى لو كان عموداً واحداً لأسماء الطلاب فقط)
+                    </p>
+                    <p class="text-xs text-slate-500 font-bold" x-show="file" x-text="'الحجم: ' + (file ? (file.size / 1024).toFixed(1) : 0) + ' كيلوبايت'"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode B: Paste Names Directly -->
+        <div x-show="mode === 'paste'" x-cloak class="space-y-2">
+            <label class="block text-xs font-bold text-slate-700">
+                الصق قائمة أسماء الطلاب هنا (كل طالب في سطر مستقل):
+            </label>
+            <textarea x-model="rawText" 
+                      rows="8" 
+                      placeholder="مثال:&#10;كرار حيدر علي الساعدي&#10;مصطفى حسين كاظم الكعبي&#10;يوسف أحمد جاسم البصري&#10;زينب رافد محمد العبيدي"
+                      class="w-full text-xs font-medium rounded-xl border border-slate-200 p-4 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden transition-all leading-relaxed"></textarea>
+            <p class="text-[11px] text-slate-400">
+                يمكنك نسخ الأسماء من أي مستند Word أو رسالة WhatsApp أو ملف PDF ولصقها هنا مباشرة.
+            </p>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2 flex justify-end">
+            <button type="button" 
+                    @click="submitUpload()" 
+                    :disabled="loading" 
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-black text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-200 transition-all disabled:opacity-50">
+                <span x-show="!loading">🚀 بدء الاستيراد وتضمين الطلاب</span>
+                <span x-show="loading" class="flex items-center gap-2">
+                    <svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>جارٍ معالجة البيانات وتضمين الطلاب...</span>
+                </span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Supported Columns Guide -->
+    <div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2 text-slate-600">
+        <h4 class="font-black text-slate-800 text-sm">💡 كيف يتعامل النظام مع ملفات الإكسل؟</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] pt-1 leading-relaxed">
+            <div class="bg-white p-3 rounded-xl border border-slate-200/80">
+                <span class="font-bold text-brand-700 block mb-1">1. في حال توفر عمود واحد فقط (الاسم):</span>
+                يقوم النظام بقراءة الأسماء، ويأخذ الاسم الأول كاسم شخصي، وباقي الاسم كاسم عائلة، وينشئ رقماً جامعياً وحساباً فريداً لكل طالب تلقائياً.
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200/80">
+                <span class="font-bold text-emerald-700 block mb-1">2. في حال توفر أعمدة إضافية (اختيارية):</span>
+                إذا كان الملف يحتوي على (الرقم الجامعي، رقم الهاتف، نوع الدراسة، البريد الإلكتروني)، سيقوم النظام بقراءتها وحفظها دون إجبارك على أي حقل غير متوفر!
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 1: QUICK ADD INSTITUTION                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showAddInstModal" 
+         x-transition
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-right"
+             @click.outside="showAddInstModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🏛️</span>
+                    <h3 class="text-base font-black text-slate-900">إضافة جامعة أو كلية جديدة فوراً</h3>
+                </div>
+                <button type="button" @click="showAddInstModal = false" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الجامعة / الكلية *</label>
+                    <input type="text" 
+                           x-model="newInstName" 
+                           placeholder="مثال: جامعة بغداد - كلية الطب" 
+                           class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" @click="showAddInstModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">إلغاء</button>
+                <button type="button" @click="createInstitution()" :disabled="instLoading" class="px-5 py-2 text-xs font-black text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs disabled:opacity-50">
+                    <span x-show="!instLoading">✓ حفظ وتحديد الجامعة</span>
+                    <span x-show="instLoading">جارٍ الحفظ...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 2: QUICK ADD SECTION                                      -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showAddSecModal" 
+         x-transition
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-right"
+             @click.outside="showAddSecModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">👥</span>
+                    <h3 class="text-base font-black text-slate-900">إضافة شعبة دراسية جديدة فوراً</h3>
+                </div>
+                <button type="button" @click="showAddSecModal = false" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الشعبة *</label>
+                    <input type="text" 
+                           x-model="newSecName" 
+                           placeholder="مثال: شعبة أ، شعبة C، المجموعة 1" 
+                           class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المرحلة / الصف الدراسي *</label>
+                    <select x-model="newSecLevel" data-native="true" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-500 bg-white">
+                        <option value="المرحلة الأولى">المرحلة الأولى</option>
+                        <option value="المرحلة الثانية">المرحلة الثانية</option>
+                        <option value="المرحلة الثالثة">المرحلة الثالثة</option>
+                        <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                        <option value="الدراسات العليا">الدراسات العليا</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع الدراسة (الدوام) *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer text-xs font-bold"
+                               :class="newSecShift === 'MORNING' ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-200 text-slate-600'">
+                            <input type="radio" value="MORNING" x-model="newSecShift" class="text-amber-600">
+                            <span>☀️ صباحي</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer text-xs font-bold"
+                               :class="newSecShift === 'EVENING' ? 'border-indigo-400 bg-indigo-50 text-indigo-900' : 'border-slate-200 text-slate-600'">
+                            <input type="radio" value="EVENING" x-model="newSecShift" class="text-indigo-600">
+                            <span>🌙 مسائي</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" @click="showAddSecModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">إلغاء</button>
+                <button type="button" @click="createSection()" :disabled="secLoading" class="px-5 py-2 text-xs font-black text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs disabled:opacity-50">
+                    <span x-show="!secLoading">✓ حفظ وتحديد الشعبة</span>
+                    <span x-show="secLoading">جارٍ الحفظ...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 3: QUICK ADD COURSE                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showAddCourseModal" 
+         x-transition
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-right"
+             @click.outside="showAddCourseModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📚</span>
+                    <h3 class="text-base font-black text-slate-900">إضافة مادة دراسية جديدة فوراً</h3>
+                </div>
+                <button type="button" @click="showAddCourseModal = false" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المادة الدراسية *</label>
+                    <input type="text" 
+                           x-model="newCourseName" 
+                           placeholder="مثال: الذكاء الاصطناعي، تراكيب البيانات" 
+                           class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز المادة (اختياري)</label>
+                    <input type="text" 
+                           x-model="newCourseCode" 
+                           placeholder="مثال: CS301 (اتركه فارغاً للتوليد التلقائي)" 
+                           class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" @click="showAddCourseModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">إلغاء</button>
+                <button type="button" @click="createCourse()" :disabled="courseLoading" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs disabled:opacity-50">
+                    <span x-show="!courseLoading">✓ حفظ المادة الدراسية</span>
+                    <span x-show="courseLoading">جارٍ الحفظ...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

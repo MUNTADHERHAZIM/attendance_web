@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة طلابي - نظام الحضور الذكي{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+        addModalOpen: false, 
+        importModalOpen: false,
+        sectionModalOpen: false,
+        addInlineSection: false,
+        importInlineSection: false,
+        searchQuery: '{{ search_query|escapejs }}',
+        selectedSection: '{{ selected_section_id }}'
+     }">
+
+    <!-- Top Banner -->
+    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            
+            <!-- Left Info -->
+            <div class="flex items-center space-x-reverse space-x-4">
+                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-all" title="العودة">
+                    <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200">
+                            👥 بوابة الأستاذ المستقلة
+                        </span>
+                        <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                            🏛️ {{ teacher.institution.name }}
+                        </span>
+                    </div>
+                    <h1 class="text-2xl font-black text-slate-900">إدارة طلابي والشعب الدراسية</h1>
+                    <p class="text-xs text-slate-500 font-semibold mt-0.5 flex flex-wrap items-center gap-2">
+                        <span>إجمالي الطلاب في شعبك: <strong class="text-brand-600 font-black">{{ total_count }} طالب</strong></span>
+                        <span class="text-slate-300">•</span>
+                        <span>القسم الأكاديمي: <strong class="text-indigo-600">{{ teacher.department.name|default:teacher.specialization|default:"القسم الأكاديمي" }}</strong></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button type="button" 
+                        @click="sectionModalOpen = true" 
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border border-brand-200 text-brand-700 bg-brand-50 hover:bg-brand-100 transition-all shadow-xs hover:scale-[1.02] active:scale-95">
+                    <span>🏫</span>
+                    <span>➕ إنشاء شعبة جديدة</span>
+                </button>
+
+                <button type="button" 
+                        @click="addModalOpen = true" 
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 transition-all shadow-md shadow-brand-200 hover:scale-[1.02] active:scale-95">
+                    <span>➕</span>
+                    <span>إضافة طالب جديد</span>
+                </button>
+
+                <button type="button" 
+                        @click="importModalOpen = true" 
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all shadow-xs">
+                    <span>📥</span>
+                    <span>استيراد ملف Excel</span>
+                </button>
+
+                <a href="{% url 'reports:admin_reports_overview' %}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
+                    <span>📊</span>
+                    <span>تقارير الحضور</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shift Quick Filters & Search Toolbar -->
+    <div class="space-y-3">
+        <!-- Shift Filter Tabs -->
+        <div class="flex items-center gap-2 bg-white border border-slate-200/80 rounded-2xl p-1.5 shadow-xs overflow-x-auto">
+            <a href="{% url 'accounts:teacher_students' %}{% if selected_section_id %}?section_id={{ selected_section_id }}{% endif %}" 
+               class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
+                      {% if not shift_filter %}bg-slate-900 text-white shadow-xs{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                <span>👥 جميع الطلاب</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if not shift_filter %}bg-white/20 text-white{% else %}bg-slate-200 text-slate-700{% endif %} font-mono">{{ total_count }}</span>
+            </a>
+
+            <a href="{% url 'accounts:teacher_students' %}?shift=MORNING{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
+               class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
+                      {% if shift_filter == 'MORNING' %}bg-amber-600 text-white shadow-xs{% else %}text-slate-600 hover:bg-amber-50 hover:text-amber-800{% endif %}">
+                <span>☀️ الدراسة الصباحية</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if shift_filter == 'MORNING' %}bg-white/20 text-white{% else %}bg-amber-100 text-amber-800{% endif %} font-mono">{{ morning_count }}</span>
+            </a>
+
+            <a href="{% url 'accounts:teacher_students' %}?shift=EVENING{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
+               class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
+                      {% if shift_filter == 'EVENING' %}bg-indigo-600 text-white shadow-xs{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-800{% endif %}">
+                <span>🌙 الدراسة المسائية</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if shift_filter == 'EVENING' %}bg-white/20 text-white{% else %}bg-indigo-100 text-indigo-800{% endif %} font-mono">{{ evening_count }}</span>
+            </a>
+        </div>
+
+        <!-- Filter & Search Inputs -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <form method="GET" action="{% url 'accounts:teacher_students' %}" class="flex flex-col sm:flex-row gap-3">
+                {% if shift_filter %}
+                    <input type="hidden" name="shift" value="{{ shift_filter }}">
+                {% endif %}
+
+                <!-- Search Input -->
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">🔍</span>
+                    <input type="text" name="q" value="{{ search_query }}" 
+                           placeholder="ابحث بالاسم الكامل، الرقم الجامعي، أو رقم الهاتف..." 
+                           class="w-full pr-9 pl-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all bg-slate-50/60">
+                </div>
+
+                <!-- Section Selector -->
+                <div class="sm:w-64 relative" x-data="{ 
+                    open: false, 
+                    value: '{{ selected_section_id }}', 
+                    label: '{% for sec in my_sections %}{% if selected_section_id == sec.id|stringformat:'s' %}{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }}){% endif %}{% endfor %}' || 'جميع الشعب الدراسية' 
+                }">
+                    <input type="hidden" name="section_id" :value="value">
+                    <button type="button" 
+                            @click="open = !open" 
+                            @click.away="open = false"
+                            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/90 hover:bg-white hover:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 text-xs sm:text-sm font-bold text-slate-800 transition-all shadow-2xs">
+                        <span class="truncate" x-text="label"></span>
+                        <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 mr-1.5" :class="open ? 'rotate-180 text-brand-600' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-98"
+                         class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
+                        <div @click="value = ''; label = 'جميع الشعب الدراسية'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                             class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                             :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                            <span>جميع الشعب الدراسية</span>
+                            <span x-show="value === ''" class="text-brand-600">✓</span>
+                        </div>
+                        {% for sec in my_sections %}
+                            <div @click="value = '{{ sec.id }}'; label = '{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }})'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                                 class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                                 :class="value === '{{ sec.id }}' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                                <span class="truncate">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</span>
+                                <span x-show="value === '{{ sec.id }}'" class="text-brand-600">✓</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors">
+                    بحث
+                </button>
+                {% if search_query or selected_section_id or shift_filter %}
+                    <a href="{% url 'accounts:teacher_students' %}" class="px-3 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 flex items-center justify-center">
+                        إلغاء التصفية
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Students Table Card -->
+    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100 text-right">
+                <thead>
+                    <tr class="bg-slate-50/90 border-b border-slate-200">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">الطالب والبريد</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">الرقم الجامعي</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">نوع الدراسة</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">الشعبة الدراسية</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">رقم الهاتف</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">نسبة الحضور</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                    {% for item in students_list %}
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-reverse space-x-3">
+                                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
+                                        {{ item.profile.user.first_name|first|default:"ط" }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-900">{{ item.profile.user.get_full_name }}</div>
+                                        <div class="text-xs text-slate-400 font-mono">{{ item.profile.user.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center text-sm font-bold font-mono text-slate-700">
+                                {{ item.profile.student_id }}
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
+                                      {% if item.profile.study_shift == 'EVENING' %}bg-indigo-50 text-indigo-800 border border-indigo-200
+                                      {% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
+                                    {% if item.profile.study_shift == 'EVENING' %}🌙 مسائي{% else %}☀️ صباحي{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-600">
+                                {% for s in item.sections %}
+                                    <span class="inline-block bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md mx-0.5">
+                                        {{ s.name }}
+                                    </span>
+                                {% empty %}
+                                    <span class="text-slate-300">-</span>
+                                {% endfor %}
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold font-mono text-slate-600" dir="ltr">
+                                {{ item.profile.user.phone|default:"-" }}
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center text-sm">
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black
+                                          {% if item.rate >= 90 %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                          {% elif item.rate >= 75 %}bg-amber-50 text-amber-700 border border-amber-200
+                                          {% else %}bg-rose-50 text-rose-700 border border-rose-200{% endif %}">
+                                        {{ item.rate }}%
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-semibold">
+                                        حاضر: {{ item.present_count }} | غائب: {{ item.absent_count }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold">
+                                <a href="{% url 'reports:admin_student_detail' item.profile.id %}" 
+                                   class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors">
+                                    <span>📄 السجل التفصيلي</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                <div class="flex flex-col items-center justify-center space-y-2">
+                                    <span class="text-4xl">👥</span>
+                                    <p class="font-bold text-slate-600 text-sm">لا يوجد طلاب مسجلون في هذا البحث حالياً.</p>
+                                    <button type="button" @click="addModalOpen = true" class="text-xs font-bold text-brand-600 underline">
+                                        انقر هنا لإضافة أول طالب
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- ➕ MODAL: إضافة طالب جديد يدوياً -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="addModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="addModalOpen = false" 
+             class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 text-right">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-brand-50 text-brand-600 text-lg">➕</span>
+                    <h3 class="text-lg font-black text-slate-900">إضافة طالب جديد إلى الشعبة</h3>
+                </div>
+                <button type="button" @click="addModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_add_student' %}" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-700">الاسم الأول <span class="text-rose-500">*</span></label>
+                        <input type="text" name="first_name" required placeholder="مثال: علي" 
+                               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-700">الاسم الأخير / اللقب <span class="text-rose-500">*</span></label>
+                        <input type="text" name="last_name" required placeholder="مثال: الكعبي" 
+                               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-700">الرقم الجامعي <span class="text-rose-500">*</span></label>
+                        <input type="text" name="student_id" required placeholder="مثال: 202410125" 
+                               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-slate-700">الشعبة الدراسية <span class="text-rose-500">*</span></label>
+                            <button type="button" @click="addInlineSection = !addInlineSection" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 underline">
+                                <span x-text="addInlineSection ? '↩️ اختيار شعبة' : '➕ إنشاء شعبة'"></span>
+                            </button>
+                        </div>
+                        <div x-show="!addInlineSection">
+                            <select name="section_id" :disabled="addInlineSection"
+                                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
+                                {% for sec in my_sections %}
+                                    <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                                {% empty %}
+                                    <option value="" disabled selected>لا توجد شعب سابقة - انقر إنشاء شعبة</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div x-show="addInlineSection" class="p-2.5 bg-brand-50/70 rounded-xl border border-brand-200 space-y-2" style="display: none;">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-700">اسم الشعبة الجديدة</label>
+                                <input type="text" name="new_section_name" placeholder="مثال: شعبة ب" :disabled="!addInlineSection"
+                                       class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold">
+                            </div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <select name="new_section_level" :disabled="!addInlineSection" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold">
+                                    <option value="المرحلة الأولى">المرحلة الأولى</option>
+                                    <option value="المرحلة الثانية">المرحلة الثانية</option>
+                                    <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
+                                    <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                                </select>
+                                <select name="new_section_shift" :disabled="!addInlineSection" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold">
+                                    <option value="MORNING">☀️ صباحي</option>
+                                    <option value="EVENING">🌙 مسائي</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">نوع الدراسة (الدوام) <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-amber-50/50 transition-colors">
+                            <input type="radio" name="study_shift" value="MORNING" checked class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-800">☀️ دراسة صباحية</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-indigo-50/50 transition-colors">
+                            <input type="radio" name="study_shift" value="EVENING" class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-800">🌙 دراسة مسائية</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">رقم الهاتف العراقي (11 رقماً يبدأ بـ 07)</label>
+                    <input type="tel" name="phone" maxlength="11" placeholder="مثال: 07724978301" 
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500" dir="ltr">
+                    <p class="text-[10px] text-slate-400">يقبل الأرقام العراقية لشبكات آسيا سيل، زين، كورك.</p>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">بطاقة RFID / NFC (اختياري)</label>
+                    <input type="text" name="rfid_card" placeholder="رقم شريحة البطاقة إن توفرت" 
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div class="flex gap-2 pt-3 border-t border-slate-100">
+                    <button type="submit" 
+                            class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm shadow-brand-200">
+                        حفظ وإلحاق الطالب
+                    </button>
+                    <button type="button" @click="addModalOpen = false" 
+                            class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 📥 MODAL: استيراد الطلاب عبر Excel -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="importModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="importModalOpen = false" 
+             class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 text-right">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-emerald-50 text-emerald-600 text-lg">📥</span>
+                    <h3 class="text-lg font-black text-slate-900">استيراد قائمة الطلاب من Excel / CSV</h3>
+                </div>
+                <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_import_students' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-slate-700">الشعبة المراد إلحاق الطلاب بها <span class="text-rose-500">*</span></label>
+                        <button type="button" @click="importInlineSection = !importInlineSection" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline">
+                            <span x-text="importInlineSection ? '↩️ اختيار شعبة سابقة' : '➕ إنشاء شعبة جديدة فوراً'"></span>
+                        </button>
+                    </div>
+
+                    <div x-show="!importInlineSection">
+                        <select name="section_id" :disabled="importInlineSection"
+                                class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
+                            {% for sec in my_sections %}
+                                <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                            {% empty %}
+                                <option value="" disabled selected>لا توجد شعب سابقة - اضغط على (إنشاء شعبة جديدة فوراً) أعلاه</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Inline Section Creation for Excel Upload -->
+                    <div x-show="importInlineSection" class="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2.5" style="display: none;">
+                        <div class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                            <span>✨</span>
+                            <span>سيتم إنشاء هذه الشعبة فوراً وإلحاق الطلاب المستوردين بها:</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700">اسم الشعبة الجديدة <span class="text-rose-500">*</span></label>
+                            <input type="text" name="new_section_name" placeholder="مثال: شعبة ب أو Group B" :disabled="!importInlineSection"
+                                   class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700">المرحلة الدراسية</label>
+                                <select name="new_section_level" :disabled="!importInlineSection" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                                    <option value="المرحلة الأولى">المرحلة الأولى</option>
+                                    <option value="المرحلة الثانية">المرحلة الثانية</option>
+                                    <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
+                                    <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700">نوع الدراسة</label>
+                                <select name="new_section_shift" :disabled="!importInlineSection" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                                    <option value="MORNING">☀️ صباحي</option>
+                                    <option value="EVENING">🌙 مسائي</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">ملف Excel أو CSV <span class="text-rose-500">*</span></label>
+                    <input type="file" name="excel_file" accept=".xlsx,.xls,.csv" required 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                    <p class="text-[11px] text-slate-400 mt-1">يجب أن يحتوي الملف على عمود باسم (الاسم) وعمود باسم (الرقم الجامعي)، واختيارياً (الهاتف).</p>
+                </div>
+
+                <div class="flex gap-2 pt-3 border-t border-slate-100">
+                    <button type="submit" 
+                            class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm shadow-emerald-200">
+                        رفع واستيراد الطلاب
+                    </button>
+                    <button type="button" @click="importModalOpen = false" 
+                            class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🏫 MODAL: إنشاء شعبة دراسية جديدة مستقلة -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="sectionModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="sectionModalOpen = false" 
+             class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 text-right">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-brand-50 text-brand-600 text-lg">🏫</span>
+                    <h3 class="text-lg font-black text-slate-900">إنشاء شعبة دراسية جديدة</h3>
+                </div>
+                <button type="button" @click="sectionModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <form method="POST" action="{% url 'accounts:teacher_add_section' %}" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">اسم الشعبة / المجموعة <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" required placeholder="مثال: شعبة أ أو Group B" 
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">المرحلة الدراسية <span class="text-rose-500">*</span></label>
+                    <select name="level" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
+                        <option value="المرحلة الأولى">المرحلة الأولى</option>
+                        <option value="المرحلة الثانية">المرحلة الثانية</option>
+                        <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
+                        <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">نوع الدراسة (الدوام) <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-amber-50/50 transition-colors">
+                            <input type="radio" name="shift" value="MORNING" checked class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-800">☀️ دراسة صباحية</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-indigo-50/50 transition-colors">
+                            <input type="radio" name="shift" value="EVENING" class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-800">🌙 دراسة مسائية</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-3 border-t border-slate-100">
+                    <button type="submit" 
+                            class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm shadow-brand-200">
+                        حفظ الشعبة
+                    </button>
+                    <button type="button" @click="sectionModalOpen = false" 
+                            class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Institutional & Developer Footer -->
+    <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
+        <p class="font-bold text-slate-500 font-mono">المطور: MUNTADHER HAZIM | هاتف: 07724978301</p>
+    </div>
+
+</div>
+{% endblock %}
