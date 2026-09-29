@@ -1,0 +1,35 @@
+# .gitattributes — ضبط line endings تلقائياً
+# يضمن أن ملفات bash تُحفظ دائماً بـ LF (Unix) بغض النظر عن نظام المطوّر
+
+# الإعداد الافتراضي: تحويل تلقائي حسب النظام
+* text=auto
+
+# ملفات Shell — يجب أن تكون LF دائماً على Linux/PythonAnywhere
+*.sh text eol=lf
+
+# ملفات Python — LF
+*.py text eol=lf
+
+# ملفات HTML/CSS/JS — LF
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# ملفات الإعدادات — LF
+*.txt text eol=lf
+*.md text eol=lf
+*.env text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# ملفات Windows batch — CRLF (تعمل على Windows فقط)
+*.bat text eol=crlf
+
+# ملفات ثنائية — بدون تحويل
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.sqlite3 binary
