@@ -75,27 +75,25 @@ TEMPLATES = [
 ]
 
 # =====================================================================
-# 6. Sessions — cached_db (أسرع من db العادي)
+# 6. Sessions
 # =====================================================================
-SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_AGE = 86400 * 7
 SESSION_SAVE_EVERY_REQUEST = False
 
 # =====================================================================
-# 7. قاعدة البيانات — SQLite مع PRAGMA تحسينات
+# 7. قاعدة البيانات — SQLite متوافقة 100% مع نظام ملفات PythonAnywhere (NFS)
 # =====================================================================
 DATABASES["default"]["OPTIONS"] = {  # noqa: F405
-    "timeout": 20,
+    "timeout": 60,
     "init_command": (
-        "PRAGMA journal_mode=WAL;"
+        "PRAGMA journal_mode=DELETE;"
         "PRAGMA synchronous=NORMAL;"
-        "PRAGMA cache_size=-32000;"
         "PRAGMA temp_store=MEMORY;"
-        "PRAGMA mmap_size=268435456;"
     ),
     "check_same_thread": False,
 }
-CONN_MAX_AGE = 60
+CONN_MAX_AGE = 0
 
 # =====================================================================
 # 8. Cache — LocMemCache محسَّن
