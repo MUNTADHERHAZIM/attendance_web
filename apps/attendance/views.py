@@ -1506,6 +1506,153 @@ def create_custom_session_view(request, timetable_id=None):
 
 
 @login_required
+def edit_session_view(request, session_id):
+    """Allows a teacher or admin to edit lecture details (course, section, shift, time, date, room, topic, OTP, etc.)."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "هذه الصفحة مخصصة للمعلمين والإداريين فقط.")
+        return redirect("dashboard")
+
+    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    session_obj = att_session.session
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    institution = (
+        teacher_profile.institution 
+        if teacher_profile and teacher_profile.institution 
+        else Institution.objects.first()
+    )
+
+    if request.method == "POST":
+        course_name = request.POST.get("course_name", "").strip()
+        course_code = request.POST.get("course_code", "").strip()
+        section_name = request.POST.get("section_name", "").strip()
+        section_level = request.POST.get("section_level", "").strip()
+        shift = request.POST.get("shift", "MORNING").strip().upper()
+        room = request.POST.get("room", "").strip()
+        topic = request.POST.get("topic", "").strip()
+        lecture_type = request.POST.get("lecture_type", "نظري").strip()
+        session_date_str = request.POST.get("session_date", "").strip()
+        start_time_str = request.POST.get("start_time", "").strip()
+        end_time_str = request.POST.get("end_time", "").strip()
+        is_active = "is_active" in request.POST
+        is_frozen_qr = "is_frozen_qr" in request.POST
+        quick_otp = request.POST.get("quick_otp", "").strip()
+
+        # 1. Update Course
+        if course_name:
+            session_obj.course.name = course_name
+            if course_code:
+                session_obj.course.code = course_code
+            session_obj.course.save()
+
+        # 2. Update Section
+        if section_name:
+            session_obj.class_section.name = section_name
+        if section_level:
+            session_obj.class_section.level = section_level
+        if shift:
+            session_obj.class_section.shift = shift
+        session_obj.class_section.save()
+
+        # 3. Update Academic Session
+        if room:
+            session_obj.room = room
+        if shift:
+            session_obj.shift = shift
+        
+        if start_time_str:
+            try:
+                session_obj.start_time = datetime.strptime(start_time_str, "%H:%M").time()
+            except ValueError:
+                pass
+        if end_time_str:
+            try:
+                session_obj.end_time = datetime.strptime(end_time_str, "%H:%M").time()
+            except ValueError:
+                pass
+        session_obj.save()
+
+        # 4. Update Attendance Session
+        if session_date_str:
+            try:
+                att_session.date = datetime.strptime(session_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        if start_time_str:
+            try:
+                st = datetime.strptime(start_time_str, "%H:%M").time()
+                att_session.start_time = timezone.make_aware(datetime.combine(att_session.date, st))
+            except Exception:
+                pass
+
+        if end_time_str:
+            try:
+                et = datetime.strptime(end_time_str, "%H:%M").time()
+                att_session.end_time = timezone.make_aware(datetime.combine(att_session.date, et))
+            except Exception:
+                pass
+
+        att_session.shift = shift
+        att_session.topic = topic
+        att_session.lecture_type = lecture_type
+        att_session.is_active = is_active
+        att_session.is_frozen_qr = is_frozen_qr
+        if quick_otp and len(quick_otp) == 6:
+            att_session.quick_otp = quick_otp
+
+        att_session.save()
+
+        AuditLog.objects.create(
+            user=request.user,
+            action="تعديل_بيانات_المحاضرة",
+            ip_address=_get_ip(request),
+            user_agent=request.META.get("HTTP_USER_AGENT"),
+            details={
+                "session_id": att_session.id,
+                "course": session_obj.course.name,
+                "section": session_obj.class_section.name,
+                "shift": shift,
+                "topic": topic,
+            },
+        )
+
+        messages.success(request, f"تم حفظ تعديلات المحاضرة ({session_obj.course.name}) بنجاح! ✨")
+        return redirect("attendance:session_detail_web", session_id=att_session.id)
+
+    # Departments, courses, sections
+    departments = institution.departments.all() if institution else Department.objects.all()
+    courses = Course.objects.filter(department__in=departments) if departments.exists() else Course.objects.all()
+    sections = ClassSection.objects.filter(department__in=departments) if departments.exists() else ClassSection.objects.all()
+
+    # Format start and end times
+    start_time_val = ""
+    end_time_val = ""
+    if att_session.start_time:
+        start_time_val = att_session.start_time.strftime("%H:%M")
+    elif session_obj.start_time:
+        start_time_val = session_obj.start_time.strftime("%H:%M")
+
+    if att_session.end_time:
+        end_time_val = att_session.end_time.strftime("%H:%M")
+    elif session_obj.end_time:
+        end_time_val = session_obj.end_time.strftime("%H:%M")
+
+    date_val = att_session.date.strftime("%Y-%m-%d") if att_session.date else ""
+
+    context = {
+        "att_session": att_session,
+        "session_obj": session_obj,
+        "courses": courses,
+        "sections": sections,
+        "current_start_time": start_time_val,
+        "current_end_time": end_time_val,
+        "current_date": date_val,
+        "institution": institution,
+    }
+    return render(request, "attendance/edit_session.html", context)
+
+
+@login_required
 def quick_create_course_view(request):
     """API endpoint to instantly add a new course directly from the custom combobox."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):

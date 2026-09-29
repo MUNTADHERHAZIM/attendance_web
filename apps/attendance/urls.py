@@ -25,6 +25,7 @@ from .views import (
     get_hotspot_info_api,
     offline_emergency_mode_view,
     flexible_session_route_view,
+    edit_session_view,
 )
 
 app_name = "attendance"
@@ -45,6 +46,7 @@ urlpatterns = [
     # ─── Web Template Views ───────────────────────────────────────────
     path("session/start-web/", start_session_web_view, name="start_session_web"),
     path("session/<int:session_id>/", session_detail_web_view, name="session_detail_web"),
+    path("session/<int:session_id>/edit/", edit_session_view, name="edit_session"),
     path("session/<int:session_id>/print/", printable_qr_sheet_view, name="printable_qr_sheet"),
     path("session/<int:session_id>/students-list/", session_students_list_partial, name="session_students_list"),
     path("record/manual-update-web/", manual_update_web_view, name="manual_update_web"),

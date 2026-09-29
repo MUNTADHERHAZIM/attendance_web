@@ -239,11 +239,16 @@
                             </div>
                         </div>
                         
-                        <div class="mt-5">
+                        <div class="mt-5 flex flex-col sm:flex-row items-center gap-2">
                             <a href="/attendance/session/{{ att_session.id }}/" 
-                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-black rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200">
+                               class="flex-1 w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-black rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200">
                                 <span>📱</span>
                                 <span>فتح شاشة الـ QR المباشرة ومتابعة الطلاب</span>
+                            </a>
+                            <a href="/attendance/session/{{ att_session.id }}/edit/" 
+                               class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-3 border border-slate-300 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs" title="تعديل وقت أو مادة أو تفاصيل المحاضرة">
+                                <span>✏️</span>
+                                <span>تعديل المحاضرة</span>
                             </a>
                         </div>
                     </div>
