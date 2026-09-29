@@ -12,41 +12,51 @@ def generate_qr_token(attendance_session):
     return signer.sign(data)
 
 
-def verify_qr_token(token_str, max_age=600):
+def verify_qr_token(token_str, max_age=1800):
     """
     Verifies that:
     1. The signature is mathematically valid (uses settings.SECRET_KEY).
-    2. The token is not expired (max_age 600 seconds = 10 minutes).
+    2. The token is not expired (max_age 1800 seconds = 30 minutes).
     3. The token contains the active session ID.
+    Supports raw signatures, URL-encoded tokens, full URLs, and unquoted strings.
     """
     if not token_str:
         return None, "رمز التحضير غير موجود"
 
-    token_str = str(token_str).strip()
+    import urllib.parse
+    token_str = str(token_str).strip().strip('"').strip("'")
+    token_str = urllib.parse.unquote(token_str)
 
     # Extract token query param if a full URL was scanned
     if "token=" in token_str:
         try:
-            from urllib.parse import urlparse, parse_qs
-            parsed = urlparse(token_str)
-            qs = parse_qs(parsed.query)
+            parsed = urllib.parse.urlparse(token_str)
+            qs = urllib.parse.parse_qs(parsed.query)
             if "token" in qs and qs["token"]:
-                token_str = qs["token"][0]
+                token_str = urllib.parse.unquote(qs["token"][0])
         except Exception:
             import re
             m = re.search(r'token=([^&]+)', token_str)
             if m:
-                token_str = m.group(1)
+                token_str = urllib.parse.unquote(m.group(1))
+
+    # Clean any trailing whitespace or trailing slashes
+    token_str = token_str.rstrip("/")
 
     signer = TimestampSigner()
     try:
         # Load model lazily to avoid circular imports
         from .models import AttendanceSession
 
-        # Verify timestamp signature (valid for max_age seconds, default 10 minutes)
-        unsigned_data = signer.unsign(token_str, max_age=max_age)
-        session_id_str, qr_salt_str = unsigned_data.split(":")
-        session_id = int(session_id_str)
+        # Verify timestamp signature (valid for max_age seconds, default 30 minutes)
+        try:
+            unsigned_data = signer.unsign(token_str, max_age=max_age)
+        except (BadSignature, SignatureExpired):
+            # Also try without max_age if signature expired slightly or unquoting was needed
+            unsigned_data = signer.unsign(urllib.parse.unquote(token_str), max_age=max_age)
+
+        parts = unsigned_data.split(":")
+        session_id = int(parts[0])
 
         attendance_session = AttendanceSession.objects.get(id=session_id, is_active=True)
         return attendance_session, None
@@ -55,7 +65,7 @@ def verify_qr_token(token_str, max_age=600):
         return None, "انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)"
     except BadSignature:
         return None, "توقيع الرمز غير صالح"
-    except (ValueError, AttendanceSession.DoesNotExist):
+    except (ValueError, IndexError, AttendanceSession.DoesNotExist):
         return None, "جلسة التحضير غير موجودة أو غير نشطة"
 
 

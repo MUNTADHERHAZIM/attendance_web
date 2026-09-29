@@ -23,7 +23,7 @@ function sessionDetailManager() {
     return {
         token: ds.token || '',
         qrTimestamp: Date.now(),
-        expiresIn: 15,
+        expiresIn: 30,
         sessionId: parseInt(ds.sessionId || '0', 10),
         isFrozen: ds.isFrozen === 'true',
         qrSize: 'lg',

@@ -189,7 +189,7 @@ class GetDynamicQRTokenView(APIView):
             attendance_session.save(update_fields=["qr_salt"])
 
         token = generate_qr_token(attendance_session)
-        expires = 86400 if getattr(attendance_session, "is_frozen_qr", False) else 15
+        expires = 86400 if getattr(attendance_session, "is_frozen_qr", False) else 30
         return Response(
             {
                 "token": token,
@@ -395,7 +395,7 @@ class StudentCheckInView(APIView):
 
         # 2. Token / OTP Verification
         if token:
-            attendance_session, error_msg = verify_qr_token(token, max_age=600)
+            attendance_session, error_msg = verify_qr_token(token, max_age=1800)
             if not attendance_session:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -403,10 +403,8 @@ class StudentCheckInView(APIView):
             if not session_id:
                 # Find active session matching this OTP automatically
                 active_sessions = AttendanceSession.objects.filter(is_active=True, quick_otp=otp_clean)
-                if active_sessions.count() == 1:
-                    attendance_session = active_sessions.first()
-                elif active_sessions.count() > 1:
-                    return Response({"error": "توجد أكثر من جلسة نشطة بهذا الرمز. يرجى اختيار الجلسة التابعة لمادتك."}, status=status.HTTP_400_BAD_REQUEST)
+                if active_sessions.exists():
+                    attendance_session = active_sessions.order_by('-id').first()
                 else:
                     return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهت المحاضرة."}, status=status.HTTP_400_BAD_REQUEST)
             else:
