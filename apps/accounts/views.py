@@ -68,11 +68,13 @@ class UserProfileView(APIView):
 def profile_web_view(request):
     """
     Renders and processes the User Profile HTML page.
-    Allows viewing/updating basic personal info and changing password.
+    Allows viewing/updating personal info, academic data (institution, university, student ID, shift, etc.) and changing password.
     """
     from django.contrib import messages
     from django.contrib.auth import update_session_auth_hash
     from django.contrib.auth.forms import PasswordChangeForm
+    from apps.academics.models import Institution, ClassSection
+    from datetime import datetime
 
     user = request.user
     pwd_form = PasswordChangeForm(user)
@@ -96,8 +98,90 @@ def profile_web_view(request):
             user.last_name = last_name
             user.email = email
             user.phone = phone
+
+            if "avatar" in request.FILES:
+                user.avatar = request.FILES["avatar"]
+
             user.save()
-            messages.success(request, "تم تحديث البيانات الشخصية بنجاح.")
+
+            # Handle Role-Specific Academic Profile Details (Student / Teacher)
+            institution_id = request.POST.get("institution_id", "").strip()
+            new_institution_name = request.POST.get("new_institution_name", "").strip()
+
+            # Resolve or create institution
+            target_institution = None
+            if institution_id and institution_id.isdigit():
+                target_institution = Institution.objects.filter(id=int(institution_id)).first()
+            if not target_institution and new_institution_name:
+                target_institution, _ = Institution.objects.get_or_create(name=new_institution_name)
+
+            if user.is_student():
+                student_profile = getattr(user, "student_profile", None)
+                if not student_profile:
+                    if not target_institution:
+                        target_institution = Institution.objects.first() or Institution.objects.create(name="جامعتي")
+                    student_profile = StudentProfile.objects.create(
+                        user=user,
+                        student_id=f"STD-{user.id}",
+                        institution=target_institution
+                    )
+
+                student_id = request.POST.get("student_id", "").strip()
+                study_shift = request.POST.get("study_shift", "MORNING").strip().upper()
+                birth_date_str = request.POST.get("birth_date", "").strip()
+                section_ids = request.POST.getlist("sections")
+
+                if student_id and student_id != student_profile.student_id:
+                    if not StudentProfile.objects.filter(student_id=student_id).exclude(id=student_profile.id).exists():
+                        student_profile.student_id = student_id
+                    else:
+                        messages.warning(request, "الرقم الجامعي مستخدم من قبل طالب آخر، تم الإبقاء على رقمك الحالي.")
+
+                if target_institution:
+                    student_profile.institution = target_institution
+
+                if study_shift in ["MORNING", "EVENING"]:
+                    student_profile.study_shift = study_shift
+
+                if birth_date_str:
+                    try:
+                        student_profile.birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+                    except ValueError:
+                        pass
+
+                student_profile.save()
+
+                if section_ids:
+                    valid_sections = ClassSection.objects.filter(id__in=[s for s in section_ids if s.isdigit()])
+                    student_profile.sections.set(valid_sections)
+
+            elif user.is_teacher():
+                teacher_profile = getattr(user, "teacher_profile", None)
+                if not teacher_profile:
+                    if not target_institution:
+                        target_institution = Institution.objects.first() or Institution.objects.create(name="جامعتي")
+                    teacher_profile = TeacherProfile.objects.create(
+                        user=user,
+                        teacher_id=f"TCH-{user.id}",
+                        institution=target_institution
+                    )
+
+                teacher_id = request.POST.get("teacher_id", "").strip()
+                specialization = request.POST.get("specialization", "").strip()
+
+                if teacher_id and teacher_id != teacher_profile.teacher_id:
+                    if not TeacherProfile.objects.filter(teacher_id=teacher_id).exclude(id=teacher_profile.id).exists():
+                        teacher_profile.teacher_id = teacher_id
+
+                if specialization:
+                    teacher_profile.specialization = specialization
+
+                if target_institution:
+                    teacher_profile.institution = target_institution
+
+                teacher_profile.save()
+
+            messages.success(request, "تم تحديث البيانات الشخصية والأكاديمية بنجاح! ✨")
             return redirect("accounts:profile_web")
 
         elif action == "change_password":
@@ -111,10 +195,21 @@ def profile_web_view(request):
                 messages.error(request, "يرجى التحقق من صحة بيانات كلمة المرور.")
 
     profile = user.get_profile()
+    from apps.academics.models import Institution, ClassSection
+    institutions = Institution.objects.all().order_by("name")
+    all_sections = ClassSection.objects.all().order_by("shift", "level", "name")
+
+    birth_date_val = ""
+    if profile and hasattr(profile, "birth_date") and profile.birth_date:
+        birth_date_val = profile.birth_date.strftime("%Y-%m-%d")
+
     context = {
         "user": user,
         "profile": profile,
         "pwd_form": pwd_form,
+        "institutions": institutions,
+        "all_sections": all_sections,
+        "birth_date_val": birth_date_val,
     }
     return render(request, "accounts/profile.html", context)
 

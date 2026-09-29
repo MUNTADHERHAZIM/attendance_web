@@ -7,16 +7,20 @@
     <!-- Header -->
     <div class="border-b border-slate-200 pb-5">
         <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">الملف الشخصي وإعدادات الحساب</h1>
-        <p class="text-sm text-slate-500 font-medium mt-1">عرض وتحديث بياناتك الشخصية وتعديل كلمة المرور</p>
+        <p class="text-sm text-slate-500 font-medium mt-1">عرض وتحديث بياناتك الشخصية، اسم الجامعة، ومعلومات الاعتماد الأكاديمي</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Right Column: User Card & Role Info -->
         <div class="space-y-6">
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center">
-                <div class="w-20 h-20 mx-auto bg-gradient-to-tr from-brand-600 to-indigo-500 text-white text-2xl font-black rounded-2xl flex items-center justify-center shadow-lg shadow-brand-200">
-                    {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
-                </div>
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="Avatar" class="w-20 h-20 mx-auto object-cover rounded-2xl border-2 border-brand-200 shadow-md">
+                {% else %}
+                    <div class="w-20 h-20 mx-auto bg-gradient-to-tr from-brand-600 to-indigo-500 text-white text-2xl font-black rounded-2xl flex items-center justify-center shadow-lg shadow-brand-200">
+                        {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
                 <h2 class="text-xl font-bold text-slate-900 mt-4">{{ user.get_full_name|default:user.username }}</h2>
                 <p class="text-xs text-slate-400 mt-0.5" dir="ltr">@{{ user.username }}</p>
                 
@@ -44,19 +48,23 @@
                 </div>
             </div>
 
-            <!-- Role details card if applicable -->
+            <!-- Role details summary card -->
             {% if profile %}
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-right">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">بيانات الاعتماد الأكاديمي</h3>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">بيانات الاعتماد الأكاديمي الحالية</h3>
                 {% if user.is_student %}
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span class="text-slate-500">الرقم الجامعي:</span> <span class="font-bold">{{ profile.student_id }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">المؤسسة:</span> <span class="font-bold">{{ profile.institution.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">الرقم الجامعي:</span> <span class="font-bold text-slate-900 font-mono">{{ profile.student_id }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">الجامعة / الكلية:</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">نوع الدراسة:</span> <span class="font-bold">{{ profile.get_study_shift_display }}</span></div>
+                        {% if profile.birth_date %}
+                        <div class="flex justify-between"><span class="text-slate-500">تاريخ الميلاد:</span> <span class="font-bold font-mono">{{ profile.birth_date|date:"Y-m-d" }}</span></div>
+                        {% endif %}
                     </div>
                 {% elif user.is_teacher %}
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span class="text-slate-500">الرقم الوظيفي:</span> <span class="font-bold">{{ profile.teacher_id }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">المؤسسة:</span> <span class="font-bold">{{ profile.institution.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">الرقم الوظيفي:</span> <span class="font-bold text-slate-900 font-mono">{{ profile.teacher_id }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">الجامعة / الكلية:</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
                         {% if profile.specialization %}
                         <div class="flex justify-between"><span class="text-slate-500">التخصص:</span> <span class="font-bold">{{ profile.specialization }}</span></div>
                         {% endif %}
@@ -68,31 +76,32 @@
 
         <!-- Left Column: Forms -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Edit Personal Info Form -->
+            <!-- Edit Personal & Academic Info Form -->
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center space-x-reverse space-x-2 border-b border-slate-100 pb-4 mb-6">
                     <div class="h-8 w-8 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center font-bold">
                         👤
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-900">تحديث البيانات الأساسية</h2>
-                        <p class="text-xs text-slate-400">تعديل الاسم والبريد الإلكتروني ورقم التواصل</p>
+                        <h2 class="text-lg font-bold text-slate-900">تحديث البيانات الشخصية والأكاديمية</h2>
+                        <p class="text-xs text-slate-400">تعديل الاسم، البريد، الهاتف، واسم الجامعة/المؤسسة التعليمية</p>
                     </div>
                 </div>
 
-                <form method="POST" action="{% url 'accounts:profile_web' %}" class="space-y-4">
+                <form method="POST" action="{% url 'accounts:profile_web' %}" enctype="multipart/form-data" class="space-y-5">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update_info">
 
+                    <!-- Section: Basic Info -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">الاسم الأول</label>
-                            <input type="text" name="first_name" value="{{ user.first_name }}"
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">الاسم الأول *</label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم العائلة</label>
-                            <input type="text" name="last_name" value="{{ user.last_name }}"
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم العائلة / اللقب *</label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
                     </div>
@@ -111,17 +120,94 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">رقم الهاتف / الجوال</label>
-                        <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
-                               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
-                               placeholder="05XXXXXXXX">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">رقم الهاتف / الجوال (عراقي)</label>
+                            <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
+                                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
+                                   placeholder="07724978301">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">الصورة الشخصية (Avatar)</label>
+                            <input type="file" name="avatar" accept="image/*"
+                                   class="w-full px-3.5 py-2 bg-slate-50 border border-slate-250 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                        </div>
                     </div>
 
-                    <div class="flex justify-end pt-2">
+                    <!-- 🏛️ Section: University & Academic Profile Details -->
+                    <div class="pt-4 border-t border-slate-100 space-y-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-brand-600">🏛️</span>
+                            <h3 class="text-sm font-bold text-slate-900">البيانات الأكاديمية والجامعية</h3>
+                        </div>
+
+                        <!-- University / Institution Selection & Custom Entry -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">اختر الجامعة / الكلية المسجلة</label>
+                                <select name="institution_id" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
+                                    {% for inst in institutions %}
+                                        <option value="{{ inst.id }}" {% if profile and profile.institution_id == inst.id %}selected{% endif %}>
+                                            {{ inst.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">أو اكتب اسم الجامعة/المؤسسة (إذا لم تكن بالقائمة)</label>
+                                <input type="text" name="new_institution_name" 
+                                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
+                                       placeholder="مثال: جامعة بغداد - كلية العلوم">
+                            </div>
+                        </div>
+
+                        {% if user.is_student %}
+                        <!-- Student Specific Details -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">الرقم الجامعي / الطلابي *</label>
+                                <input type="text" name="student_id" value="{{ profile.student_id|default:'' }}" required
+                                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                                       placeholder="مثال: 20261042">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الدراسة (الدوام)</label>
+                                <select name="study_shift" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
+                                    <option value="MORNING" {% if profile and profile.study_shift == 'MORNING' %}selected{% endif %}>☀️ صباحي</option>
+                                    <option value="EVENING" {% if profile and profile.study_shift == 'EVENING' %}selected{% endif %}>🌙 مسائي</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">تاريخ الميلاد</label>
+                                <input type="date" name="birth_date" value="{{ birth_date_val }}"
+                                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
+                            </div>
+                        </div>
+
+                        {% elif user.is_teacher %}
+                        <!-- Teacher Specific Details -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">الرقم الوظيفي / الأكاديمي</label>
+                                <input type="text" name="teacher_id" value="{{ profile.teacher_id|default:'' }}"
+                                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                                       placeholder="مثال: TCH-102">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">التخصص الأكاديمي</label>
+                                <input type="text" name="specialization" value="{{ profile.specialization|default:'' }}"
+                                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
+                                       placeholder="مثال: علوم حاسوب / ذكاء اصطناعي">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-slate-100">
                         <button type="submit"
-                                class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-100 transition-all flex items-center space-x-reverse space-x-2">
-                            <span>حفظ التعديلات</span>
+                                class="px-6 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-100 transition-all flex items-center space-x-reverse space-x-2">
+                            <span>💾</span>
+                            <span>حفظ جميع التعديلات</span>
                         </button>
                     </div>
                 </form>
