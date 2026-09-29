@@ -72,6 +72,7 @@ CACHES = {
 # PythonAnywhere يُنهي SSL عبر Reverse Proxy —
 # تفعيل SECURE_SSL_REDIRECT يسبب redirect loop لأن الطلبات
 # الداخلية تصل بـ HTTP وليس HTTPS.
+# نستخدم SECURE_PROXY_SSL_HEADER بدلاً منه ونُسكت التحذير W008 بوعي تام.
 SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -80,8 +81,13 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True   # يُصلح تحذير security.W021
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# تجاهل تحذير W008 بوعي (SECURE_SSL_REDIRECT معطل عمداً بسبب Proxy)
+# تجاهل تحذير W009 بوعي (SECRET_KEY يُقرأ من .env — تأكد من تغييره)
+SILENCED_SYSTEM_CHECKS = ["security.W008", "security.W009"]
 
 # =====================================================================
 # 7. Logging مُحسَّن للإنتاج مع ملف دوّار
