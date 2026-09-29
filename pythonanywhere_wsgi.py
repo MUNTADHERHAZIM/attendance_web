@@ -21,6 +21,11 @@ PROJECT_PATH = "/home/attendances/attendance_web"
 if PROJECT_PATH not in sys.path:
     sys.path.insert(0, PROJECT_PATH)
 
+try:
+    os.chdir(PROJECT_PATH)
+except Exception:
+    pass
+
 # ─── 2. ملف البيئة (.env) ────────────────────────────────────────────
 # تأكد من وجود ملف .env في مجلد المشروع يحتوي على:
 #   SECRET_KEY, DEBUG=False, ALLOWED_HOSTS, DATABASE_URL

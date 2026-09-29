@@ -82,16 +82,22 @@ SESSION_COOKIE_AGE = 86400 * 7
 SESSION_SAVE_EVERY_REQUEST = False
 
 # =====================================================================
-# 7. قاعدة البيانات — SQLite متوافقة 100% مع نظام ملفات PythonAnywhere (NFS)
+# 7. قاعدة البيانات — مسار مطلق لضمان الوصول إلى نفس الملف في WSGI و CLI
 # =====================================================================
-DATABASES["default"]["OPTIONS"] = {  # noqa: F405
-    "timeout": 60,
-    "init_command": (
-        "PRAGMA journal_mode=DELETE;"
-        "PRAGMA synchronous=NORMAL;"
-        "PRAGMA temp_store=MEMORY;"
-    ),
-    "check_same_thread": False,
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "OPTIONS": {
+            "timeout": 60,
+            "init_command": (
+                "PRAGMA journal_mode=DELETE;"
+                "PRAGMA synchronous=NORMAL;"
+                "PRAGMA temp_store=MEMORY;"
+            ),
+            "check_same_thread": False,
+        },
+    }
 }
 CONN_MAX_AGE = 0
 
