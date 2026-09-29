@@ -15,7 +15,6 @@ django-environ>=0.11.0
 # Channels / WebSocket
 # يعمل بـ InMemoryChannelLayer على PythonAnywhere بدون Redis
 channels>=4.2.0
-daphne>=4.1.0
 
 # Celery (مطلوب للاستيراد حتى لو معطّل)
 # CELERY_TASK_ALWAYS_EAGER=True في settings_pythonanywhere.py

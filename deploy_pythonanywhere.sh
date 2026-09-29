@@ -36,16 +36,15 @@ if [ -d "$VENV_DIR" ] && [ ! -f "$PIP" ]; then
 fi
 
 if [ ! -d "$VENV_DIR" ]; then
-    python3.12 -m venv "$VENV_DIR"
-    echo "      ✅ تم إنشاء venv"
+    python3.12 -m venv --system-site-packages "$VENV_DIR"
+    echo "      ✅ تم إنشاء venv خفيف وسريع (مستفيد من مكتبات النظام)"
 else
     echo "      ℹ️  venv موجود وصالح"
 fi
 
 # ─── 3. تثبيت/تحديث المتطلبات ──────────────────────────────
-echo "[3/7] تثبيت المتطلبات..."
-$PIP install --upgrade pip --quiet
-$PIP install -r requirements-pythonanywhere.txt --quiet
+echo "[3/7] تثبيت المتطلبات الضرورية فقط..."
+$PIP install -r requirements-pythonanywhere.txt --no-cache-dir --quiet
 echo "      ✅ تم تثبيت جميع الحزم"
 
 # ─── 4. التحقق من ملف .env ─────────────────────────────────
