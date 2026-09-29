@@ -16,7 +16,7 @@ import os
 # ─── 1. مسار المشروع ──────────────────────────────────────────────────
 # غيّر "yourusername" إلى اسم مستخدمك على PythonAnywhere
 # غيّر "attendance" إلى اسم مجلد مشروعك (إذا كان مختلفاً)
-PROJECT_PATH = "/home/yourusername/attendance"
+PROJECT_PATH = "/home/attendances/attendance_web"
 
 if PROJECT_PATH not in sys.path:
     sys.path.insert(0, PROJECT_PATH)
@@ -30,7 +30,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings_pythonanywhere"
 # PythonAnywhere ينشئ virtualenv تلقائياً في:
 #   /home/yourusername/.virtualenvs/attendance_env/
 # إذا كنت تستخدم venv يدوياً، عدّل المسار أدناه:
-VENV_PATH = "/home/yourusername/.virtualenvs/attendance_env/lib/python3.12/site-packages"
+VENV_PATH = "/home/attendances/attendance_web/.venv/lib/python3.12/site-packages"
 if os.path.exists(VENV_PATH) and VENV_PATH not in sys.path:
     sys.path.insert(0, VENV_PATH)
 
