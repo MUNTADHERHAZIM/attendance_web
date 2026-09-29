@@ -9,8 +9,9 @@
 
 set -e  # وقف السكريبت فوراً عند أي خطأ
 
-# ─── إعدادات قابلة للتخصيص ────────────────────────────────
-PROJECT_DIR="$HOME/attendance"
+# ─── اكتشاف مسار المشروع تلقائياً ────────────────────────
+# يستخدم مجلد السكريبت نفسه — يعمل بغض النظر عن اسم المجلد
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$PROJECT_DIR/.venv"
 PYTHON="$VENV_DIR/bin/python"
 PIP="$VENV_DIR/bin/pip"
