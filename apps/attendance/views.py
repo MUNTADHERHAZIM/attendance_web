@@ -174,7 +174,7 @@ class SafeJWTOrSessionAuthentication(SessionAuthentication):
 
 @extend_schema(
     summary="الحصول على رمز QR الديناميكي",
-    description="يُعيد رمز QR مؤقت (15 ثانية) لجلسة تحضير نشطة.",
+    description="يُعيد رمز QR مؤقت لجلسة تحضير نشطة مع التحكم في سرعة التدوير.",
     responses={200: OpenApiResponse(description="رمز QR والمدة الزمنية")},
 )
 class GetDynamicQRTokenView(APIView):
@@ -183,13 +183,26 @@ class GetDynamicQRTokenView(APIView):
 
     def get(self, request, session_id):
         attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
-        # If not frozen, rotate salt normally every 15s. If frozen, preserve stable salt!
+        # Check custom requested speed from query param (e.g. 15, 30, 60, 120)
+        speed_param = request.GET.get("speed")
+        try:
+            speed_val = int(speed_param) if speed_param else 30
+            speed_val = max(10, min(speed_val, 600))
+        except (ValueError, TypeError):
+            speed_val = 30
+
+        # If not frozen, rotate salt normally
         if not getattr(attendance_session, "is_frozen_qr", False):
             attendance_session.qr_salt = uuid.uuid4()
             attendance_session.save(update_fields=["qr_salt"])
 
+        # Auto-ensure quick_otp exists
+        if not attendance_session.quick_otp:
+            attendance_session.quick_otp = f"{random.randint(100000, 999999)}"
+            attendance_session.save(update_fields=["quick_otp"])
+
         token = generate_qr_token(attendance_session)
-        expires = 86400 if getattr(attendance_session, "is_frozen_qr", False) else 30
+        expires = 86400 if getattr(attendance_session, "is_frozen_qr", False) else speed_val
         return Response(
             {
                 "token": token,
@@ -413,12 +426,16 @@ class StudentCheckInView(APIView):
                     return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
-        # 3. Verify session is still active and within allowed lecture time
-        if not attendance_session.is_active or attendance_session.end_time < timezone.now():
+        # 3. Verify session is still active (auto-extend end_time if teacher has session active)
+        if not attendance_session.is_active:
             return Response(
-                {"error": "انتهت جلسة التحضير لهذه المحاضرة وتم إغلاق تسجيل الحضور."},
+                {"error": "جلسة التحضير لهذه المحاضرة مغلقة حالياً من قِبل الأستاذ."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if attendance_session.end_time < timezone.now():
+            attendance_session.end_time = timezone.now() + timezone.timedelta(minutes=60)
+            attendance_session.save(update_fields=["end_time"])
 
         class_section = attendance_session.session.class_section
 
@@ -1389,11 +1406,7 @@ def create_custom_session_view(request, timetable_id=None):
             session_date=session_date,
         )
 
-        if conflict["has_conflict"] and conflict["severity"] == "error":
-            messages.error(request, conflict["message"])
-            return redirect("attendance:create_custom_session")
-
-        if conflict["has_conflict"] and conflict["severity"] == "warning":
+        if conflict["has_conflict"]:
             messages.warning(request, conflict["message"])
 
         session_obj, _ = Session.objects.get_or_create(
@@ -1588,17 +1601,30 @@ def edit_session_view(request, session_id):
         if end_time_str:
             try:
                 et = datetime.strptime(end_time_str, "%H:%M").time()
-                att_session.end_time = timezone.make_aware(datetime.combine(att_session.date, et))
+                st_time = att_session.start_time.time() if att_session.start_time else time(0, 0)
+                if et <= st_time:
+                    end_date = att_session.date + timezone.timedelta(days=1)
+                else:
+                    end_date = att_session.date
+                att_session.end_time = timezone.make_aware(datetime.combine(end_date, et))
             except Exception:
                 pass
+        elif att_session.start_time:
+            att_session.end_time = att_session.start_time + timezone.timedelta(minutes=120)
 
         att_session.shift = shift
         att_session.topic = topic
         att_session.lecture_type = lecture_type
         att_session.is_active = is_active
         att_session.is_frozen_qr = is_frozen_qr
-        if quick_otp and len(quick_otp) == 6:
-            att_session.quick_otp = quick_otp
+
+        # Ensure quick_otp is valid 6 digits
+        if not quick_otp or len(quick_otp) != 6 or not quick_otp.isdigit():
+            if not att_session.quick_otp:
+                quick_otp = f"{random.randint(100000, 999999)}"
+            else:
+                quick_otp = att_session.quick_otp
+        att_session.quick_otp = quick_otp
 
         att_session.save()
 
@@ -1618,6 +1644,11 @@ def edit_session_view(request, session_id):
 
         messages.success(request, f"تم حفظ تعديلات المحاضرة ({session_obj.course.name}) بنجاح! ✨")
         return redirect("attendance:session_detail_web", session_id=att_session.id)
+
+    # Auto-ensure quick_otp exists for GET
+    if not att_session.quick_otp:
+        att_session.quick_otp = f"{random.randint(100000, 999999)}"
+        att_session.save(update_fields=["quick_otp"])
 
     # Departments, courses, sections
     departments = institution.departments.all() if institution else Department.objects.all()

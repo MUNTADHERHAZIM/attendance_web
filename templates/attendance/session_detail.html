@@ -23,11 +23,34 @@ function sessionDetailManager() {
     return {
         token: ds.token || '',
         qrTimestamp: Date.now(),
-        expiresIn: 30,
+        expiresIn: parseInt(localStorage.getItem('qr_rotation_speed') || '30', 10),
+        qrSpeed: parseInt(localStorage.getItem('qr_rotation_speed') || '30', 10),
+        maxExpiresIn: parseInt(localStorage.getItem('qr_rotation_speed') || '30', 10),
         sessionId: parseInt(ds.sessionId || '0', 10),
         isFrozen: ds.isFrozen === 'true',
         qrSize: 'lg',
         layoutMode: localStorage.getItem('session_table_layout') || 'split',
+
+        setQrSpeed: function(seconds) {
+            this.qrSpeed = seconds;
+            this.maxExpiresIn = seconds;
+            this.expiresIn = seconds;
+            localStorage.setItem('qr_rotation_speed', seconds.toString());
+            if (this.isFrozen) {
+                this.toggleFreeze();
+            } else {
+                this.refreshToken();
+            }
+        },
+
+        qrSpeedLabel: function() {
+            if (this.isFrozen) return 'مثبت (بدون تدوير)';
+            if (this.qrSpeed === 15) return '15 ثانية (سريع)';
+            if (this.qrSpeed === 30) return '30 ثانية (معتدل)';
+            if (this.qrSpeed === 60) return '60 ثانية (دقيقة)';
+            if (this.qrSpeed === 120) return 'دقيقتان (بطيء جداً)';
+            return this.qrSpeed + ' ثانية';
+        },
         projectorMode: false,
         soundEnabled: true,
         filterStatus: 'ALL',
@@ -237,14 +260,14 @@ function sessionDetailManager() {
             if (jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined') {
                 headers['Authorization'] = 'Bearer ' + jwtToken;
             }
-            fetch('/attendance/api/session/' + self.sessionId + '/qr/', {
+            fetch('/attendance/api/session/' + self.sessionId + '/qr/?speed=' + self.qrSpeed, {
                 headers: headers,
                 credentials: 'same-origin'
             })
             .then(function(response) {
                 if (response.status === 401 && jwtToken) {
                     localStorage.removeItem('token');
-                    return fetch('/attendance/api/session/' + self.sessionId + '/qr/', {
+                    return fetch('/attendance/api/session/' + self.sessionId + '/qr/?speed=' + self.qrSpeed, {
                         credentials: 'same-origin'
                     });
                 }
@@ -259,11 +282,15 @@ function sessionDetailManager() {
                     self.token = data.token;
                     self.qrTimestamp = Date.now();
                 }
-                self.expiresIn = data.expires_in_seconds || 15;
+                if (data.quick_otp) {
+                    self.quickOtp = data.quick_otp;
+                }
+                self.expiresIn = data.expires_in_seconds || self.qrSpeed || 30;
+                self.maxExpiresIn = self.expiresIn;
             })
             .catch(function(e) {
                 console.error('Failed to rotate QR Token', e);
-                self.expiresIn = 15;
+                self.expiresIn = self.qrSpeed || 30;
             });
         },
 
@@ -665,6 +692,24 @@ window.addEventListener('keydown', function(e) {
                     </template>
                 </div>
 
+                <!-- QR Rotation Speed Controller Bar -->
+                <div class="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-600 mb-1">
+                        <span class="flex items-center gap-1">
+                            <span>⏱️</span>
+                            <span>سرعة تجديد الرمز:</span>
+                        </span>
+                        <span class="text-[11px] font-mono font-bold text-brand-600" x-text="qrSpeedLabel()"></span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-1 text-[11px] font-bold">
+                        <button @click="setQrSpeed(15)" :class="qrSpeed === 15 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">15ث ⚡</button>
+                        <button @click="setQrSpeed(30)" :class="qrSpeed === 30 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">30ث ⏱️</button>
+                        <button @click="setQrSpeed(60)" :class="qrSpeed === 60 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">60ث 🐢</button>
+                        <button @click="setQrSpeed(120)" :class="qrSpeed === 120 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">دقيقتان ⏳</button>
+                        <button @click="toggleFreeze()" :class="isFrozen ? 'bg-amber-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">تثبيت 🔒</button>
+                    </div>
+                </div>
+
                 <!-- Animated Countdown Progress Bar -->
                 <div class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
                     <div class="flex justify-between items-center text-xs font-bold text-slate-600 px-1">
@@ -676,12 +721,12 @@ window.addEventListener('keydown', function(e) {
                             <span>🔒</span>
                             الرمز مثبت (بدون تدوير):
                         </span>
-                        <span class="font-mono text-brand-700 font-black text-sm" x-show="!isFrozen" x-text="expiresIn + ' ثانية'">15 ثانية</span>
+                        <span class="font-mono text-brand-700 font-black text-sm" x-show="!isFrozen" x-text="expiresIn + ' ثانية'">30 ثانية</span>
                         <span class="text-amber-800 font-black text-xs" x-show="isFrozen">صالح طوال المحاضرة</span>
                     </div>
                     <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden" x-show="!isFrozen">
                         <div class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full transition-all duration-1000 ease-linear rounded-full"
-                             :style="'width: ' + (expiresIn / 15 * 100) + '%'"></div>
+                             :style="'width: ' + Math.min(100, Math.max(0, (expiresIn / maxExpiresIn * 100))) + '%'"></div>
                     </div>
                     <div class="p-1.5 bg-amber-50 rounded text-[11px] text-amber-800 font-medium text-center border border-amber-200" x-show="isFrozen">
                         ⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً.
@@ -702,7 +747,7 @@ window.addEventListener('keydown', function(e) {
 
                     <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200/80 shadow-xs">
                         <div class="flex-1 text-center">
-                            <span class="text-3xl font-black tracking-widest text-indigo-700 font-mono select-all">
+                            <span class="text-3xl font-black tracking-widest text-indigo-700 font-mono select-all" x-text="quickOtp">
                                 {{ attendance_session.quick_otp|default:"849201" }}
                             </span>
                         </div>
