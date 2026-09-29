@@ -49,3 +49,6 @@ requests>=2.31.0
 # ملاحظة: gunicorn غير مطلوب على PythonAnywhere
 # PythonAnywhere يستخدم خادم WSGI الداخلي الخاص به
 # gunicorn>=21.0.0
+
+whitenoise>=6.0.0
+
