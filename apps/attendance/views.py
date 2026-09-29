@@ -385,6 +385,7 @@ class StudentCheckInView(APIView):
         otp = request.data.get("otp")
         session_id = request.data.get("session_id")
         checkin_method = AttendanceRecord.Methods.QR
+        is_new_auto_student = False
 
         if not token and not otp:
             return Response(
@@ -394,15 +395,24 @@ class StudentCheckInView(APIView):
 
         # 2. Token / OTP Verification
         if token:
-            attendance_session, error_msg = verify_qr_token(token, max_age=15)
+            attendance_session, error_msg = verify_qr_token(token, max_age=600)
             if not attendance_session:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         else:
+            otp_clean = str(otp).strip() if otp else ""
             if not session_id:
-                return Response({"error": "معرف الجلسة مطلوب عند استخدام رمز OTP"}, status=status.HTTP_400_BAD_REQUEST)
-            attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
-            if not attendance_session.quick_otp or attendance_session.quick_otp != str(otp).strip():
-                return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
+                # Find active session matching this OTP automatically
+                active_sessions = AttendanceSession.objects.filter(is_active=True, quick_otp=otp_clean)
+                if active_sessions.count() == 1:
+                    attendance_session = active_sessions.first()
+                elif active_sessions.count() > 1:
+                    return Response({"error": "توجد أكثر من جلسة نشطة بهذا الرمز. يرجى اختيار الجلسة التابعة لمادتك."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهت المحاضرة."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
+                if not attendance_session.quick_otp or attendance_session.quick_otp != otp_clean:
+                    return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
         # 3. Verify session is still active and within allowed lecture time
@@ -414,16 +424,13 @@ class StudentCheckInView(APIView):
 
         class_section = attendance_session.session.class_section
 
-        # 4. Student Identification: Logged-in Account OR Guest Student Name/ID Match
+        # 4. Student Identification: Logged-in Account OR Guest Student Name/ID Match / Auto-Register New Student
         student_profile = None
         if request.user.is_authenticated and hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
             # Verify student is enrolled in this section
             if not student_profile.sections.filter(id=class_section.id).exists():
-                return Response(
-                    {"error": f"أنت غير مسجل في هذه الشعبة ({class_section.name})."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+                student_profile.sections.add(class_section)
         else:
             student_query = request.data.get("student_name") or request.data.get("student_id") or request.data.get("identifier")
             if not student_query or not str(student_query).strip():
@@ -437,10 +444,30 @@ class StudentCheckInView(APIView):
             
             matched_student, match_err = find_matching_student(student_query, class_section)
             if not matched_student:
-                return Response(
-                    {"error": match_err},
-                    status=status.HTTP_400_BAD_REQUEST,
+                # ✅ Auto-register new guest student if not found in database!
+                student_name_clean = str(student_query).strip()
+                from apps.accounts.models import User
+                new_username = f"std_auto_{uuid.uuid4().hex[:8]}"
+                
+                new_user = User.objects.create(
+                    username=new_username,
+                    first_name=student_name_clean,
+                    role=User.Roles.STUDENT,
                 )
+                inst = getattr(class_section.department, "institution", None) or Institution.objects.first()
+                new_std_id = f"NEW-{random.randint(10000, 99999)}"
+                if student_name_clean.isdigit():
+                    new_std_id = student_name_clean
+                
+                matched_student = StudentProfile.objects.create(
+                    user=new_user,
+                    student_id=new_std_id,
+                    institution=inst,
+                    study_shift=attendance_session.shift,
+                )
+                matched_student.sections.add(class_section)
+                is_new_auto_student = True
+
             student_profile = matched_student
 
         # Shift / Study Type Verification (منع تضارب دوام الصباحي والمسائي)
@@ -489,9 +516,9 @@ class StudentCheckInView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            target_lat = attendance_session.latitude or institution.latitude
-            target_lon = attendance_session.longitude or institution.longitude
-            allowed_radius = attendance_session.radius_meters or institution.radius_meters or 50
+            target_lat = attendance_session.latitude or (institution.latitude if institution else None)
+            target_lon = attendance_session.longitude or (institution.longitude if institution else None)
+            allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 50) or 50
 
             if target_lat and target_lon:
                 distance = calculate_haversine_distance(student_lat, student_lon, target_lat, target_lon)
@@ -505,7 +532,7 @@ class StudentCheckInView(APIView):
 
         # 8. WiFi / Subnet restriction (if configured)
         if attendance_session.requires_wifi:
-            subnet = attendance_session.allowed_ip_subnet or institution.allowed_ip_subnet
+            subnet = attendance_session.allowed_ip_subnet or (institution.allowed_ip_subnet if institution else None)
             if subnet and not is_ip_in_subnet(ip, subnet):
                 return Response(
                     {
@@ -526,6 +553,8 @@ class StudentCheckInView(APIView):
             else AttendanceRecord.Statuses.PRESENT
         )
 
+        record_notes = "✨ طالب جديد (تم التسجيل الذاتي أثناء المحاضرة)" if is_new_auto_student else None
+
         record, created = AttendanceRecord.objects.update_or_create(
             student=student_profile,
             attendance_session=attendance_session,
@@ -534,7 +563,8 @@ class StudentCheckInView(APIView):
                 "method": checkin_method,
                 "ip_address": ip,
                 "device_user_agent": request.META.get("HTTP_USER_AGENT"),
-                "modified_by": request.user,
+                "modified_by": request.user if request.user.is_authenticated else None,
+                "notes": record_notes,
             },
         )
 
@@ -543,11 +573,14 @@ class StudentCheckInView(APIView):
         queue_for_sync(record, SyncQueue.Actions.CREATE if created else SyncQueue.Actions.UPDATE)
 
         serializer = AttendanceRecordSerializer(record)
-        msg = (
-            "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
-            if record_status == AttendanceRecord.Statuses.PRESENT
-            else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
-        )
+        if is_new_auto_student:
+            msg = f"تم إضافتك كطالب جديد وتسجيل حضورك بنجاح ✔ ({student_profile.user.get_full_name()})"
+        else:
+            msg = (
+                "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
+                if record_status == AttendanceRecord.Statuses.PRESENT
+                else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
+            )
         return Response({"message": msg, "record": serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -739,15 +772,20 @@ def session_detail_web_view(request, session_id):
 
     import socket
     primary_hotspot_ip = None
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0.1)
-        s.connect(('10.255.255.255', 1))
-        primary_hotspot_ip = s.getsockname()[0]
-        s.close()
-    except Exception:
-        pass
-    if not primary_hotspot_ip or primary_hotspot_ip.startswith("127."):
+    host_name = request.get_host().split(":")[0]
+    is_cloud_prod = "pythonanywhere" in host_name or not settings.DEBUG or host_name not in ["127.0.0.1", "localhost"]
+
+    if not is_cloud_prod:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(0.1)
+            s.connect(('10.255.255.255', 1))
+            primary_hotspot_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+
+    if not primary_hotspot_ip or primary_hotspot_ip.startswith("127.") or primary_hotspot_ip.startswith("10.0.4."):
         primary_hotspot_ip = "127.0.0.1"
 
     server_port = str(request.get_port() or "8001")
@@ -965,7 +1003,10 @@ def qr_image_view(request):
 
     # Build absolute URL for student check-in (supports Hotspot LAN host)
     custom_host = request.GET.get("host", "").strip()
-    if custom_host:
+    current_host = request.get_host().split(":")[0]
+    is_cloud_env = "pythonanywhere" in current_host or current_host not in ["127.0.0.1", "localhost"]
+
+    if custom_host and not is_cloud_env and not custom_host.startswith("10.0.4."):
         checkin_url = f"http://{custom_host}/attendance/checkin/"
     else:
         checkin_url = request.build_absolute_uri("/attendance/checkin/")

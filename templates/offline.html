@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>وضع عدم الاتصال | نظام الحضور الذكي</title>
+    
+    <!-- PWA & Meta -->
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="{% url 'manifest' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/pwa/favicon-32x32.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 100%);
+        }
+        @keyframes radarPulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.35); opacity: 0.2; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+        .radar-wave {
+            animation: radarPulse 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+        }
+        .radar-wave-delay {
+            animation: radarPulse 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+            animation-delay: 1.25s;
+        }
+    </style>
+</head>
+<body class="h-full min-h-screen flex items-center justify-center p-4 text-slate-100 selection:bg-brand-500 selection:text-white">
+
+    <div class="max-w-lg w-full bg-slate-800/80 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center">
+        <!-- Ambient background glows -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Radar Animation & Icon -->
+        <div class="relative w-28 h-28 mx-auto mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-2 border-amber-400/40 radar-wave"></div>
+            <div class="absolute inset-0 rounded-full border-2 border-brand-400/40 radar-wave-delay"></div>
+            <div class="relative z-10 w-20 h-20 bg-gradient-to-tr from-slate-900 to-slate-800 border-2 border-amber-400/60 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/10">
+                <svg class="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-2.828-5.657m0 0a9 9 0 012.828-5.657m0 0l2.829 2.829m-2.829-2.829L3 3m6.364 12.728a5 5 0 01-1.414-3.536m0 0a5 5 0 011.414-3.536m0 0l2.829 2.829" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Status Badge -->
+        <div class="inline-flex items-center space-x-reverse space-x-2 px-3.5 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 rounded-full text-xs font-bold mb-4">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>أنت تعمل في وضع عدم الاتصال (Offline)</span>
+        </div>
+
+        <!-- Heading & Details -->
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-3">
+            انقطع الاتصال بالشبكة
+        </h1>
+        <p class="text-sm text-slate-300 leading-relaxed mb-6">
+            النظام يعمل بكفاءة عالية دون اتصال. تم حفظ واجهات التطبيق في ذاكرة جهازك، وعند عودة الشبكة ستتم المزامنة تلقائياً.
+        </p>
+
+        <!-- Retry Button with Live Check -->
+        <div class="space-y-3 mb-6">
+            <button id="retry-btn" onclick="testConnection()" class="w-full py-3.5 px-5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center space-x-reverse space-x-2">
+                <svg id="retry-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span id="retry-text">إعادة فحص الاتصال</span>
+            </button>
+            <p id="status-feedback" class="text-xs font-semibold text-slate-400 min-h-[1.25rem]"></p>
+        </div>
+
+        <!-- Quick Local Actions -->
+        <div class="pt-5 border-t border-slate-700/60 text-right">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 text-center">الوصول السريع للشاشات المخزنة</p>
+            <div class="grid grid-cols-2 gap-2.5">
+                <a href="/attendance/checkin/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
+                    <span class="text-base">📷</span>
+                    <span>مسح QR الحضور</span>
+                </a>
+                <a href="/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
+                    <span class="text-base">📊</span>
+                    <span>لوحة التحكم</span>
+                </a>
+                <a href="/attendance/student/records/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
+                    <span class="text-base">📑</span>
+                    <span>سجلات الحضور</span>
+                </a>
+                <a href="/login/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
+                    <span class="text-base">🔑</span>
+                    <span>تسجيل الدخول</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testConnection() {
+            const btn = document.getElementById('retry-btn');
+            const icon = document.getElementById('retry-icon');
+            const text = document.getElementById('retry-text');
+            const feedback = document.getElementById('status-feedback');
+
+            icon.classList.add('animate-spin');
+            text.textContent = 'جاري الفحص...';
+            btn.disabled = true;
+            feedback.textContent = 'جاري محاولة الاتصال بالخادم...';
+            feedback.className = 'text-xs font-semibold text-slate-300';
+
+            fetch('/?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+                .then(function(res) {
+                    if (res.ok) {
+                        feedback.textContent = '⚡ تم استعادة الاتصال! جاري التوجيه...';
+                        feedback.className = 'text-xs font-semibold text-emerald-400';
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 800);
+                    } else {
+                        throw new Error('Server unreachable');
+                    }
+                })
+                .catch(function() {
+                    feedback.textContent = '❌ لا يمكن الوصول إلى الخادم حالياً. يرجى التحقق من الشبكة.';
+                    feedback.className = 'text-xs font-semibold text-rose-400';
+                })
+                .finally(function() {
+                    icon.classList.remove('animate-spin');
+                    text.textContent = 'إعادة فحص الاتصال';
+                    btn.disabled = false;
+                });
+        }
+
+        // Automatically reload when network comes back online
+        window.addEventListener('online', function() {
+            const feedback = document.getElementById('status-feedback');
+            if (feedback) {
+                feedback.textContent = '⚡ عادت الشبكة للعمل! جاري إعادة التحميل...';
+                feedback.className = 'text-xs font-semibold text-emerald-400';
+            }
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

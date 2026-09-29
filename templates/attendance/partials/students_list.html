@@ -30,8 +30,14 @@
                                 {{ item.profile.user.first_name|first|default:item.profile.user.username|first|upper }}
                             </div>
                             <div class="min-w-0">
-                                <div class="text-sm font-black text-slate-900 truncate">
-                                    {{ item.profile.user.get_full_name|default:item.profile.user.username }}
+                                <div class="text-sm font-black text-slate-900 truncate flex items-center gap-1.5">
+                                    <span>{{ item.profile.user.get_full_name|default:item.profile.user.username }}</span>
+                                    {% if item.record and 'طالب جديد' in item.record.notes or item.profile.student_id|slice:":4" == "NEW-" %}
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="طالب جديد تم تسجيله تلقائياً أثناء المحاضرة">
+                                            <span>🏷️</span>
+                                            <span>طالب جديد</span>
+                                        </span>
+                                    {% endif %}
                                 </div>
                                 <div class="text-[11px] text-slate-400 font-mono truncate">
                                     {{ item.profile.user.email|default:item.profile.user.username }}

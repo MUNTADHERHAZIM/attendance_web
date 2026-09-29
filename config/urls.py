@@ -16,7 +16,8 @@ from apps.core.views import (
     dashboard_view, 
     custom_404_view, 
     custom_500_view, 
-    custom_403_view
+    custom_403_view,
+    offline_view
 )
 from apps.reports.views import admin_import_web_view
 from apps.accounts.views import logout_view, RegisterView, CheckTeacherCodeView
@@ -95,6 +96,15 @@ urlpatterns = [
     path("admin/students/import/", admin_import_web_view, name="admin_import_web"),
 
     # ─── PWA endpoints ───────────────────────────────────────────────
+    path("offline/", offline_view, name="offline"),
+    path("manifest.json", serve, {
+        "path": "manifest.json",
+        "document_root": os.path.join(settings.BASE_DIR, "static"),
+    }, name="manifest_json"),
+    path("favicon.ico", serve, {
+        "path": "favicon.ico",
+        "document_root": os.path.join(settings.BASE_DIR, "static"),
+    }, name="favicon_ico"),
     path("", include("pwa.urls")),
 
     # ─── PWA Service Worker (must be served from root scope) ─────────

@@ -122,6 +122,18 @@
                 return;
             }
 
+            // Extract clean token parameter if a full URL was scanned
+            let cleanToken = token;
+            if (cleanToken && cleanToken.includes('token=')) {
+                try {
+                    const u = new URL(cleanToken);
+                    cleanToken = u.searchParams.get('token') || cleanToken;
+                } catch(e) {
+                    const m = cleanToken.match(/token=([^&]+)/);
+                    if (m) cleanToken = m[1];
+                }
+            }
+
             this.loading = true;
             if (!this.gpsCoords && 'geolocation' in navigator) {
                 await new Promise((res) => {
@@ -134,7 +146,7 @@
             }
 
             const payload = {
-                token: token,
+                token: cleanToken,
                 student_name: this.guestStudentName.trim() || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,

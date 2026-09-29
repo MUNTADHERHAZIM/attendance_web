@@ -292,23 +292,68 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # =====================================================================
-# PWA Configuration
+# PWA Configuration (django-pwa & Standard Web App Manifest)
 # =====================================================================
 PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, "static", "sw.js")
-PWA_APP_NAME = "نظام الحضور الذكي"
-PWA_APP_DESCRIPTION = "نظام تسجيل حضور الطلاب الذكي والمستقل عن الإنترنت"
-PWA_APP_THEME_COLOR = "#0f172a"
-PWA_APP_BACKGROUND_COLOR = "#ffffff"
+PWA_APP_NAME = "نظام الحضور الذكي | Smart Attendance"
+PWA_APP_SHORT_NAME = "الحضور الذكي"
+PWA_APP_DESCRIPTION = "نظام الحضور والغياب الذكي والمستقل عن الإنترنت - مسح سريع، تقارير فورية، ومزامنة تلقائية"
+PWA_APP_THEME_COLOR = "#4f46e5"
+PWA_APP_BACKGROUND_COLOR = "#0f172a"
 PWA_APP_DISPLAY = "standalone"
+PWA_APP_SCOPE = "/"
 PWA_APP_START_URL = "/"
-# ✅ FIX: Paths match actual files in /static/images/
+PWA_APP_ORIENTATION = "portrait-primary"
+PWA_APP_DIR = "rtl"
+PWA_APP_LANG = "ar-SA"
+PWA_APP_STATUS_BAR_COLOR = "black-translucent"
+
 PWA_APP_ICONS = [
+    {"src": "/static/images/pwa/icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/static/images/pwa/icon-maskable-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/static/images/pwa/icon-maskable-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
     {"src": "/static/images/logo_192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "/static/images/logo_512.png", "sizes": "512x512", "type": "image/png"},
 ]
-# Override django-pwa default icon path (it defaults to /static/images/icons/)
+
 PWA_APP_ICONS_APPLE = [
+    {"src": "/static/images/pwa/apple-touch-icon.png", "sizes": "180x180"},
+    {"src": "/static/images/pwa/icon-152x152.png", "sizes": "152x152"},
     {"src": "/static/images/logo_192.png", "sizes": "192x192"},
+]
+
+PWA_APP_SHORTCUTS = [
+    {
+        "name": "مسح رمز QR للتحضير",
+        "short_name": "تحضير QR",
+        "url": "/attendance/checkin/",
+        "icons": [{"src": "/static/images/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png"}]
+    },
+    {
+        "name": "محاضراتي وجلسات اليوم",
+        "short_name": "المحاضرات",
+        "url": "/attendance/teacher/sessions/",
+        "icons": [{"src": "/static/images/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png"}]
+    },
+    {
+        "name": "سجل الحضور والغياب",
+        "short_name": "سجلي",
+        "url": "/attendance/student/records/",
+        "icons": [{"src": "/static/images/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png"}]
+    },
+    {
+        "name": "لوحة التحكم الرئيسية",
+        "short_name": "الرئيسية",
+        "url": "/",
+        "icons": [{"src": "/static/images/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png"}]
+    }
 ]
 
 # =====================================================================

@@ -12,35 +12,45 @@ def generate_qr_token(attendance_session):
     return signer.sign(data)
 
 
-def verify_qr_token(token_str, max_age=15):
+def verify_qr_token(token_str, max_age=600):
     """
     Verifies that:
     1. The signature is mathematically valid (uses settings.SECRET_KEY).
-    2. The token is not expired (max_age 15 seconds unless is_frozen_qr is True).
+    2. The token is not expired (max_age 600 seconds = 10 minutes).
     3. The token contains the active session ID.
-    4. The salt matches the session's CURRENT salt.
     """
+    if not token_str:
+        return None, "رمز التحضير غير موجود"
+
+    token_str = str(token_str).strip()
+
+    # Extract token query param if a full URL was scanned
+    if "token=" in token_str:
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(token_str)
+            qs = parse_qs(parsed.query)
+            if "token" in qs and qs["token"]:
+                token_str = qs["token"][0]
+        except Exception:
+            import re
+            m = re.search(r'token=([^&]+)', token_str)
+            if m:
+                token_str = m.group(1)
+
     signer = TimestampSigner()
     try:
-        # Unsign with full daily window first to inspect session configuration
-        unsigned_data = signer.unsign(token_str, max_age=86400)
-        session_id_str, qr_salt_str = unsigned_data.split(":")
-        session_id = int(session_id_str)
-        
         # Load model lazily to avoid circular imports
         from .models import AttendanceSession
+
+        # Verify timestamp signature (valid for max_age seconds, default 10 minutes)
+        unsigned_data = signer.unsign(token_str, max_age=max_age)
+        session_id_str, qr_salt_str = unsigned_data.split(":")
+        session_id = int(session_id_str)
+
         attendance_session = AttendanceSession.objects.get(id=session_id, is_active=True)
-        
-        # If the teacher has NOT frozen the QR code, enforce the strict 15s rotating window
-        if not getattr(attendance_session, "is_frozen_qr", False):
-            signer.unsign(token_str, max_age=max_age)
-        
-        # Check if the salt matches
-        if str(attendance_session.qr_salt) != qr_salt_str:
-            return None, "منتهى الصلاحية (تم تجديد الرمز)"
-            
         return attendance_session, None
-        
+
     except SignatureExpired:
         return None, "انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)"
     except BadSignature:

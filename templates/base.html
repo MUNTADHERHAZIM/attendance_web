@@ -39,9 +39,28 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
-    <!-- PWA Manifest -->
+    <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="الحضور الذكي">
+    <meta name="application-name" content="نظام الحضور الذكي">
+    <meta name="msapplication-TileColor" content="#4f46e5">
+    <meta name="msapplication-navbutton-color" content="#4f46e5">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- PWA Favicons & Touch Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/pwa/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/pwa/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{% static 'images/pwa/icon-152x152.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{% static 'images/pwa/icon-192x192.png' %}">
     
     <style>
         body {
@@ -215,7 +234,21 @@
                 </div>
                 
                 <!-- Right Nav Section -->
-                <div class="flex items-center space-x-reverse space-x-4">
+                <div class="flex items-center space-x-reverse space-x-3 sm:space-x-4">
+                    <!-- Network Status Pill (Desktop & Tablet) -->
+                    <div id="pwa-network-badge" class="hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="pwa-network-badge-text">متصل</span>
+                    </div>
+
+                    <!-- PWA Header Install Button (Dynamic) -->
+                    <button id="pwa-header-install-btn" onclick="pwaInstallApp()" class="hidden items-center space-x-reverse space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>تثبيت التطبيق</span>
+                    </button>
+
                     {% if user.is_authenticated %}
                         <div class="hidden sm:flex flex-col text-left items-end">
                             <span class="text-sm font-semibold text-slate-700">{{ user.get_full_name|default:user.username }}</span>
@@ -471,11 +504,182 @@
             {% endif %}
 
             {% block content %}{% endblock %}
+            <!-- Bottom safe padding on mobile for Bottom Navigation Bar -->
+            <div class="h-20 sm:hidden"></div>
         </main>
     </div>
 
+    <!-- ─── Mobile Bottom Navigation Bar (App Experience) ─── -->
+    <div class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_16px_rgba(0,0,0,0.06)] no-print" style="padding-bottom: max(0.375rem, env(safe-area-inset-bottom));">
+        <a href="/" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if request.path == '/' %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+            <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="text-[10px]">الرئيسية</span>
+        </a>
+
+        {% if user.is_student %}
+            <a href="{% url 'attendance:student_checkin_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/checkin/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <div class="relative -top-2 bg-gradient-to-tr from-brand-600 to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-brand-500/30">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                </div>
+                <span class="text-[10px] -mt-1 font-bold text-brand-700">مسح QR</span>
+            </a>
+            <a href="{% url 'attendance:student_records_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="text-[10px]">سجلي</span>
+            </a>
+        {% elif user.is_teacher %}
+            <a href="{% url 'attendance:teacher_sessions_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[10px]">المحاضرات</span>
+            </a>
+            <a href="{% url 'attendance:create_custom_session' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all">
+                <div class="relative -top-2 bg-gradient-to-tr from-brand-600 to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-brand-500/30">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                <span class="text-[10px] -mt-1 font-bold text-brand-700">تحضير طارئ</span>
+            </a>
+            <a href="{% url 'reports:admin_reports_overview' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/reports/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
+                </svg>
+                <span class="text-[10px]">التقارير</span>
+            </a>
+        {% elif user.is_super_admin or user.is_institution_admin %}
+            <a href="{% url 'attendance:teacher_sessions_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[10px]">الجلسات</span>
+            </a>
+            <a href="{% url 'attendance:student_records_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                </svg>
+                <span class="text-[10px]">السجلات</span>
+            </a>
+            <a href="{% url 'reports:admin_reports_overview' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/reports/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z" />
+                </svg>
+                <span class="text-[10px]">التقارير</span>
+            </a>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/accounts/profile/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span class="text-[10px]">حسابي</span>
+            </a>
+        {% else %}
+            <a href="/login/" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-brand-600 font-bold">
+                <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                <span class="text-[10px]">دخول</span>
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- ─── PWA Floating Install Banner / Bottom Sheet ─── -->
+    <div id="pwa-install-banner" class="hidden fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl z-50 text-white transform transition-all duration-300 no-print">
+        <div class="flex items-start space-x-reverse space-x-3.5">
+            <div class="relative flex-shrink-0">
+                <img src="{% static 'images/pwa/icon-192x192.png' %}" alt="Icon" class="w-12 h-12 rounded-xl shadow-md border border-brand-400/40">
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-brand-500"></span>
+                </span>
+            </div>
+            <div class="flex-grow">
+                <div class="flex items-center space-x-reverse space-x-2">
+                    <h4 class="text-sm font-bold text-white">تثبيت تطبيق الحضور الذكي</h4>
+                    <span class="px-1.5 py-0.5 bg-brand-500/30 border border-brand-400/40 text-brand-300 text-[10px] font-extrabold rounded-md">PWA</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    ثبّت التطبيق على جهازك للوصول السريع، مسح رموز QR بلمسة واحدة، والعمل دون اتصال بالإنترنت!
+                </p>
+                <div class="flex items-center space-x-reverse space-x-2 mt-3.5">
+                    <button onclick="pwaInstallApp()" class="flex-1 py-2 px-3 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-500/25 transition-all text-center flex items-center justify-center space-x-reverse space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>تثبيت التطبيق الآن</span>
+                    </button>
+                    <button onclick="pwaDismissBanner()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-colors">
+                        لاحقاً
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── iOS Safari Add-To-Home-Screen Instruction Modal ─── -->
+    <div id="pwa-ios-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 no-print" onclick="pwaCloseIosModal(event)">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full text-white shadow-2xl text-center relative animate-fade-in" onclick="event.stopPropagation()">
+            <button onclick="pwaCloseIosModal()" class="absolute top-4 left-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div class="w-16 h-16 mx-auto mb-3.5 bg-gradient-to-tr from-brand-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 p-2.5">
+                <img src="{% static 'images/pwa/icon-192x192.png' %}" alt="App" class="w-full h-full object-contain rounded-xl">
+            </div>
+            <h3 class="text-base font-bold text-white mb-1">تثبيت التطبيق على جهاز iOS</h3>
+            <p class="text-xs text-slate-300 mb-5 leading-relaxed">لتشغيل نظام الحضور الذكي كتطبيق أصلي، اتبع الخطوات البسيطة التالية في متصفح Safari:</p>
+            
+            <div class="space-y-3 text-right bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 text-xs text-slate-200 mb-5">
+                <div class="flex items-center space-x-reverse space-x-3">
+                    <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">1</span>
+                    <span>اضغط على زر المشاركة <strong>(Share ⎋)</strong> في أسفل متصفح سفاري.</span>
+                </div>
+                <div class="flex items-center space-x-reverse space-x-3">
+                    <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">2</span>
+                    <span>مرر للأسفل واختر <strong>"إضافة إلى الصفحة الرئيسية" ⊞</strong>.</span>
+                </div>
+                <div class="flex items-center space-x-reverse space-x-3">
+                    <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">3</span>
+                    <span>اضغط على <strong>"إضافة" (Add)</strong> في أعلى الزاوية.</span>
+                </div>
+            </div>
+
+            <button onclick="pwaCloseIosModal()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl transition-colors">
+                فهمت ذلك
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── PWA Service Worker Update Banner ─── -->
+    <div id="pwa-update-toast" class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900/95 text-white border border-brand-400/50 rounded-2xl px-4 py-3 shadow-2xl flex items-center space-x-reverse space-x-3 backdrop-blur-md no-print">
+        <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-white">يتوفر إصدار جديد من النظام</p>
+            <p class="text-[11px] text-slate-300">تم تنزيل التحديث في الخلفية وهو جاهز للتطبيق.</p>
+        </div>
+        <button id="pwa-update-btn" class="mr-2 py-1 px-3 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow transition-colors">
+            تحديث فوري
+        </button>
+    </div>
+
+    <!-- ─── Real-time Network Toast Indicator ─── -->
+    <div id="pwa-network-toast" class="hidden fixed bottom-24 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-full shadow-xl text-xs font-bold flex items-center space-x-reverse space-x-2 transition-all duration-300 no-print">
+        <span id="pwa-toast-dot" class="w-2 h-2 rounded-full"></span>
+        <span id="pwa-toast-text"></span>
+    </div>
+
     <!-- Toast Notification Overlay -->
-    <div class="fixed bottom-5 left-5 z-50 flex flex-col space-y-2 pointer-events-none no-print">
+    <div class="fixed bottom-20 sm:bottom-5 left-5 z-50 flex flex-col space-y-2 pointer-events-none no-print">
         <template x-for="toast in toasts" :key="toast.id">
             <div x-data="{ show: false }" x-init="nextTick(() => show = true)" x-show="show"
                  class="w-80 bg-white border rounded-xl shadow-xl p-4 pointer-events-auto flex items-center space-x-reverse space-x-3 transition-transform duration-300"
@@ -494,16 +698,173 @@
         </template>
     </div>
 
-    <!-- Service Worker Registrar -->
+    <!-- ─── PWA Main Controller Script ─── -->
     <script>
+        let deferredPrompt = null;
+        let newWorker = null;
+
+        const isIos = () => {
+            const userAgent = window.navigator.userAgent.toLowerCase();
+            return /iphone|ipad|ipod/.test(userAgent);
+        };
+
+        const isInStandaloneMode = () => {
+            return ('standalone' in window.navigator && window.navigator.standalone) ||
+                   window.matchMedia('(display-mode: standalone)').matches ||
+                   window.matchMedia('(display-mode: window-controls-overlay)').matches;
+        };
+
+        // 1. Service Worker Registration & Update Notification
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(function(reg) {
-                    console.log('Service Worker successfully registered with scope: ', reg.scope);
-                }).catch(function(err) {
-                    console.log('Service Worker registration failed: ', err);
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration.scope);
+
+                        // Detect update
+                        registration.addEventListener('updatefound', () => {
+                            newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showUpdateToast();
+                                }
+                            });
+                        });
+                    })
+                    .catch((err) => console.warn('[PWA] SW registration failed:', err));
+
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        refreshing = true;
+                        window.location.reload();
+                    }
                 });
+            });
         }
+
+        function showUpdateToast() {
+            const toast = document.getElementById('pwa-update-toast');
+            const btn = document.getElementById('pwa-update-btn');
+            if (toast && btn) {
+                toast.classList.remove('hidden');
+                btn.onclick = () => {
+                    if (newWorker) {
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                };
+            }
+        }
+
+        // 2. Install Prompt Listener (Android & Chrome / Edge Desktop)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('[PWA] beforeinstallprompt captured.');
+
+            // Show header install button
+            const headerBtn = document.getElementById('pwa-header-install-btn');
+            if (headerBtn) {
+                headerBtn.classList.remove('hidden');
+                headerBtn.classList.add('inline-flex');
+            }
+
+            // Show floating install banner if not dismissed in the last 24h
+            const dismissedAt = localStorage.getItem('pwa_banner_dismissed');
+            const isDismissedRecently = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 24 * 60 * 60 * 1000);
+            
+            if (!isDismissedRecently && !isInStandaloneMode()) {
+                setTimeout(() => {
+                    const banner = document.getElementById('pwa-install-banner');
+                    if (banner) banner.classList.remove('hidden');
+                }, 3000);
+            }
+        });
+
+        // 3. Install Trigger
+        window.pwaInstallApp = async function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('[PWA] User response to install:', outcome);
+                deferredPrompt = null;
+                pwaDismissBanner();
+            } else if (isIos() && !isInStandaloneMode()) {
+                const iosModal = document.getElementById('pwa-ios-modal');
+                if (iosModal) iosModal.classList.remove('hidden');
+            } else {
+                alert('التطبيق مثبت بالفعل أو يمكنك تثبيته من خيارات المتصفح (Install App).');
+            }
+        };
+
+        window.pwaDismissBanner = function() {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.add('hidden');
+            localStorage.setItem('pwa_banner_dismissed', Date.now().toString());
+        };
+
+        window.pwaCloseIosModal = function() {
+            const iosModal = document.getElementById('pwa-ios-modal');
+            if (iosModal) iosModal.classList.add('hidden');
+        };
+
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] App successfully installed!');
+            pwaDismissBanner();
+            const headerBtn = document.getElementById('pwa-header-install-btn');
+            if (headerBtn) headerBtn.classList.add('hidden');
+        });
+
+        // Check iOS on load to show header install button if not installed
+        if (isIos() && !isInStandaloneMode()) {
+            const headerBtn = document.getElementById('pwa-header-install-btn');
+            if (headerBtn) {
+                headerBtn.classList.remove('hidden');
+                headerBtn.classList.add('inline-flex');
+            }
+        }
+
+        // 4. Online / Offline Real-time Network Monitoring
+        function updateNetworkStatus() {
+            const isOnline = navigator.onLine;
+            const badge = document.getElementById('pwa-network-badge');
+            const badgeText = document.getElementById('pwa-network-badge-text');
+            const toast = document.getElementById('pwa-network-toast');
+            const toastDot = document.getElementById('pwa-toast-dot');
+            const toastText = document.getElementById('pwa-toast-text');
+
+            if (badge && badgeText) {
+                if (isOnline) {
+                    badge.className = 'hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all';
+                    badge.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                    badgeText.textContent = 'متصل';
+                } else {
+                    badge.className = 'hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-full text-xs font-bold transition-all';
+                    badge.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
+                    badgeText.textContent = 'أوفلاين';
+                }
+            }
+
+            if (toast && toastDot && toastText) {
+                toast.classList.remove('hidden');
+                if (isOnline) {
+                    toast.className = 'fixed bottom-24 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 bg-emerald-900/90 text-emerald-100 border border-emerald-400/50 rounded-full shadow-2xl text-xs font-bold flex items-center space-x-reverse space-x-2 backdrop-blur-md transition-all duration-300 no-print';
+                    toastDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                    toastText.textContent = '⚡ تم استعادة الاتصال بالشبكة';
+                } else {
+                    toast.className = 'fixed bottom-24 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 bg-amber-900/90 text-amber-100 border border-amber-400/50 rounded-full shadow-2xl text-xs font-bold flex items-center space-x-reverse space-x-2 backdrop-blur-md transition-all duration-300 no-print';
+                    toastDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+                    toastText.textContent = '⚠️ أنت تعمل في وضع عدم الاتصال (Offline)';
+                }
+
+                setTimeout(() => {
+                    if (toast) toast.classList.add('hidden');
+                }, 4000);
+            }
+        }
+
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
     </script>
 
     <!-- Universal Luxury Custom Select Enhancer -->

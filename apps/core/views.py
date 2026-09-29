@@ -368,3 +368,9 @@ def custom_csrf_failure_view(request, reason=""):
     return render(request, "403_csrf.html", {"reason": reason}, status=403)
 
 
+def offline_view(request):
+    """Fallback offline view served by Service Worker when network is unavailable."""
+    return render(request, "offline.html")
+
+
+

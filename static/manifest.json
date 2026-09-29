@@ -1,0 +1,131 @@
+{
+  "name": "نظام الحضور الذكي | Smart Attendance",
+  "short_name": "الحضور الذكي",
+  "description": "نظام تسجيل حضور وغياب الطلاب الذكي والمستقل عن الإنترنت مع تقارير فورية ومزامنة تلقائية",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "dir": "rtl",
+  "lang": "ar-SA",
+  "categories": ["education", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/static/images/pwa/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/images/pwa/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "مسح رمز QR للتحضير",
+      "short_name": "تحضير QR",
+      "description": "فتح ماسح رمز الاستجابة السريعة لتسجيل الحضور",
+      "url": "/attendance/checkin/",
+      "icons": [
+        {
+          "src": "/static/images/pwa/icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "محاضراتي وجلسات اليوم",
+      "short_name": "المحاضرات",
+      "description": "عرض وإدارة الجلسات والمحاضرات الدراسية",
+      "url": "/attendance/teacher/sessions/",
+      "icons": [
+        {
+          "src": "/static/images/pwa/icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "سجل الحضور والغياب",
+      "short_name": "سجلي",
+      "description": "مراجعة كشوفات وسجلات الحضور",
+      "url": "/attendance/student/records/",
+      "icons": [
+        {
+          "src": "/static/images/pwa/icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "لوحة التحكم الرئيسية",
+      "short_name": "الرئيسية",
+      "description": "الانتقال إلى الشاشة الرئيسية للنظام",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/static/images/pwa/icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

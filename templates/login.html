@@ -5,8 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول — نظام الحضور الذكي</title>
-    <meta name="description" content="نظام إدارة الحضور والغياب الذكي للمؤسسات التعليمية">
+    <meta name="description" content="نظام إدارة الحضور والغياب الذكي للمؤسسات التعليمية - سريع ومستقل عن الإنترنت">
+    
+    <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="{% url 'manifest' %}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="الحضور الذكي">
+    <meta name="application-name" content="نظام الحضور الذكي">
+    <meta name="msapplication-TileColor" content="#4f46e5">
+
+    <!-- Favicons & Touch Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/pwa/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/pwa/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{% static 'images/pwa/icon-152x152.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{% static 'images/pwa/icon-192x192.png' %}">
 
     <!-- Fonts: Inter (Latin) + Cairo (Arabic) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -643,10 +663,16 @@ select.form-input { cursor: pointer; appearance: none; }
     ═══════════════════════════════════════════ -->
     <div class="form-panel">
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn" :class="{ active: tab==='login' }"    @click="setTab('login')">تسجيل الدخول</button>
-            <button class="tab-btn" :class="{ active: tab==='register' }" @click="setTab('register')">حساب جديد</button>
+        <!-- Tabs & Install Button -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 1.75rem;">
+            <div class="tabs" style="margin-bottom: 0; flex: 1;">
+                <button class="tab-btn" :class="{ active: tab==='login' }"    @click="setTab('login')">تسجيل الدخول</button>
+                <button class="tab-btn" :class="{ active: tab==='register' }" @click="setTab('register')">حساب جديد</button>
+            </div>
+            <button id="pwa-login-top-btn" type="button" onclick="pwaInstallApp()" style="display: none; align-items: center; gap: 6px; padding: 7px 12px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: #4338ca; border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit;">
+                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>تثبيت التطبيق</span>
+            </button>
         </div>
 
         <!-- ══════════════ LOGIN ══════════════ -->
@@ -1328,6 +1354,245 @@ document.addEventListener('alpine:init', () => {
             this.strength = lvl[Math.min(s, 5)] || lvl[1];
         },
     }));
+});
+</script>
+
+<style>
+/* ─── Dedicated Self-Contained PWA UI for Login Screen ─── */
+.pwa-login-banner {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    left: 24px;
+    max-width: 440px;
+    margin-right: auto;
+    margin-left: 0;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.25);
+    z-index: 99999;
+    direction: rtl;
+    text-align: right;
+    animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (max-width: 640px) {
+    .pwa-login-banner {
+        right: 16px;
+        left: 16px;
+        bottom: 16px;
+        max-width: none;
+        margin: 0;
+    }
+}
+@keyframes pwaSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pwa-banner-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+.pwa-app-icon-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+}
+.pwa-app-icon-img {
+    width: 48px !important;
+    height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    display: block;
+}
+.pwa-badge {
+    background: rgba(99, 102, 241, 0.25);
+    color: #a5b4fc;
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-right: 6px;
+    letter-spacing: 0.5px;
+}
+.pwa-btn-primary {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #ffffff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+.pwa-btn-primary:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+}
+.pwa-btn-secondary {
+    padding: 9px 16px;
+    background: rgba(30, 41, 59, 0.8);
+    color: #94a3b8;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+.pwa-btn-secondary:hover {
+    background: rgba(51, 65, 85, 0.9);
+    color: #e2e8f0;
+}
+</style>
+
+<!-- ─── PWA Floating Install Banner / Bottom Sheet (Login Screen) ─── -->
+<div id="pwa-install-banner" class="pwa-login-banner no-print">
+    <div class="pwa-banner-content">
+        <div class="pwa-app-icon-wrap">
+            <img src="{% static 'images/pwa/icon-192x192.png' %}" alt="Icon" class="pwa-app-icon-img">
+        </div>
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <h4 style="font-size: 0.875rem; font-weight: 800; color: #ffffff; margin: 0;">تثبيت تطبيق الحضور الذكي</h4>
+                <span class="pwa-badge">PWA</span>
+            </div>
+            <p style="font-size: 0.75rem; color: #cbd5e1; margin: 0 0 12px 0; line-height: 1.5;">
+                ثبّت التطبيق على جهازك للوصول السريع، مسح QR بلمسة واحدة، والعمل دون اتصال بالإنترنت!
+            </p>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="pwaInstallApp()" class="pwa-btn-primary">
+                    <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>تثبيت التطبيق الآن</span>
+                </button>
+                <button onclick="pwaDismissBanner()" class="pwa-btn-secondary">
+                    لاحقاً
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── iOS Safari Add-To-Home-Screen Instruction Modal (Login Screen) ─── -->
+<div id="pwa-ios-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; direction: rtl; text-align: right;" onclick="pwaCloseIosModal(event)">
+    <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 24px; max-width: 360px; width: 100%; color: #fff; text-align: center; position: relative; margin: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
+        <button onclick="pwaCloseIosModal()" style="position: absolute; top: 16px; left: 16px; background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 4px;">✕</button>
+        <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); border-radius: 16px; display: flex; align-items: center; justify-content: center; padding: 6px; box-shadow: 0 8px 20px rgba(79,70,229,0.4);">
+            <img src="{% static 'images/pwa/icon-192x192.png' %}" alt="App" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+        </div>
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">تثبيت التطبيق على جهاز iOS</h3>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 16px; line-height: 1.6;">لتشغيل نظام الحضور الذكي كتطبيق كامل، اتبع الخطوات البسيطة التالية في Safari:</p>
+        
+        <div style="text-align: right; background: rgba(30,41,59,0.85); border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; color: #e2e8f0; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(99,102,241,0.25); color: #c7d2fe; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</span>
+                <span>اضغط على زر المشاركة <strong>(Share ⎋)</strong> أسفل المتصفح.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(99,102,241,0.25); color: #c7d2fe; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</span>
+                <span>مرر للأسفل واختر <strong>"إضافة إلى الصفحة الرئيسية" ⊞</strong>.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(99,102,241,0.25); color: #c7d2fe; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</span>
+                <span>اضغط على <strong>"إضافة" (Add)</strong> في أعلى الزاوية.</span>
+            </div>
+        </div>
+
+        <button onclick="pwaCloseIosModal()" style="width: 100%; padding: 10px; background: #4f46e5; border: none; color: #fff; font-size: 0.8125rem; font-weight: 700; border-radius: 12px; cursor: pointer; font-family: inherit;">
+            حسناً، فهمت ذلك
+        </button>
+    </div>
+</div>
+
+<!-- ─── PWA Script Registrar for Login Screen ─── -->
+<script>
+let deferredPrompt = null;
+const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+const isInStandaloneMode = () => ('standalone' in window.navigator && window.navigator.standalone) || window.matchMedia('(display-mode: standalone)').matches;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[PWA Login] SW active:', reg.scope))
+            .catch(err => console.warn('[PWA Login] SW error:', err));
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const topBtn = document.getElementById('pwa-login-top-btn');
+    if (topBtn) topBtn.style.display = 'inline-flex';
+
+    const dismissedAt = localStorage.getItem('pwa_banner_dismissed');
+    const isDismissedRecently = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 24 * 60 * 60 * 1000);
+    
+    if (!isDismissedRecently && !isInStandaloneMode()) {
+        setTimeout(() => {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.style.display = 'block';
+        }, 1200);
+    }
+});
+
+// Check iOS
+if (isIos() && !isInStandaloneMode()) {
+    const topBtn = document.getElementById('pwa-login-top-btn');
+    if (topBtn) topBtn.style.display = 'inline-flex';
+}
+
+window.pwaInstallApp = async function() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        pwaDismissBanner();
+    } else if (isIos() && !isInStandaloneMode()) {
+        const modal = document.getElementById('pwa-ios-modal');
+        if (modal) modal.style.display = 'flex';
+    } else {
+        alert('التطبيق مثبت بالفعل أو يمكنك تثبيته من خيارات المتصفح (Install App).');
+    }
+};
+
+window.pwaDismissBanner = function() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem('pwa_banner_dismissed', Date.now().toString());
+};
+
+window.pwaCloseIosModal = function() {
+    const modal = document.getElementById('pwa-ios-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.addEventListener('appinstalled', () => {
+    pwaDismissBanner();
+    const topBtn = document.getElementById('pwa-login-top-btn');
+    if (topBtn) topBtn.style.display = 'none';
 });
 </script>
 </body>
