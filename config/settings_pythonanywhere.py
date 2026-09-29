@@ -36,9 +36,10 @@ MIDDLEWARE = [
 ]
 
 # =====================================================================
-# 4. WhiteNoise — ضغط وcache للملفات الثابتة
+# 4. WhiteNoise — ضغط وcache للملفات الثابتة بأمان عالي
 # =====================================================================
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
     "jpg", "jpeg", "png", "gif", "webp", "ico",
