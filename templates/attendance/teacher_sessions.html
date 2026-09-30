@@ -12,7 +12,7 @@
                 <p class="text-xs text-slate-400 font-semibold mt-1">عرض شامل لجميع محاضرات وأوقات المؤسسة</p>
             {% else %}
                 <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">جدول محاضراتي الدراسي الأسبوعي</h1>
-                <p class="text-xs text-slate-400 font-semibold mt-1">المعلم: أ. {{ user.get_full_name }}</p>
+                <p class="text-xs text-slate-400 font-semibold mt-1">المعلم: {{ user.get_full_name }}</p>
             {% endif %}
         </div>
         <div>
@@ -46,7 +46,7 @@
                             <tr>
                                 {% if is_admin %}
                                     <td class="px-6 py-4 whitespace-nowrap text-slate-800 font-semibold">
-                                        أ. {{ sess.teacher.user.get_full_name|default:sess.teacher.user.username }}
+                                        {{ sess.teacher.user.get_full_name|default:sess.teacher.user.username }}
                                     </td>
                                 {% endif %}
                                 <td class="px-6 py-4 whitespace-nowrap">

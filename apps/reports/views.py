@@ -26,9 +26,9 @@ User = get_user_model()
 class ImportStudentsView(APIView):
     """
     API view to import students from an Excel/CSV file.
-    Only accessible by Institution Admins.
+    Accessible by Teachers and Institution Admins.
     """
-    permission_classes = [IsInstitutionAdmin]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -929,3 +929,74 @@ def quick_create_academic_entity_view(request):
 
     return JsonResponse({"success": False, "error": "نوع العنصر المطلوب غير معروف."}, status=400)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🗑️  AUDIT LOG MANAGEMENT VIEWS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def delete_audit_log_view(request, log_id):
+    """Delete a single audit log entry (admin/super-admin only)."""
+    if not (request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك بحذف سجلات التدقيق.")
+        return redirect("reports:admin_reports_overview")
+    log = get_object_or_404(AuditLog, id=log_id)
+    log.delete()
+    messages.success(request, "تم حذف سجل العملية بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "reports:admin_reports_overview"))
+
+
+@login_required
+def bulk_delete_audit_logs_view(request):
+    """Bulk-delete selected audit log entries (admin/super-admin only)."""
+    if not (request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك بحذف سجلات التدقيق.")
+        return redirect("reports:admin_reports_overview")
+    if request.method == "POST":
+        log_ids = request.POST.getlist("selected_logs")
+        if not log_ids:
+            raw = request.POST.get("selected_logs_str", "")
+            log_ids = [s.strip() for s in raw.split(",") if s.strip()]
+        valid_ids = [int(lid) for lid in log_ids if str(lid).isdigit()]
+        if valid_ids:
+            cnt = AuditLog.objects.filter(id__in=valid_ids).delete()[0]
+            messages.success(request, f"تم حذف {cnt} سجل تدقيق بنجاح.")
+        else:
+            messages.warning(request, "لم يتم تحديد أي سجل للحذف.")
+    return redirect(request.META.get("HTTP_REFERER", "reports:admin_reports_overview"))
+
+
+@login_required
+def clear_all_audit_logs_view(request):
+    """Delete ALL audit log entries (super-admin only)."""
+    if not request.user.is_super_admin():
+        messages.error(request, "هذه الصلاحية للمدير الأعلى فقط.")
+        return redirect("reports:admin_reports_overview")
+    if request.method == "POST":
+        cnt = AuditLog.objects.all().delete()[0]
+        messages.success(request, f"تم مسح جميع سجلات التدقيق ({cnt} سجل) بنجاح.")
+    return redirect("reports:admin_reports_overview")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔑  CAPTCHA TOGGLE VIEW
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def toggle_captcha_view(request):
+    """Toggle Captcha ON/OFF (super-admin / institution-admin only)."""
+    from apps.core.models import SystemSetting
+    if not (request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+    if request.method == "POST":
+        current_obj, _ = SystemSetting.objects.get_or_create(
+            key="ENABLE_CAPTCHA",
+            defaults={"value": "true", "description": "تفعيل/تعطيل رمز التحقق البصري (Captcha) في صفحة تسجيل الدخول"}
+        )
+        new_val = "false" if current_obj.value.lower() == "true" else "true"
+        current_obj.value = new_val
+        current_obj.save()
+        status_ar = "مفعّل ✅" if new_val == "true" else "معطّل ❌"
+        messages.success(request, f"تم تغيير حالة رمز التحقق (Captcha) إلى: {status_ar}")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))

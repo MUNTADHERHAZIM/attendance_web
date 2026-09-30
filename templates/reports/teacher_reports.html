@@ -43,7 +43,7 @@
                         تقارير الحضور وسجل الغيابات الأكاديمي
                     </h1>
                     <p class="text-xs text-slate-400 font-semibold mt-0.5">
-                        الأستاذ: <span class="text-slate-700 font-bold">أ. {{ teacher.user.get_full_name }}</span> | 
+                        الأستاذ: <span class="text-slate-700 font-bold">{{ teacher.user.get_full_name }}</span> | 
                         الكلية: <span class="text-slate-600">كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
                     </p>
                 </div>
@@ -660,7 +660,7 @@
     <div class="mt-12 flex justify-between items-center text-xs font-bold pt-4 border-t border-slate-300">
         <div>
             <p>توقيع أستاذ المادة:</p>
-            <p class="mt-4">أ. {{ teacher.user.get_full_name }}</p>
+            <p class="mt-4">{{ teacher.user.get_full_name }}</p>
         </div>
         <div>
             <p>مصادقة رئيس القسم الأكاديمي:</p>

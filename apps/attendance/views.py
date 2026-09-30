@@ -2182,3 +2182,18 @@ def bulk_delete_sessions_view(request):
     return redirect(request.META.get("HTTP_REFERER", "dashboard"))
 
 
+@login_required
+def delete_timetable_session_view(request, session_id):
+    """Deletes a weekly timetable Session schedule."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+
+    from apps.academics.models import Session
+    sess = get_object_or_404(Session, id=session_id)
+    cname = f"{sess.course.name} - شعبة {sess.class_section.name} ({sess.get_day_of_week_display()})"
+    sess.delete()
+    messages.success(request, f"تم حذف الحصة الأسبوعية ({cname}) بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+

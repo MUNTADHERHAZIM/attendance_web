@@ -8,6 +8,10 @@ from .views import (
     export_teacher_report_excel_view,
     export_teacher_report_csv_view,
     quick_create_academic_entity_view,
+    delete_audit_log_view,
+    bulk_delete_audit_logs_view,
+    clear_all_audit_logs_view,
+    toggle_captcha_view,
 )
 
 app_name = "reports"
@@ -25,4 +29,12 @@ urlpatterns = [
     path("admin/overview/", admin_reports_overview_view, name="admin_reports_overview"),
     path("overview/", admin_reports_overview_view, name="web_dashboard"),
     path("admin/student/<int:student_id>/", admin_student_detail_view, name="admin_student_detail"),
+
+    # Audit log management
+    path("audit-log/<int:log_id>/delete/", delete_audit_log_view, name="delete_audit_log"),
+    path("audit-log/bulk-delete/", bulk_delete_audit_logs_view, name="bulk_delete_audit_logs"),
+    path("audit-log/clear-all/", clear_all_audit_logs_view, name="clear_all_audit_logs"),
+
+    # Captcha toggle
+    path("toggle-captcha/", toggle_captcha_view, name="toggle_captcha"),
 ]

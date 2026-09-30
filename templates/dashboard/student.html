@@ -57,7 +57,7 @@
 
                             <h3 class="text-base font-black text-white">{{ item.session.session.course.name }}</h3>
                             <p class="text-xs text-slate-400 font-semibold mt-0.5">
-                                أستاذ المادة: أ. {{ item.session.session.teacher.user.get_full_name|default:item.session.session.teacher.user.username }}
+                                أستاذ المادة: {{ item.session.session.teacher.user.get_full_name|default:item.session.session.teacher.user.username }}
                             </p>
 
                             <div class="mt-2.5 flex items-center gap-3 text-xs text-slate-300 font-semibold bg-slate-900/60 p-2 rounded-xl">

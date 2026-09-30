@@ -109,6 +109,13 @@ def dashboard_view(request):
         total_courses = Course.objects.filter(department__institution=institution).count() if institution else Course.objects.count()
         total_users = User.objects.count()
 
+        # Captcha enabled setting
+        captcha_setting, _ = SystemSetting.objects.get_or_create(
+            key="ENABLE_CAPTCHA",
+            defaults={"value": "true", "description": "تفعيل/تعطيل رمز التحقق البصري (Captcha)"}
+        )
+        captcha_enabled = captcha_setting.value.lower() == "true"
+
         context = {
             "institution": institution,
             "total_students": total_students,
@@ -120,6 +127,7 @@ def dashboard_view(request):
             "active_sessions_today": active_sessions_today,
             "attendance_rate_today": round(attendance_rate_today, 1),
             "critical_students": critical_students,
+            "captcha_enabled": captcha_enabled,
         }
         return render(request, "dashboard/admin.html", context)
 
