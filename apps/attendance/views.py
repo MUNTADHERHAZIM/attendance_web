@@ -80,13 +80,60 @@ def _get_ip(request):
 
 def _get_students_for_session(attendance_session):
     """
-    ✅ FIX: Returns students enrolled in the specific class section of the session,
-    not all students in the institution.
+    ✅ Returns students enrolled in the specific class section of the session,
+    plus any students who checked into this session (including newly created guest students).
     """
     class_section = attendance_session.session.class_section
-    return StudentProfile.objects.filter(
-        sections=class_section
-    ).select_related("user")
+    enrolled_pks = list(
+        StudentProfile.objects.filter(sections=class_section).values_list("pk", flat=True)
+    )
+    recorded_pks = list(
+        AttendanceRecord.objects.filter(attendance_session=attendance_session).values_list("student_id", flat=True)
+    )
+    all_pks = set(enrolled_pks + recorded_pks)
+    return StudentProfile.objects.filter(pk__in=all_pks).select_related("user").order_by("user__first_name", "user__last_name", "student_id")
+
+
+def _get_shared_device_map(attendance_session):
+    """
+    Identifies students who checked in from the same physical device or browser in this session.
+    Groups by extracted device UUID or (IP + User-Agent).
+    Returns dict: student_id -> list of other student names sharing this device.
+    """
+    records = AttendanceRecord.objects.filter(
+        attendance_session=attendance_session
+    ).select_related("student__user")
+
+    device_groups = {}
+    for r in records:
+        if not r.student or not r.student.user:
+            continue
+        student_name = r.student.user.get_full_name() or r.student.user.username
+        ua = r.device_user_agent or ""
+        dev_key = None
+
+        if "[DEV:" in ua:
+            try:
+                dev_key = "dev_" + ua.split("[DEV:")[1].split("]")[0].strip()
+            except Exception:
+                dev_key = None
+
+        if not dev_key and r.ip_address and r.ip_address not in ["127.0.0.1", "localhost", "::1"]:
+            clean_ua = ua[:120].strip()
+            dev_key = f"ip_{r.ip_address}_{clean_ua}"
+
+        if dev_key:
+            device_groups.setdefault(dev_key, []).append((r.student_id, student_name))
+
+    shared_map = {}
+    for dev_key, group in device_groups.items():
+        if len(group) > 1:
+            for std_id, std_name in group:
+                others = [name for s_id, name in group if s_id != std_id]
+                if others:
+                    shared_map[std_id] = others
+
+    return shared_map
 
 
 # =====================================================================
@@ -598,6 +645,13 @@ class StudentCheckInView(APIView):
             else AttendanceRecord.Statuses.PRESENT
         )
 
+        device_id = request.data.get("device_id") or request.headers.get("X-Device-Id")
+        raw_ua = request.META.get("HTTP_USER_AGENT", "")
+        if device_id:
+            device_user_agent = f"[DEV:{device_id}] {raw_ua}"
+        else:
+            device_user_agent = raw_ua
+
         record_notes = "✨ طالب جديد (تم التسجيل الذاتي أثناء المحاضرة)" if is_new_auto_student else None
 
         record, created = AttendanceRecord.objects.update_or_create(
@@ -607,7 +661,7 @@ class StudentCheckInView(APIView):
                 "status": record_status,
                 "method": checkin_method,
                 "ip_address": ip,
-                "device_user_agent": request.META.get("HTTP_USER_AGENT"),
+                "device_user_agent": device_user_agent,
                 "modified_by": request.user if request.user.is_authenticated else None,
                 "notes": record_notes,
             },
@@ -783,8 +837,9 @@ def session_detail_web_view(request, session_id):
         messages.error(request, "لم يتم العثور على جلسة التحضير المطلوبة.")
         return redirect("attendance:teacher_sessions_web")
 
-    # ✅ FIX: Get only students enrolled in this specific class section
+    # ✅ FIX: Get students in section + any newly checked-in students
     students_in_section = _get_students_for_session(attendance_session)
+    shared_device_map = _get_shared_device_map(attendance_session)
 
     records_map = {
         r.student_id: r
@@ -794,12 +849,15 @@ def session_detail_web_view(request, session_id):
     students_list = []
     for std in students_in_section:
         rec = records_map.get(std.id)
+        shared_with = shared_device_map.get(std.id, [])
         students_list.append(
             {
                 "profile": std,
                 "record": rec,
                 "status": rec.status if rec else "ABSENT",
                 "status_display": rec.get_status_display() if rec else "غائب",
+                "is_shared_device": bool(shared_with),
+                "shared_with_names": shared_with,
             }
         )
 
@@ -891,8 +949,9 @@ def session_students_list_partial(request, session_id):
 
     attendance_session = get_object_or_404(AttendanceSession, id=session_id)
 
-    # ✅ FIX: Use helper to get section-specific students
+    # ✅ FIX: Use helper to get section-specific students + new check-ins
     students_in_section = _get_students_for_session(attendance_session)
+    shared_device_map = _get_shared_device_map(attendance_session)
 
     records_map = {
         r.student_id: r
@@ -902,12 +961,15 @@ def session_students_list_partial(request, session_id):
     students_list = []
     for std in students_in_section:
         rec = records_map.get(std.id)
+        shared_with = shared_device_map.get(std.id, [])
         students_list.append(
             {
                 "profile": std,
                 "record": rec,
                 "status": rec.status if rec else "ABSENT",
                 "status_display": rec.get_status_display() if rec else "غائب",
+                "is_shared_device": bool(shared_with),
+                "shared_with_names": shared_with,
             }
         )
 

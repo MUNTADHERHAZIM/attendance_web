@@ -216,8 +216,18 @@
             await this.sendCheckinPayload(payload);
         },
 
+        getDeviceId() {
+            let id = localStorage.getItem('attendance_device_uuid');
+            if (!id) {
+                id = 'dev_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+                try { localStorage.setItem('attendance_device_uuid', id); } catch(e){}
+            }
+            return id;
+        },
+
         async sendCheckinPayload(payload) {
             try {
+                payload.device_id = this.getDeviceId();
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 let response = await fetch('/attendance/api/checkin/', {
                     method: 'POST',

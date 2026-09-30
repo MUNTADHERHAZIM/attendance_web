@@ -82,22 +82,7 @@ def check_session_conflict(
                 "message": f"❌ تعارض في نوع الدراسة: الشعبة ({class_section.name}) مخصصة للدراسة ({sec_shift})، بينما حددت المحاضرة كـ ({cur_shift}). يرجى توحيد نوع الدراسة لمنع تداخل القوائم.",
             }
 
-    # 2. Shift Time sanity checks
-    if shift == "MORNING" and start_time.hour >= 15:
-        return {
-            "has_conflict": True,
-            "conflict_type": "SHIFT_TIME_WARNING",
-            "severity": "warning",
-            "message": f"⚠️ تنبيه التوقيت: وقت البدء ({start_time.strftime('%H:%M')}) يقع في الفترة المسائية بينما نوع الدراسة المحدد (صباحي). يرجى التأكد من التوقيت أو تحويل المحاضرة لمسائي.",
-        }
-
-    if shift == "EVENING" and start_time.hour < 12:
-        return {
-            "has_conflict": True,
-            "conflict_type": "SHIFT_TIME_WARNING",
-            "severity": "warning",
-            "message": f"⚠️ تنبيه التوقيت: وقت البدء ({start_time.strftime('%H:%M')}) يقع في الفترة الصباحية بينما نوع الدراسة المحدد (مسائي). تبدأ الدراسة المسائية عادة بعد الظهر.",
-        }
+    # 2. Shift Time sanity checks (Disabled - allow flexible scheduling without restrictions)
 
     # 3. Teacher Conflict Check (Scheduled & Live)
     teacher_profile = teacher

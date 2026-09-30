@@ -38,6 +38,13 @@
                                             <span>طالب جديد</span>
                                         </span>
                                     {% endif %}
+                                    {% if item.is_shared_device %}
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs" 
+                                              title="⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس جهاز ({{ item.shared_with_names|join:' ، ' }})">
+                                            <span>📱⚠️</span>
+                                            <span>جهاز مشترك مع: {{ item.shared_with_names|join:' ، ' }}</span>
+                                        </span>
+                                    {% endif %}
                                 </div>
                                 <div class="text-[11px] text-slate-400 font-mono truncate">
                                     {{ item.profile.user.email|default:item.profile.user.username }}
