@@ -2137,3 +2137,48 @@ def cancel_scheduled_session_view(request, session_id):
     return redirect(request.META.get("HTTP_REFERER", "dashboard"))
 
 
+@login_required
+def delete_attendance_session_view(request, session_id):
+    """Deletes any attendance session and its records."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+
+    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    if request.user.is_teacher() and not (request.user.is_super_admin() or request.user.is_institution_admin()):
+        if att_session.session.teacher and att_session.session.teacher.user != request.user and att_session.created_by != request.user:
+            messages.error(request, "غير مصرح لك بحذف هذه الجلسة.")
+            return redirect("dashboard")
+
+    course_name = att_session.session.course.name if att_session.session and att_session.session.course else "المحاضرة"
+    date_str = str(att_session.date)
+    att_session.delete()
+
+    messages.success(request, f"تم حذف جلسة التحضير لمادة ({course_name}) بتاريخ {date_str} بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+
+@login_required
+def bulk_delete_sessions_view(request):
+    """Bulk deletes selected attendance sessions."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+    if request.method == "POST":
+        session_ids = request.POST.getlist("selected_sessions")
+        if not session_ids:
+            raw = request.POST.get("selected_sessions_str", "")
+            session_ids = [s.strip() for s in raw.split(",") if s.strip()]
+        valid_ids = [int(sid) for sid in session_ids if sid.isdigit()]
+        if valid_ids:
+            qs = AttendanceSession.objects.filter(id__in=valid_ids)
+            if request.user.is_teacher() and not (request.user.is_super_admin() or request.user.is_institution_admin()):
+                qs = qs.filter(Q(session__teacher__user=request.user) | Q(created_by=request.user))
+            cnt = qs.count()
+            qs.delete()
+            messages.success(request, f"تم حذف {cnt} جلسة تحضير بنجاح.")
+        else:
+            messages.warning(request, "لم يتم تحديد أي جلسة للحذف.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+

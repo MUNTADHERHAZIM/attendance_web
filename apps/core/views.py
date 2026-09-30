@@ -136,7 +136,9 @@ def dashboard_view(request):
             )
 
         # 1. Teacher Timetable Sessions
-        sessions = Session.objects.filter(teacher=teacher_profile).select_related("course", "class_section").order_by("day_of_week", "start_time")
+        sessions = Session.objects.filter(
+            Q(teacher=teacher_profile) | Q(attendance_sessions__created_by=user)
+        ).distinct().select_related("course", "class_section").order_by("day_of_week", "start_time")
         
         # 2. Check active & scheduled sessions
         today = timezone.now().date()
@@ -146,17 +148,16 @@ def dashboard_view(request):
         today_timetable_sessions = sessions.filter(day_of_week=today_day_of_week)
 
         active_attendance_sessions = AttendanceSession.objects.filter(
-            session__teacher=teacher_profile,
-            date=today,
+            Q(session__teacher=teacher_profile) | Q(created_by=user),
             is_active=True
-        ).select_related("session__course", "session__class_section")
+        ).distinct().select_related("session__course", "session__class_section")
 
         # Upcoming scheduled sessions (dates >= today and not active)
         upcoming_scheduled_sessions = AttendanceSession.objects.filter(
             Q(session__teacher=teacher_profile) | Q(created_by=user),
             date__gte=today,
             is_active=False
-        ).select_related("session__course", "session__class_section").order_by("date", "start_time")
+        ).distinct().select_related("session__course", "session__class_section").order_by("date", "start_time")
 
         # 3. Courses: Taught in timetable OR owned in department/institution
         course_ids = list(sessions.values_list("course_id", flat=True).distinct())
@@ -185,7 +186,10 @@ def dashboard_view(request):
         evening_students_count = students_qs.filter(study_shift="EVENING").count()
 
         # 6. Today's Attendance Stats
-        today_sessions = AttendanceSession.objects.filter(session__teacher=teacher_profile, date=today)
+        today_sessions = AttendanceSession.objects.filter(
+            Q(session__teacher=teacher_profile) | Q(created_by=user),
+            date=today
+        ).distinct()
         today_records = AttendanceRecord.objects.filter(attendance_session__in=today_sessions)
         today_total_records = today_records.count()
         today_present = today_records.filter(status__in=["PRESENT", "LATE"]).count()

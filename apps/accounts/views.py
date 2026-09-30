@@ -1056,5 +1056,69 @@ def admin_users_directory_view(request):
     return render(request, "accounts/admin_directory.html", context)
 
 
+@login_required
+def teacher_delete_course_view(request, course_id):
+    """Allows deleting a course/subject."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+    from apps.academics.models import Course
+    course = get_object_or_404(Course, id=course_id)
+    cname = course.name
+    course.delete()
+    messages.success(request, f"تم حذف المادة الدراسية ({cname}) بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+
+@login_required
+def teacher_delete_section_view(request, section_id):
+    """Allows deleting a class section."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+    from apps.academics.models import ClassSection
+    section = get_object_or_404(ClassSection, id=section_id)
+    sname = f"{section.level} - {section.name}"
+    section.delete()
+    messages.success(request, f"تم حذف الشعبة الدراسية ({sname}) بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+
+@login_required
+def teacher_delete_student_view(request, student_id):
+    """Allows deleting a single student and their user record."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("accounts:teacher_students")
+    std = get_object_or_404(StudentProfile, id=student_id)
+    name = std.user.get_full_name() or std.user.username
+    std.user.delete()
+    messages.success(request, f"تم حذف الطالب ({name}) وسجلاته بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+
+
+@login_required
+def teacher_bulk_delete_students_view(request):
+    """Allows bulk deleting selected students."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("accounts:teacher_students")
+    if request.method == "POST":
+        student_ids = request.POST.getlist("selected_students")
+        if not student_ids:
+            raw_str = request.POST.get("selected_students_str", "")
+            student_ids = [s.strip() for s in raw_str.split(",") if s.strip()]
+        
+        valid_ids = [int(sid) for sid in student_ids if sid.isdigit()]
+        if valid_ids:
+            users = User.objects.filter(student_profile__id__in=valid_ids)
+            count = users.count()
+            users.delete()
+            messages.success(request, f"تم حذف {count} طالب بنجاح.")
+        else:
+            messages.warning(request, "لم يتم تحديد أي طالب للحذف.")
+    return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+
+
 
 

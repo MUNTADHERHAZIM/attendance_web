@@ -13,6 +13,10 @@ from .views import (
     teacher_add_course_view,
     teacher_update_profile_view,
     admin_users_directory_view,
+    teacher_delete_course_view,
+    teacher_delete_section_view,
+    teacher_delete_student_view,
+    teacher_bulk_delete_students_view,
 )
 
 app_name = "accounts"
@@ -26,8 +30,12 @@ urlpatterns = [
     path("teacher/students/", teacher_students_view, name="teacher_students"),
     path("teacher/students/add/", teacher_add_student_view, name="teacher_add_student"),
     path("teacher/students/import/", teacher_import_students_view, name="teacher_import_students"),
+    path("teacher/students/<int:student_id>/delete/", teacher_delete_student_view, name="teacher_delete_student"),
+    path("teacher/students/bulk-delete/", teacher_bulk_delete_students_view, name="teacher_bulk_delete_students"),
     path("teacher/sections/add/", teacher_add_section_view, name="teacher_add_section"),
+    path("teacher/sections/<int:section_id>/delete/", teacher_delete_section_view, name="teacher_delete_section"),
     path("teacher/courses/add/", teacher_add_course_view, name="teacher_add_course"),
+    path("teacher/courses/<int:course_id>/delete/", teacher_delete_course_view, name="teacher_delete_course"),
     path("teacher/profile/update/", teacher_update_profile_view, name="teacher_update_profile"),
 
     # REST API Endpoints

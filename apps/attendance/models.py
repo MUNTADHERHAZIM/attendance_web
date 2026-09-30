@@ -36,6 +36,33 @@ class AttendanceSession(models.Model):
     def __str__(self):
         return f"جلسة {self.session} بتاريخ {self.date}"
 
+    @property
+    def present_count(self):
+        return self.records.filter(status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE]).count()
+
+    @property
+    def absent_count(self):
+        return self.records.filter(status=AttendanceRecord.Statuses.ABSENT).count()
+
+    @property
+    def late_count(self):
+        return self.records.filter(status=AttendanceRecord.Statuses.LATE).count()
+
+    @property
+    def total_count(self):
+        sec_count = 0
+        if self.session and self.session.class_section:
+            sec_count = self.session.class_section.students.count()
+        rec_count = self.records.count()
+        return max(sec_count, rec_count)
+
+    @property
+    def attendance_rate(self):
+        tot = self.total_count
+        if tot == 0:
+            return 0.0
+        return round((self.present_count / tot * 100), 1)
+
 
 class AttendanceRecord(models.Model):
     class Statuses(models.TextChoices):

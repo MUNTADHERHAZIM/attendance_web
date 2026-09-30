@@ -781,7 +781,9 @@
                                 <a href="{% url 'attendance:create_custom_session' %}?course_id={{ crs.id }}" class="text-xs font-bold text-indigo-600 hover:underline">
                                     ⚡ بدء تحضير فوري
                                 </a>
-                                <span class="text-[11px] text-slate-400">مقرر نشط ✓</span>
+                                <a href="{% url 'accounts:teacher_delete_course' crs.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه المادة الدراسية؟')" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف المادة">
+                                    🗑️ حذف
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
@@ -832,8 +834,8 @@
                                 <a href="{% url 'accounts:teacher_students' %}?section_id={{ sec.id }}" class="text-xs font-bold text-blue-600 hover:underline">
                                     عرض وتعديل الطلاب ➔
                                 </a>
-                                <a href="{% url 'attendance:create_custom_session' %}?section_id={{ sec.id }}" class="text-xs font-bold text-slate-600 hover:text-slate-900">
-                                    + جلسة للشعبة
+                                <a href="{% url 'accounts:teacher_delete_section' sec.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه الشعبة الدراسية؟')" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف الشعبة">
+                                    🗑️ حذف
                                 </a>
                             </div>
                         </div>
@@ -892,15 +894,20 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-emerald-700">
-                                        {{ rec.present_count|default:rec.records.count }} حاضر
+                                        {{ rec.present_count }} حاضر
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-black text-brand-700">
-                                        {{ rec.attendance_rate|default:0 }}%
+                                        {{ rec.attendance_rate }}%
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
-                                        <a href="/attendance/session/{{ rec.id }}/" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
-                                            عرض السجل 👁️
-                                        </a>
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <a href="/attendance/session/{{ rec.id }}/" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+                                                عرض السجل 👁️
+                                            </a>
+                                            <a href="{% url 'attendance:delete_session' rec.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه الجلسة وسجلاتها؟')" class="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors" title="حذف الجلسة">
+                                                🗑️
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
