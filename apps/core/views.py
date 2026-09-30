@@ -70,22 +70,37 @@ def dashboard_view(request):
                         "pct": round(absence_pct, 1)
                     })
         
-        # Handle Teacher Verification Code update from Admin Dashboard
+        # Handle Institution Profile / Logo & Teacher Code updates from Admin Dashboard
         from apps.core.models import SystemSetting
         from django.contrib import messages
 
-        if request.method == "POST" and "new_teacher_code" in request.POST:
-            new_code = request.POST.get("new_teacher_code", "").strip()
-            if new_code:
-                SystemSetting.objects.update_or_create(
-                    key="TEACHER_VERIFICATION_CODE",
-                    defaults={
-                        "value": new_code,
-                        "description": "كود التحقق الأكاديمي لتسجيل الكادر التعليمي"
-                    }
-                )
-                messages.success(request, f"تم تحديث رمز تسجيل الأساتذة بنجاح إلى: {new_code}")
-                return redirect("dashboard")
+        if request.method == "POST":
+            if "update_institution" in request.POST:
+                inst_name = request.POST.get("institution_name", "").strip()
+                inst_logo = request.FILES.get("institution_logo")
+                if inst_name:
+                    if not institution:
+                        institution = Institution.objects.create(name=inst_name)
+                    else:
+                        institution.name = inst_name
+                    if inst_logo:
+                        institution.logo = inst_logo
+                    institution.save()
+                    messages.success(request, "تم حفظ بيانات وشعار المؤسسة بنجاح!")
+                    return redirect("dashboard")
+
+            elif "new_teacher_code" in request.POST:
+                new_code = request.POST.get("new_teacher_code", "").strip()
+                if new_code:
+                    SystemSetting.objects.update_or_create(
+                        key="TEACHER_VERIFICATION_CODE",
+                        defaults={
+                            "value": new_code,
+                            "description": "كود التحقق الأكاديمي لتسجيل الكادر التعليمي"
+                        }
+                    )
+                    messages.success(request, f"تم تحديث رمز تسجيل الأساتذة بنجاح إلى: {new_code}")
+                    return redirect("dashboard")
 
         # Sort critical students by absence percentage descending
         critical_students = sorted(critical_students, key=lambda x: x["pct"], reverse=True)[:5]
@@ -123,13 +138,25 @@ def dashboard_view(request):
         # 1. Teacher Timetable Sessions
         sessions = Session.objects.filter(teacher=teacher_profile).select_related("course", "class_section").order_by("day_of_week", "start_time")
         
-        # 2. Check active attendance sessions right now
+        # 2. Check active & scheduled sessions
         today = timezone.now().date()
+        today_day_of_week = (today.weekday() + 2) % 7
+        
+        # Today's recurring timetable sessions
+        today_timetable_sessions = sessions.filter(day_of_week=today_day_of_week)
+
         active_attendance_sessions = AttendanceSession.objects.filter(
             session__teacher=teacher_profile,
             date=today,
             is_active=True
         ).select_related("session__course", "session__class_section")
+
+        # Upcoming scheduled sessions (dates >= today and not active)
+        upcoming_scheduled_sessions = AttendanceSession.objects.filter(
+            Q(session__teacher=teacher_profile) | Q(created_by=user),
+            date__gte=today,
+            is_active=False
+        ).select_related("session__course", "session__class_section").order_by("date", "start_time")
 
         # 3. Courses: Taught in timetable OR owned in department/institution
         course_ids = list(sessions.values_list("course_id", flat=True).distinct())
@@ -285,6 +312,8 @@ def dashboard_view(request):
         context = {
             "teacher": teacher_profile,
             "sessions": sessions,
+            "today_timetable_sessions": today_timetable_sessions,
+            "upcoming_scheduled_sessions": upcoming_scheduled_sessions,
             "active_attendance_sessions": active_attendance_sessions,
             "my_courses": my_courses,
             "my_sections": my_sections,
@@ -316,6 +345,31 @@ def dashboard_view(request):
         if not student_profile:
             return render(request, "dashboard/student.html", {"error": "لم يتم ربط حسابك بملف طالب."})
 
+        today = timezone.now().date()
+        student_sections = student_profile.sections.all()
+
+        # Today's attendance sessions for student's enrolled sections
+        today_student_sessions_qs = AttendanceSession.objects.filter(
+            session__class_section__in=student_sections,
+            date=today
+        ).select_related("session__course", "session__class_section", "session__teacher__user").order_by("start_time")
+
+        my_today_records = {
+            r.attendance_session_id: r 
+            for r in AttendanceRecord.objects.filter(student=student_profile, attendance_session__date=today)
+        }
+
+        today_sessions_data = []
+        for att in today_student_sessions_qs:
+            rec = my_today_records.get(att.id)
+            is_attended = bool(rec and rec.status in ["PRESENT", "LATE"])
+            today_sessions_data.append({
+                "session": att,
+                "record": rec,
+                "is_attended": is_attended,
+                "status_display": rec.get_status_display() if rec else ("🔴 جارية الآن" if att.is_active else "⏳ مجدولة"),
+            })
+
         # Calculate student stats
         records = AttendanceRecord.objects.filter(student=student_profile)
         total = records.count()
@@ -332,6 +386,7 @@ def dashboard_view(request):
 
         context = {
             "student": student_profile,
+            "today_sessions_data": today_sessions_data,
             "total": total,
             "present": present,
             "late": late,

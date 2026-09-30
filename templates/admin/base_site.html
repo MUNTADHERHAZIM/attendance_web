@@ -6,12 +6,16 @@
 {% block branding %}
 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.75rem; padding: 0.35rem 0;">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="display: inline-flex; width: 34px; height: 34px; background: #ffffff; color: #4338ca; border-radius: 9px; align-items: center; justify-content: center; font-weight: 900; font-size: 1.15rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">ح</span>
+        {% if system_institution_logo %}
+            <img src="{{ system_institution_logo }}" alt="Logo" style="width: 36px; height: 36px; object-fit: contain; background: #ffffff; border-radius: 9px; padding: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);" />
+        {% else %}
+            <span style="display: inline-flex; width: 34px; height: 34px; background: #ffffff; color: #4338ca; border-radius: 9px; align-items: center; justify-content: center; font-weight: 900; font-size: 1.15rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">ح</span>
+        {% endif %}
         <div>
             <h1 id="site-name" style="margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
                 <a href="{% url 'admin:index' %}" style="color: #ffffff; text-decoration: none;">لوحة إدارة نظام الحضور الذكي</a>
             </h1>
-            <div style="font-size: 0.75rem; color: #c7d2fe; font-weight: 600;">العراق &bull; جامعة بغداد</div>
+            <div style="font-size: 0.75rem; color: #c7d2fe; font-weight: 600;">العراق &bull; {{ system_institution_name|default:"جامعة بغداد" }}</div>
         </div>
     </div>
     <div style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: 9999px; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">

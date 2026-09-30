@@ -2,10 +2,27 @@ from django.contrib import admin
 from .models import Institution, Department, Course, ClassSection, Session
 
 
+from django.utils.html import format_html
+
 @admin.register(Institution)
 class InstitutionAdmin(admin.ModelAdmin):
-    list_display = ("name", "allowed_wifi_ssid", "allowed_ip_subnet")
+    list_display = ("logo_preview", "name", "allowed_wifi_ssid", "allowed_ip_subnet")
     search_fields = ("name",)
+    readonly_fields = ("logo_preview",)
+    fieldsets = (
+        ("هوية النظام والشعار", {
+            "fields": ("name", "logo", "logo_preview", "address")
+        }),
+        ("قيود الشبكة والموقع (WiFi & Subnet)", {
+            "fields": ("allowed_wifi_ssid", "allowed_wifi_bssid", "allowed_ip_subnet", "latitude", "longitude", "radius_meters")
+        }),
+    )
+
+    def logo_preview(self, obj):
+        if obj.logo:
+            return format_html('<img src="{}" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0;" />', obj.logo.url)
+        return "لا يوجد شعار"
+    logo_preview.short_description = "معاينة الشعار"
 
 
 @admin.register(Department)

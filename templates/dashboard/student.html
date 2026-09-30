@@ -12,10 +12,83 @@
         </div>
         
         <a href="/attendance/checkin/" 
-           class="inline-flex items-center justify-center px-6 py-3.5 border border-transparent text-base font-bold rounded-2xl text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-lg shadow-brand-200">
+           class="inline-flex items-center justify-center px-6 py-3.5 border border-transparent text-base font-bold rounded-2xl text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 transition-all shadow-lg shadow-brand-200 hover:scale-105 active:scale-95">
             📸 فتح الكاميرا لمسح الـ QR وتسجيل حضوري
         </a>
     </div>
+
+    <!-- 🗓️ TODAY'S LECTURE SCHEDULE (شريط المحاضرات القادمة والجارية اليوم) -->
+    {% if today_sessions_data %}
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-3xl shadow-xl border border-slate-800 space-y-4 relative overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">📅</span>
+                    <h2 class="text-lg font-black text-white">جدول محاضراتك لليوم</h2>
+                </div>
+                <span class="text-xs font-bold bg-white/10 px-3 py-1 rounded-full text-indigo-300 border border-white/10">
+                    اليوم: {{ today_sessions_data|length }} محاضرة
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for item in today_sessions_data %}
+                    <div class="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded">
+                                    {{ item.session.session.course.code }}
+                                </span>
+                                {% if item.is_attended %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                        <span>✔️</span>
+                                        <span>حاضر مسجل</span>
+                                    </span>
+                                {% elif item.session.is_active %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                                        <span>جارية الآن 🔴</span>
+                                    </span>
+                                {% else %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                        ⏳ مجدولة
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="text-base font-black text-white">{{ item.session.session.course.name }}</h3>
+                            <p class="text-xs text-slate-400 font-semibold mt-0.5">
+                                أستاذ المادة: أ. {{ item.session.session.teacher.user.get_full_name|default:item.session.session.teacher.user.username }}
+                            </p>
+
+                            <div class="mt-2.5 flex items-center gap-3 text-xs text-slate-300 font-semibold bg-slate-900/60 p-2 rounded-xl">
+                                <span>⏰ {{ item.session.start_time|date:"H:i" }}</span>
+                                <span>•</span>
+                                <span>🏛️ {{ item.session.session.room|default:"القاعة الرئيسية" }}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            {% if item.is_attended %}
+                                <div class="text-center py-2 text-xs font-bold text-emerald-400 bg-emerald-950/40 rounded-xl border border-emerald-800/40">
+                                    ✓ تم تسجيل حضورك بنجاح
+                                </div>
+                            {% elif item.session.is_active %}
+                                <a href="/attendance/checkin/" 
+                                   class="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-900/50 transition-all hover:scale-105">
+                                    <span>📸</span>
+                                    <span>تسجيل حضوري الآن</span>
+                                </a>
+                            {% else %}
+                                <div class="text-center py-2 text-[11px] font-semibold text-slate-400 bg-slate-900/40 rounded-xl">
+                                    تبدأ عند الساعة {{ item.session.start_time|date:"H:i" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Attendance Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">

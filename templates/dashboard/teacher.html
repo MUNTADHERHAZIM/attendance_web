@@ -7,7 +7,8 @@
      x-data="{ 
          showAddCourseModal: false, 
          showAddSectionModal: false, 
-         showProfileModal: false,
+         showProfileModal: false, 
+         showScheduleModal: false,
          activeTab: 'sessions' 
      }">
 
@@ -63,10 +64,15 @@
                     <span>✏️</span>
                     <span>تعديل الجامعة والقسم</span>
                 </button>
+                <button @click="showScheduleModal = true" 
+                        class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-400/30 transition-all shadow-xs backdrop-blur-xs hover:scale-105">
+                    <span>📅</span>
+                    <span>جدولة محاضرة قادمة</span>
+                </button>
                 <a href="{% url 'attendance:create_custom_session' %}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 transition-all shadow-md shadow-brand-500/25 hover:scale-[1.02] active:scale-95">
                     <span>⚡</span>
-                    <span>بدء محاضرة ذكية فورية</span>
+                    <span>بدء محاضرة فورية</span>
                 </a>
             </div>
         </div>
@@ -249,6 +255,61 @@
                                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-3 border border-slate-300 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs" title="تعديل وقت أو مادة أو تفاصيل المحاضرة">
                                 <span>✏️</span>
                                 <span>تعديل المحاضرة</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- ⚡ TODAY'S SCHEDULED & TIMETABLE LECTURES (1-CLICK QUICK LAUNCH) -->
+    {% if today_timetable_sessions %}
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">⚡</span>
+                    <h2 class="text-lg font-black text-slate-900">محاضرات اليوم المقررة (تشغيل فوري بلمسة واحدة)</h2>
+                </div>
+                <span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+                    اليوم: {{ today_timetable_sessions.count }} محاضرة
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for sess in today_timetable_sessions %}
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-brand-300 transition-all flex flex-col justify-between space-y-4 group">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                    {{ sess.course.code }}
+                                </span>
+                                {% if sess.shift == 'MORNING' %}
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="text-base font-black text-slate-900 mt-2.5 group-hover:text-brand-700 transition-colors">
+                                {{ sess.course.name }}
+                            </h3>
+                            <p class="text-xs font-bold text-slate-500 mt-0.5">
+                                {{ sess.class_section.level }} - {{ sess.class_section.name }}
+                            </p>
+
+                            <div class="mt-3 flex items-center gap-3 text-xs text-slate-600 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <span>⏰ {{ sess.start_time|time:"H:i" }} - {{ sess.end_time|time:"H:i" }}</span>
+                                <span>•</span>
+                                <span>🏛️ {{ sess.room|default:"القاعة الرئيسية" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <a href="{% url 'attendance:quick_start_session' session_id=sess.id %}" 
+                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-95">
+                                <span>⚡</span>
+                                <span>بدء التحضير فوراً (بلمسة واحدة)</span>
                             </a>
                         </div>
                     </div>
@@ -460,11 +521,19 @@
         
         <!-- Tab Navigation Bar -->
         <div class="flex flex-wrap items-center justify-between border-b border-slate-200 bg-slate-50/70 p-4 gap-3">
-            <div class="inline-flex rounded-xl border border-slate-200 p-1 bg-white shadow-2xs" role="tablist">
+            <div class="inline-flex rounded-xl border border-slate-200 p-1 bg-white shadow-2xs flex-wrap" role="tablist">
                 <button @click="activeTab = 'sessions'" 
                         :class="activeTab === 'sessions' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
                     🗓️ جدول المحاضرات الأسبوعي
+                </button>
+                <button @click="activeTab = 'scheduled'" 
+                        :class="activeTab === 'scheduled' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
+                    <span>📅 المحاضرات المجدولة</span>
+                    {% if upcoming_scheduled_sessions %}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-900 font-mono font-black">{{ upcoming_scheduled_sessions.count }}</span>
+                    {% endif %}
                 </button>
                 <button @click="activeTab = 'courses'" 
                         :class="activeTab === 'courses' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
@@ -482,6 +551,110 @@
                     ⏱️ الجلسات السابقة ({{ recent_sessions.count }})
                 </button>
             </div>
+        </div>
+
+        <!-- TAB: SCHEDULED LECTURES -->
+        <div x-show="activeTab === 'scheduled'" class="p-5 sm:p-6 space-y-4" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-black text-slate-900">المحاضرات المجدولة مسبقاً</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">محاضرات تم تجهيز إعداداتها مسبقاً لتشغيلها بضغطة زر عند موعدها</p>
+                </div>
+                <button @click="showScheduleModal = true" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-xs transition-all">
+                    <span>+</span>
+                    <span>جدولة محاضرة جديدة</span>
+                </button>
+            </div>
+
+            {% if upcoming_scheduled_sessions %}
+                <div class="overflow-x-auto rounded-xl border border-slate-200/80">
+                    <table class="min-w-full divide-y divide-slate-100 text-right">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5">المادة الدراسية</th>
+                                <th class="px-4 py-3.5">الشعبة / المرحلة</th>
+                                <th class="px-4 py-3.5 text-center">التاريخ المقرر</th>
+                                <th class="px-4 py-3.5 text-center">الوقت</th>
+                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
+                                <th class="px-4 py-3.5 text-center">حماية الأمان</th>
+                                <th class="px-4 py-3.5 text-center">الإجراءات والتشغيل</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
+                            {% for sch in upcoming_scheduled_sessions %}
+                                <tr class="hover:bg-amber-50/40 transition-colors">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-black text-slate-900">{{ sch.session.course.name }}</div>
+                                        {% if sch.topic %}
+                                            <div class="text-[11px] text-brand-600 font-semibold truncate max-w-xs">📖 {{ sch.topic }}</div>
+                                        {% else %}
+                                            <div class="text-[11px] text-slate-400 font-mono">{{ sch.session.course.code }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-700">
+                                        {{ sch.session.class_section.level }} - {{ sch.session.class_section.name }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-slate-900 font-mono">
+                                        {{ sch.date|date:"Y-m-d" }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-mono font-bold text-slate-600">
+                                        {{ sch.start_time|date:"H:i" }}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        {% if sch.shift == 'MORNING' %}
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                        {% else %}
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <div class="flex items-center justify-center gap-1 text-[11px]">
+                                            {% if sch.requires_wifi %}
+                                                <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">WiFi</span>
+                                            {% endif %}
+                                            {% if sch.requires_geofence %}
+                                                <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">GPS</span>
+                                            {% endif %}
+                                            {% if not sch.requires_wifi and not sch.requires_geofence %}
+                                                <span class="text-slate-400">قياسي</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{% url 'attendance:quick_start_session' session_id=sch.id %}" 
+                                               class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-1">
+                                                <span>⚡</span>
+                                                <span>تفعيل وبدء الآن</span>
+                                            </a>
+                                            <a href="{% url 'attendance:edit_session' session_id=sch.id %}" 
+                                               class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all" title="تعديل الموعد أو التفاصيل">
+                                                ✏️
+                                            </a>
+                                            <a href="{% url 'attendance:cancel_scheduled_session' session_id=sch.id %}" 
+                                               onclick="return confirm('هل أنت متأكد من إلغاء هذه المحاضرة المجدولة؟');"
+                                               class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all" title="إلغاء الجدولة">
+                                                🗑️
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                    <span class="text-3xl">📅</span>
+                    <p class="font-bold text-slate-700 text-sm">لا توجد محاضرات مجدولة حالياً.</p>
+                    <p class="text-xs text-slate-400">يمكنك جدولة المحاضرات للأيام القادمة وحفظ إعداداتها مسبقاً لتوفير وقتك في القاعة.</p>
+                    <div class="pt-2">
+                        <button @click="showScheduleModal = true" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs">
+                            + جدولة محاضرة جديدة الآن
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
         </div>
 
         <!-- TAB 1: WEEKLY TIMETABLE SESSIONS -->
@@ -1008,5 +1181,144 @@
         </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 🪟 MODAL 4: SCHEDULE LECTURE (جدولة محاضرة جديدة أو تعويضية) -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="showScheduleModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none"
+         style="display: none;">
+        
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 space-y-5 text-right"
+             @click.outside="showScheduleModal = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-bold">
+                        📅
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">جدولة محاضرة قادمة أو تعويضية</h3>
+                        <p class="text-xs text-slate-400 font-semibold">تجهيز المحاضرة مسبقاً لتشغيلها بلمسة واحدة</p>
+                    </div>
+                </div>
+                <button @click="showScheduleModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
+                    ✕
+                </button>
+            </div>
+
+            <form method="POST" action="{% url 'attendance:create_custom_session' %}" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="schedule">
+                <input type="hidden" name="schedule_only" value="true">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">المادة الدراسية *</label>
+                        <select name="course_id" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="">-- اختر المادة --</option>
+                            {% for c in my_courses %}
+                                <option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">الشعبة / المرحلة *</label>
+                        <select name="section_id" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="">-- اختر الشعبة --</option>
+                            {% for s in my_sections %}
+                                <option value="{{ s.id }}">{{ s.level }} - {{ s.name }} ({{ s.get_shift_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">تاريخ المحاضرة *</label>
+                        <input type="date" name="session_date" required id="schedule_date_input"
+                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">وقت البدء *</label>
+                        <input type="time" name="start_time" value="10:00" required
+                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">المدة (بالدقائق)</label>
+                        <select name="duration" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="30">30 دقيقة</option>
+                            <option value="45" selected>45 دقيقة</option>
+                            <option value="60">60 دقيقة (ساعة)</option>
+                            <option value="90">90 دقيقة</option>
+                            <option value="120">120 دقيقة (ساعتان)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">نوع الدراسة</label>
+                        <select name="shift" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="MORNING">☀️ صباحي</option>
+                            <option value="EVENING">🌙 مسائي</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">القاعة</label>
+                        <input type="text" name="room" placeholder="مثال: قاعة 4"
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">موضوع أو عنوان المحاضرة (اختياري)</label>
+                    <input type="text" name="topic" placeholder="مثال: الفصل الثالث - الخوارزميات المتقدمة"
+                           class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Security Options -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <p class="text-xs font-bold text-slate-700">🛡️ خيارات التحقق والأمان المسبقة:</p>
+                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-slate-700">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="requires_geofence" checked class="rounded border-slate-300 text-amber-600">
+                            <span>📍 التحقق من الموقع الجغرافي (GPS)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="requires_wifi" class="rounded border-slate-300 text-amber-600">
+                            <span>📶 التحقق من شبكة WiFi المؤسسة</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" @click="showScheduleModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-black text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 rounded-xl shadow-md shadow-amber-200 transition-all flex items-center gap-1.5">
+                        <span>💾</span>
+                        <span>حفظ وجدولة المحاضرة</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
+<script>
+    // Set default schedule date to today or tomorrow
+    document.addEventListener('DOMContentLoaded', function() {
+        const scheduleDateInput = document.getElementById('schedule_date_input');
+        if (scheduleDateInput && !scheduleDateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            scheduleDateInput.value = today;
+        }
+    });
+</script>
 {% endblock %}

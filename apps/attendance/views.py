@@ -1427,6 +1427,9 @@ def create_custom_session_view(request, timetable_id=None):
             session_obj.shift = shift
         session_obj.save()
 
+        is_scheduled_only = request.POST.get("action") == "schedule" or "schedule_only" in request.POST
+        target_is_active = not is_scheduled_only
+
         attendance_session, att_created = AttendanceSession.objects.get_or_create(
             session=session_obj,
             date=session_date,
@@ -1444,12 +1447,12 @@ def create_custom_session_view(request, timetable_id=None):
                 "topic": topic,
                 "lecture_type": lecture_type,
                 "shift": shift,
-                "is_active": True,
+                "is_active": target_is_active,
             },
         )
 
         if not att_created:
-            attendance_session.is_active = True
+            attendance_session.is_active = target_is_active
             attendance_session.end_time = end_dt
             attendance_session.requires_wifi = requires_wifi
             attendance_session.allowed_wifi_ssid = allowed_wifi_ssid
@@ -1470,7 +1473,7 @@ def create_custom_session_view(request, timetable_id=None):
         shift_display = "صباحي" if shift == "MORNING" else "مسائي"
         AuditLog.objects.create(
             user=request.user,
-            action="بدء_تحضير_مخصص",
+            action="جدولة_محاضرة" if is_scheduled_only else "بدء_تحضير_مخصص",
             ip_address=_get_ip(request),
             user_agent=request.META.get("HTTP_USER_AGENT"),
             details={
@@ -1483,8 +1486,16 @@ def create_custom_session_view(request, timetable_id=None):
                 "duration_minutes": duration_minutes,
                 "requires_wifi": requires_wifi,
                 "requires_geofence": requires_geofence,
+                "is_scheduled": is_scheduled_only,
             },
         )
+
+        if is_scheduled_only:
+            messages.success(
+                request,
+                f"تمت جدولة محاضرة {course.name} ({lecture_type} - {shift_display}) بنجاح لتاريخ {session_date}! ستجدها في قائمة المحاضرات المجدولة لتفعيلها بضغطة زر واحدة.",
+            )
+            return redirect("dashboard")
 
         messages.success(
             request,
@@ -1948,4 +1959,89 @@ def offline_emergency_mode_view(request, session_id):
         "server_port": server_port,
     }
     return render(request, "attendance/offline_emergency.html", context)
+
+
+@login_required
+def quick_start_scheduled_session_view(request, session_id):
+    """
+    1-Click Quick Launch for scheduled sessions or recurring timetable sessions.
+    Activates the session immediately with QR code & fresh OTP without re-entering details.
+    """
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك بتشغيل جلسات التحضير.")
+        return redirect("dashboard")
+
+    # Check if session_id refers to an AttendanceSession
+    att_session = AttendanceSession.objects.filter(id=session_id).first()
+    now = timezone.now()
+    generated_otp = f"{random.randint(100000, 999999)}"
+
+    if att_session:
+        # Check permissions
+        if request.user.is_teacher() and att_session.session.teacher.user != request.user and att_session.created_by != request.user:
+            messages.error(request, "غير مصرح لك بتشغيل هذه الجلسة.")
+            return redirect("dashboard")
+
+        # Activate
+        att_session.is_active = True
+        att_session.date = now.date()
+        att_session.start_time = now
+        att_session.end_time = now + timezone.timedelta(minutes=45)
+        att_session.qr_salt = uuid.uuid4()
+        att_session.quick_otp = generated_otp
+        att_session.save()
+
+        messages.success(request, f"⚡ تم تفعيل وبدء جلسة مادة ({att_session.session.course.name}) بنجاح!")
+        return redirect("attendance:session_detail_web", session_id=att_session.id)
+    
+    # Try timetable Session
+    timetable_session = get_object_or_404(Session, id=session_id)
+    if request.user.is_teacher() and timetable_session.teacher.user != request.user:
+        messages.error(request, "غير مصرح لك بتشغيل هذه الحصة.")
+        return redirect("dashboard")
+
+    # Create / activate today's AttendanceSession
+    att_session, created = AttendanceSession.objects.get_or_create(
+        session=timetable_session,
+        date=now.date(),
+        defaults={
+            "created_by": request.user,
+            "start_time": now,
+            "end_time": now + timezone.timedelta(minutes=45),
+            "quick_otp": generated_otp,
+            "is_active": True,
+            "shift": timetable_session.shift,
+        }
+    )
+    if not created and not att_session.is_active:
+        att_session.is_active = True
+        att_session.start_time = now
+        att_session.end_time = now + timezone.timedelta(minutes=45)
+        att_session.quick_otp = generated_otp
+        att_session.qr_salt = uuid.uuid4()
+        att_session.save()
+
+    messages.success(request, f"⚡ تم تفعيل وبدء جلسة تحضير مادة ({timetable_session.course.name}) بنجاح!")
+    return redirect("attendance:session_detail_web", session_id=att_session.id)
+
+
+@login_required
+def cancel_scheduled_session_view(request, session_id):
+    """Cancels a scheduled future/inactive attendance session."""
+    if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
+        messages.error(request, "غير مصرح لك.")
+        return redirect("dashboard")
+
+    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    if request.user.is_teacher() and att_session.session.teacher.user != request.user and att_session.created_by != request.user:
+        messages.error(request, "غير مصرح لك بإلغاء هذه الجلسة.")
+        return redirect("dashboard")
+
+    course_name = att_session.session.course.name
+    date_str = str(att_session.date)
+    att_session.delete()
+
+    messages.success(request, f"تم إلغاء المحاضرة المجدولة لمادة ({course_name}) بتاريخ {date_str} بنجاح.")
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
 

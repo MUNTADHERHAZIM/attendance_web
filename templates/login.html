@@ -609,10 +609,14 @@ select.form-input { cursor: pointer; appearance: none; }
     <div class="info-panel">
         <!-- Logo -->
         <div class="info-logo">
-            <div class="info-logo-mark">ح</div>
+            {% if system_institution_logo %}
+                <img src="{{ system_institution_logo }}" alt="Logo" style="width: 44px; height: 44px; object-fit: contain; background: #ffffff; border-radius: 12px; padding: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            {% else %}
+                <div class="info-logo-mark">ح</div>
+            {% endif %}
             <div>
                 <div class="info-logo-name">نظام الحضور الذكي</div>
-                <div class="info-logo-sub">Smart Attendance System</div>
+                <div class="info-logo-sub">{{ system_institution_name|default:"Smart Attendance System" }}</div>
             </div>
         </div>
 

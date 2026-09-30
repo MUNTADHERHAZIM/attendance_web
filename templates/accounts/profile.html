@@ -145,19 +145,27 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">اختر الجامعة / الكلية المسجلة</label>
-                                <select name="institution_id" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
+                                <select name="institution_id" id="institution_select" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
+                                    <option value="">-- اختر من الجامعات المسجلة --</option>
                                     {% for inst in institutions %}
                                         <option value="{{ inst.id }}" {% if profile and profile.institution_id == inst.id %}selected{% endif %}>
                                             {{ inst.name }}
                                         </option>
                                     {% endfor %}
+                                    <option value="other">🏛️ أخرى (كتابة اسم جامعة جديد)...</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">أو اكتب اسم الجامعة/المؤسسة (إذا لم تكن بالقائمة)</label>
-                                <input type="text" name="new_institution_name" 
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700">أو اكتب اسم الجامعة/المؤسسة (إذا لم تكن بالقائمة)</label>
+                                    <span id="new_inst_badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded">جامعة مخصصة ✨</span>
+                                </div>
+                                <input type="text" name="new_institution_name" id="new_institution_input"
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
-                                       placeholder="مثال: جامعة بغداد - كلية العلوم">
+                                       placeholder="مثال: جامعة العراق - كلية الهندسة">
+                                <p id="new_inst_hint" class="text-[11px] text-brand-600 font-semibold mt-1 hidden">
+                                    ✓ سيتم تسجيل هذه الجامعة وربط حسابك بها مباشرة عند الحفظ.
+                                </p>
                             </div>
                         </div>
 
@@ -259,4 +267,48 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const instSelect = document.getElementById('institution_select');
+    const newInstInput = document.getElementById('new_institution_input');
+    const newInstBadge = document.getElementById('new_inst_badge');
+    const newInstHint = document.getElementById('new_inst_hint');
+
+    if (instSelect && newInstInput) {
+        function updateUIState() {
+            const hasCustomText = newInstInput.value.trim().length > 0;
+            if (hasCustomText) {
+                instSelect.value = 'other';
+                if (newInstBadge) newInstBadge.classList.remove('hidden');
+                if (newInstHint) newInstHint.classList.remove('hidden');
+            } else {
+                if (instSelect.value === 'other') {
+                    if (newInstBadge) newInstBadge.classList.remove('hidden');
+                    if (newInstHint) newInstHint.classList.remove('hidden');
+                } else {
+                    if (newInstBadge) newInstBadge.classList.add('hidden');
+                    if (newInstHint) newInstHint.classList.add('hidden');
+                }
+            }
+        }
+
+        newInstInput.addEventListener('input', updateUIState);
+
+        instSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                newInstInput.focus();
+                if (newInstBadge) newInstBadge.classList.remove('hidden');
+                if (newInstHint) newInstHint.classList.remove('hidden');
+            } else if (this.value !== '') {
+                newInstInput.value = '';
+                if (newInstBadge) newInstBadge.classList.add('hidden');
+                if (newInstHint) newInstHint.classList.add('hidden');
+            }
+        });
+
+        updateUIState();
+    }
+});
+</script>
 {% endblock %}

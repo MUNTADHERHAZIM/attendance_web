@@ -108,12 +108,15 @@ def profile_web_view(request):
             institution_id = request.POST.get("institution_id", "").strip()
             new_institution_name = request.POST.get("new_institution_name", "").strip()
 
-            # Resolve or create institution
+            # Resolve or create institution (Custom typed university takes absolute priority)
             target_institution = None
-            if institution_id and institution_id.isdigit():
+            if new_institution_name:
+                target_institution, _ = Institution.objects.get_or_create(
+                    name=new_institution_name,
+                    defaults={"address": "جمهورية العراق"}
+                )
+            elif institution_id and institution_id.isdigit():
                 target_institution = Institution.objects.filter(id=int(institution_id)).first()
-            if not target_institution and new_institution_name:
-                target_institution, _ = Institution.objects.get_or_create(name=new_institution_name)
 
             if user.is_student():
                 student_profile = getattr(user, "student_profile", None)

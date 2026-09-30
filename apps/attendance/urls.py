@@ -26,6 +26,8 @@ from .views import (
     offline_emergency_mode_view,
     flexible_session_route_view,
     edit_session_view,
+    quick_start_scheduled_session_view,
+    cancel_scheduled_session_view,
 )
 
 app_name = "attendance"
@@ -47,6 +49,8 @@ urlpatterns = [
     path("session/start-web/", start_session_web_view, name="start_session_web"),
     path("session/<int:session_id>/", session_detail_web_view, name="session_detail_web"),
     path("session/<int:session_id>/edit/", edit_session_view, name="edit_session"),
+    path("session/<int:session_id>/quick-start/", quick_start_scheduled_session_view, name="quick_start_session"),
+    path("session/<int:session_id>/cancel-scheduled/", cancel_scheduled_session_view, name="cancel_scheduled_session"),
     path("session/<int:session_id>/print/", printable_qr_sheet_view, name="printable_qr_sheet"),
     path("session/<int:session_id>/students-list/", session_students_list_partial, name="session_students_list"),
     path("record/manual-update-web/", manual_update_web_view, name="manual_update_web"),
