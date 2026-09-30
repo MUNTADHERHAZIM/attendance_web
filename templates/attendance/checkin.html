@@ -16,7 +16,9 @@
         otpCode: '',
         sessionId: '',
         gpsCoords: null,
+        gpsAccuracy: null,
         gpsStatus: 'جاري التحقق من الموقع...',
+        _gpsWatcher: null,
 
         init() {
             this.requestGPS();
@@ -24,7 +26,6 @@
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 this.scanning = false;
-                // If logged in, submit immediately. If guest, let them enter their name first or submit if provided.
                 if (this.isLoggedIn) {
                     this.loading = true;
                     setTimeout(() => { this.submitToken(urlToken); }, 200);
@@ -40,21 +41,38 @@
         pendingToken: '',
 
         async requestGPS() {
-            if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-                        this.gpsStatus = '📍 تم تحديد موقعك الجغرافي بنجاح';
-                    },
-                    (err) => {
-                        this.gpsStatus = '⚠️ لم يتم تفعيل الـ GPS (يرجى السماح بالوصول للموقع)';
-                        console.warn('Geolocation error:', err);
-                    },
-                    { enableHighAccuracy: true, timeout: 8000 }
-                );
-            } else {
+            if (!('geolocation' in navigator)) {
                 this.gpsStatus = 'المتصفح لا يدعم تحديد الموقع';
+                return;
             }
+            // Use watchPosition to continuously improve accuracy and pick the best indoor reading
+            let bestAccuracy = Infinity;
+            this._gpsWatcher = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const acc = pos.coords.accuracy; // metres
+                    // Always update with the most accurate reading we get
+                    if (acc < bestAccuracy) {
+                        bestAccuracy = acc;
+                        this.gpsCoords = {
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude
+                        };
+                        this.gpsAccuracy = Math.round(acc);
+                    }
+                    if (acc <= 50) {
+                        this.gpsStatus = `📍 موقعك محدد بدقة ±${Math.round(acc)}م`;
+                    } else if (acc <= 300) {
+                        this.gpsStatus = `📡 تحديد الموقع متوسط ±${Math.round(acc)}م`;
+                    } else {
+                        this.gpsStatus = `⚠️ إشارة GPS ضعيفة داخل المبنى ±${Math.round(acc)}م — يُقبل الحضور تلقائياً`;
+                    }
+                },
+                (err) => {
+                    this.gpsStatus = '⚠️ تعذر الحصول على الموقع — سيُقبل الحضور بدون GPS';
+                    console.warn('Geolocation error:', err);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
         },
 
         initCamera() {
@@ -135,12 +153,17 @@
             }
 
             this.loading = true;
+            // If no GPS yet, do a short fallback attempt
             if (!this.gpsCoords && 'geolocation' in navigator) {
                 await new Promise((res) => {
                     navigator.geolocation.getCurrentPosition(
-                        (pos) => { this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; res(); },
+                        (pos) => {
+                            this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                            this.gpsAccuracy = Math.round(pos.coords.accuracy);
+                            res();
+                        },
                         () => res(),
-                        { timeout: 3000, enableHighAccuracy: true }
+                        { timeout: 4000, enableHighAccuracy: true }
                     );
                 });
             }
@@ -150,6 +173,7 @@
                 student_name: this.guestStudentName.trim() || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
+                gps_accuracy: this.gpsAccuracy || null,
             };
 
             await this.sendCheckinPayload(payload);
@@ -169,9 +193,13 @@
             if (!this.gpsCoords && 'geolocation' in navigator) {
                 await new Promise((res) => {
                     navigator.geolocation.getCurrentPosition(
-                        (pos) => { this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; res(); },
+                        (pos) => {
+                            this.gpsCoords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                            this.gpsAccuracy = Math.round(pos.coords.accuracy);
+                            res();
+                        },
                         () => res(),
-                        { timeout: 3000, enableHighAccuracy: true }
+                        { timeout: 4000, enableHighAccuracy: true }
                     );
                 });
             }
@@ -182,6 +210,7 @@
                 session_id: this.sessionId || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
+                gps_accuracy: this.gpsAccuracy || null,
             };
 
             await this.sendCheckinPayload(payload);
