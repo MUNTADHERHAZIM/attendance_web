@@ -519,40 +519,61 @@ class StudentCheckInView(APIView):
         ip = _get_ip(request)
 
         # 7. Geolocation / GPS Geofencing Verification (Factor 2)
-        if attendance_session.requires_geofence:
+        # ─────────────────────────────────────────────────────────────────
+        # BYPASS RULES (GPS check is meaningless / harmful in these cases):
+        #  A) OTP method  → teacher gave code verbally; student is physically present
+        #  B) WIFI method → subnet check already proves same network / same building
+        #  C) GPS accuracy > threshold → indoor signal unreliable; benefit of the doubt
+        # ─────────────────────────────────────────────────────────────────
+        GPS_OTP_BYPASS_METHODS = {
+            AttendanceRecord.Methods.OTP,
+            AttendanceRecord.Methods.WIFI,
+            AttendanceRecord.Methods.OFFLINE_MANUAL,
+        }
+        GPS_ACCURACY_BYPASS_THRESHOLD = 150  # metres — typical indoor GPS error
+
+        if attendance_session.requires_geofence and checkin_method not in GPS_OTP_BYPASS_METHODS:
             student_lat = request.data.get("latitude")
             student_lon = request.data.get("longitude")
             gps_accuracy = request.data.get("gps_accuracy")  # metres, sent by client
 
-            # If GPS accuracy is very poor (e.g. indoors > 200m), the reading is unreliable
-            # In this case we give the student the benefit of the doubt and skip the fence check
-            GPS_ACCURACY_BYPASS_THRESHOLD = 200  # metres
-            if gps_accuracy and float(gps_accuracy) > GPS_ACCURACY_BYPASS_THRESHOLD:
-                # GPS unreliable indoors — skip fence, log a warning instead
-                pass
+            # Case C: Accuracy too poor to be trusted (e.g. inside a building)
+            gps_accuracy_float = float(gps_accuracy) if gps_accuracy else None
+            if gps_accuracy_float and gps_accuracy_float > GPS_ACCURACY_BYPASS_THRESHOLD:
+                pass  # GPS unreliable indoors — skip geofence silently
+
             elif not student_lat or not student_lon:
                 return Response(
                     {
-                        "error": "تتطلب هذه المحاضرة التحقق من موقعك الجغرافي (GPS). يرجى السماح بالوصول للموقع في متصفح هاتفك والمحاولة مجدداً."
+                        "error": (
+                            "تتطلب هذه المحاضرة التحقق من موقعك الجغرافي (GPS).\n"
+                            "• يرجى السماح بالوصول للموقع في متصفح هاتفك.\n"
+                            "• أو استخدم كود OTP الذي يوفره الأستاذ لتجاوز فحص الموقع."
+                        )
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
             else:
                 target_lat = attendance_session.latitude or (institution.latitude if institution else None)
                 target_lon = attendance_session.longitude or (institution.longitude if institution else None)
-                allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 150) or 150
+                allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 200) or 200
 
                 if target_lat and target_lon:
                     distance = calculate_haversine_distance(student_lat, student_lon, target_lat, target_lon)
-                    # Also factor in GPS accuracy: effective distance = distance - accuracy (benefit of the doubt)
-                    effective_distance = distance - float(gps_accuracy or 0) if distance is not None else None
-                    if effective_distance is not None and effective_distance > allowed_radius:
-                        return Response(
-                            {
-                                "error": f"فشل التحقق من الموقع الجغرافي: أنت خارج نطاق المحاضرة! المسافة المحسوبة ({int(distance)}م) تتجاوز الحد الأقصى المسموح ({int(allowed_radius)}م). إذا كنت داخل المبنى، تأكد من تفعيل GPS وانتظر ثوانٍ ثم أعد المحاولة."
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                    if distance is not None:
+                        # Subtract GPS accuracy from raw distance (benefit of the doubt)
+                        effective_distance = max(0, distance - (gps_accuracy_float or 0))
+                        if effective_distance > allowed_radius:
+                            return Response(
+                                {
+                                    "error": (
+                                        f"⚠️ أنت خارج نطاق المحاضرة!\n"
+                                        f"المسافة المحسوبة: {int(distance)}م — النطاق المسموح: {int(allowed_radius)}م.\n"
+                                        f"إذا كنت داخل المبنى، جرّب كود OTP بدلاً من QR لتجاوز فحص الموقع."
+                                    )
+                                },
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
 
         # 8. WiFi / Subnet restriction (if configured)
         if attendance_session.requires_wifi:
