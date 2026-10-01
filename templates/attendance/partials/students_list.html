@@ -1,3 +1,9 @@
+{% if review_required_count %}
+    <div class="mb-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-right text-xs font-bold text-amber-950">
+        <span class="text-base">⚠️</span>
+        <span>تنبيه للأستاذ: يوجد {{ review_required_count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة.</span>
+    </div>
+{% endif %}
 <div id="students-table-scroller" class="overflow-x-auto rounded-xl border border-slate-200/90 shadow-2xs">
     <table class="min-w-full divide-y divide-slate-100 text-right">
         <thead>
@@ -36,6 +42,12 @@
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="طالب جديد تم تسجيله تلقائياً أثناء المحاضرة">
                                             <span>🏷️</span>
                                             <span>طالب جديد</span>
+                                        </span>
+                                    {% endif %}
+                                    {% if item.record and 'يتطلب مراجعة الأستاذ' in item.record.notes and item.profile.student_id|slice:":4" != "NEW-" %}
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs" title="راجع أهلية الطالب لهذه الشعبة">
+                                            <span>⚠️</span>
+                                            <span>يتطلب مراجعة</span>
                                         </span>
                                     {% endif %}
                                     {% if item.is_shared_device %}

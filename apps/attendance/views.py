@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Q
 
 import json
@@ -19,7 +19,7 @@ import random
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.throttling import SimpleRateThrottle
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from rest_framework import serializers as drf_serializers
 
@@ -37,7 +37,7 @@ from .utils import (
     find_matching_student,
 )
 from apps.accounts.permissions import IsTeacher, IsStudent
-from apps.accounts.models import StudentProfile, TeacherProfile
+from apps.accounts.models import StudentProfile, TeacherProfile, User
 from apps.academics.models import Session, Course, ClassSection, Department, Institution
 from apps.core.models import AuditLog
 
@@ -80,6 +80,17 @@ def _get_ip(request):
     if x_forwarded_for:
         return x_forwarded_for.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR", "")
+
+
+class StudentCheckInRateThrottle(SimpleRateThrottle):
+    scope = "checkin"
+
+    def get_cache_key(self, request, view):
+        if request.user.is_authenticated:
+            identity = f"user_{request.user.pk}"
+        else:
+            identity = f"ip_{self.get_ident(request)}"
+        return self.cache_format % {"scope": self.scope, "ident": identity}
 
 
 def _get_students_for_session(attendance_session):
@@ -516,19 +527,9 @@ def get_hotspot_info_api(request):
 )
 class StudentCheckInView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "checkin"
+    throttle_classes = [StudentCheckInRateThrottle]
 
     def post(self, request):
-        # 1. Rate Limiting: prevent spamming
-        user_key = request.user.id if request.user.is_authenticated else _get_ip(request)
-        cache_key = f"checkin_lock_{user_key}"
-        if cache.get(cache_key):
-            return Response(
-                {"error": "لقد سجّلت حضورك مؤخراً، يرجى الانتظار قليلاً قبل المحاولة مجدداً."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
-
         token = request.data.get("token")
         otp = request.data.get("otp")
         session_id = request.data.get("session_id")
@@ -566,18 +567,20 @@ class StudentCheckInView(APIView):
 
         class_section = attendance_session.session.class_section
 
-        # 4. Student Identification: Logged-in Account OR Guest Student Name/ID Match / Auto-Register New Student
+        # 4. Existing student, listed guest, or provisional guest awaiting teacher review.
         student_profile = None
+        is_new_student = False
+        requires_teacher_review = False
+        provisional_name = None
         if request.user.is_authenticated and hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
-            if (
-                student_profile.institution_id != class_section.department.institution_id
-                or not student_profile.sections.filter(id=class_section.id).exists()
-            ):
+            if student_profile.institution_id != class_section.department.institution_id:
                 return Response(
-                    {"error": "حسابك غير مسجل في شعبة هذه المحاضرة. راجع إدارة القسم."},
+                    {"error": "حسابك تابع لمؤسسة أخرى ولا يمكن تسجيله في هذه الجلسة."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
+            if not student_profile.sections.filter(id=class_section.id).exists():
+                requires_teacher_review = True
         else:
             student_query = request.data.get("student_name") or request.data.get("student_id") or request.data.get("identifier")
             if not student_query or not str(student_query).strip():
@@ -588,21 +591,52 @@ class StudentCheckInView(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
-            matched_student, match_err = find_matching_student(student_query, class_section)
-            if not matched_student:
+            student_query = str(student_query).strip()
+            if len(student_query) > 150:
                 return Response(
-                    {
-                        "error": match_err or "لم يتم العثور على الطالب في كشف الشعبة.",
-                        "requires_enrollment": True,
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
+                    {"error": "يجب ألا يتجاوز الاسم أو الرقم الجامعي 150 حرفاً."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            student_profile = matched_student
+            provisional_records = AttendanceRecord.objects.filter(
+                attendance_session=attendance_session,
+                student__student_id__startswith="NEW-",
+            ).select_related("student__user")
+            normalized_query = normalize_arabic_text(student_query)
+            student_profile = next(
+                (
+                    item.student
+                    for item in provisional_records
+                    if normalize_arabic_text(
+                        item.student.user.get_full_name() or item.student.user.username
+                    ) == normalized_query
+                ),
+                None,
+            )
+            if student_profile:
+                is_new_student = True
+                requires_teacher_review = True
+            else:
+                matched_student, match_err = find_matching_student(student_query, class_section)
+                if matched_student:
+                    student_profile = matched_student
+                elif match_err and "يوجد" in match_err:
+                    return Response(
+                        {"error": match_err},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                else:
+                    provisional_name = student_query
+                    is_new_student = True
+                    requires_teacher_review = True
 
-        # Shift / Study Type Verification (منع تضارب دوام الصباحي والمسائي)
-        if student_profile and student_profile.study_shift and attendance_session.shift:
+        # Allow an unlisted student to check in, but flag their record for review.
+        if (
+            not requires_teacher_review
+            and student_profile
+            and student_profile.study_shift
+            and attendance_session.shift
+        ):
             if student_profile.study_shift != attendance_session.shift:
                 shift_names = {"MORNING": "الصباحية", "EVENING": "المسائية"}
                 std_shift = shift_names.get(student_profile.study_shift, student_profile.study_shift)
@@ -615,11 +649,15 @@ class StudentCheckInView(APIView):
                 )
 
         # 5. Anti-Proxy: Duplicate Prevention (Factor 5)
-        existing_present = AttendanceRecord.objects.filter(
-            student=student_profile,
-            attendance_session=attendance_session,
-            status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE]
-        ).first()
+        existing_present = (
+            AttendanceRecord.objects.filter(
+                student=student_profile,
+                attendance_session=attendance_session,
+                status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+            ).first()
+            if student_profile
+            else None
+        )
         if existing_present:
             serializer = AttendanceRecordSerializer(existing_present)
             return Response(
@@ -631,7 +669,11 @@ class StudentCheckInView(APIView):
                 status=status.HTTP_200_OK
             )
 
-        institution = student_profile.institution
+        institution = (
+            student_profile.institution
+            if student_profile
+            else class_section.department.institution
+        )
         ip = _get_ip(request)
 
         # 7. Geolocation / GPS Geofencing Verification (Factor 2)
@@ -740,31 +782,78 @@ class StudentCheckInView(APIView):
             device_user_agent = raw_ua
 
         record_notes = None
+        if is_new_student:
+            record_notes = "طالب جديد غير موجود في قائمة الشعبة - يتطلب مراجعة الأستاذ."
+        elif requires_teacher_review:
+            record_notes = "طالب غير مسجل في هذه الشعبة - يتطلب مراجعة الأستاذ."
 
-        record, created = AttendanceRecord.objects.update_or_create(
-            student=student_profile,
-            attendance_session=attendance_session,
-            defaults={
-                "status": record_status,
-                "method": checkin_method,
-                "ip_address": ip,
-                "device_user_agent": device_user_agent,
-                "modified_by": request.user if request.user.is_authenticated else None,
-                "notes": record_notes,
-            },
-        )
+        with transaction.atomic():
+            if provisional_name is not None:
+                parts = provisional_name.split(maxsplit=1)
+                unique_id = uuid.uuid4().hex.upper()
+                guest_user = User.objects.create(
+                    username=f"guest_{unique_id.lower()}",
+                    first_name=parts[0],
+                    last_name=parts[1] if len(parts) > 1 else "",
+                    role=User.Roles.STUDENT,
+                )
+                guest_user.set_unusable_password()
+                guest_user.save(update_fields=["password"])
+                student_profile = StudentProfile.objects.create(
+                    user=guest_user,
+                    student_id=f"NEW-{unique_id}",
+                    institution=class_section.department.institution,
+                    study_shift=attendance_session.shift or class_section.shift,
+                )
 
-        # Lock this user from checking in again for 30 seconds
-        cache.set(cache_key, True, timeout=30)
+            record, created = AttendanceRecord.objects.update_or_create(
+                student=student_profile,
+                attendance_session=attendance_session,
+                defaults={
+                    "status": record_status,
+                    "method": checkin_method,
+                    "ip_address": ip,
+                    "device_user_agent": device_user_agent,
+                    "modified_by": request.user if request.user.is_authenticated else None,
+                    "notes": record_notes,
+                },
+            )
+
         queue_for_sync(record, SyncQueue.Actions.CREATE if created else SyncQueue.Actions.UPDATE)
 
+        if requires_teacher_review:
+            AuditLog.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                action="تسجيل حضور طالب يتطلب مراجعة الأستاذ",
+                details={
+                    "attendance_session_id": attendance_session.id,
+                    "student_profile_id": student_profile.id,
+                    "student_name": student_profile.user.get_full_name(),
+                    "is_new_student": is_new_student,
+                    "device_id": device_id or "",
+                },
+            )
+
         serializer = AttendanceRecordSerializer(record)
-        msg = (
-            "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
-            if record_status == AttendanceRecord.Statuses.PRESENT
-            else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
+        if is_new_student:
+            msg = "تم تسجيل حضورك كطالب جديد بانتظار مراجعة الأستاذ. يرجى التأكد من إضافة اسمك إلى القائمة."
+        elif requires_teacher_review:
+            msg = "تم تسجيل الحضور وإبلاغ الأستاذ بأن حسابك غير مسجل في هذه الشعبة."
+        else:
+            msg = (
+                "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
+                if record_status == AttendanceRecord.Statuses.PRESENT
+                else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
+            )
+        return Response(
+            {
+                "message": msg,
+                "record": serializer.data,
+                "is_new_student": is_new_student,
+                "requires_teacher_review": requires_teacher_review,
+            },
+            status=status.HTTP_200_OK,
         )
-        return Response({"message": msg, "record": serializer.data}, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -965,6 +1054,16 @@ def session_detail_web_view(request, session_id):
     late_cnt = sum(1 for s in students_list if s["status"] == "LATE")
     total_cnt = len(students_list)
     rate = round((present_cnt / total_cnt * 100), 1) if total_cnt > 0 else 0
+    review_required_count = sum(
+        1
+        for item in students_list
+        if item["profile"].student_id.startswith("NEW-")
+        or (
+            item["record"]
+            and item["record"].notes
+            and "يتطلب مراجعة الأستاذ" in item["record"].notes
+        )
+    )
     initial_qr_token = ""
     if attendance_session.is_active:
         if not attendance_session.qr_salt:
@@ -1077,6 +1176,16 @@ def session_students_list_partial(request, session_id):
     late_cnt = sum(1 for s in students_list if s["status"] == "LATE")
     total_cnt = len(students_list)
     rate = round((present_cnt / total_cnt * 100), 1) if total_cnt > 0 else 0
+    review_required_count = sum(
+        1
+        for item in students_list
+        if item["profile"].student_id.startswith("NEW-")
+        or (
+            item["record"]
+            and item["record"].notes
+            and "يتطلب مراجعة الأستاذ" in item["record"].notes
+        )
+    )
 
     context = {
         "attendance_session": attendance_session,
@@ -1086,6 +1195,7 @@ def session_students_list_partial(request, session_id):
         "late_count": late_cnt,
         "total_count": total_cnt,
         "attendance_rate": rate,
+        "review_required_count": review_required_count,
     }
     return render(request, "attendance/partials/students_list.html", context)
 
@@ -2173,6 +2283,16 @@ def offline_emergency_mode_view(request, session_id):
     late_cnt = sum(1 for s in students_list if s["status"] == "LATE")
     total_cnt = len(students_list)
     rate = round((present_cnt / total_cnt * 100), 1) if total_cnt > 0 else 0
+    review_required_count = sum(
+        1
+        for item in students_list
+        if item["profile"].student_id.startswith("NEW-")
+        or (
+            item["record"]
+            and item["record"].notes
+            and "يتطلب مراجعة الأستاذ" in item["record"].notes
+        )
+    )
 
     # Detect local IPs for hotspot
     import socket
@@ -2200,6 +2320,7 @@ def offline_emergency_mode_view(request, session_id):
         "local_ips": local_ips,
         "primary_ip": local_ips[0] if local_ips else "127.0.0.1",
         "server_port": server_port,
+        "review_required_count": review_required_count,
     }
     return render(request, "attendance/offline_emergency.html", context)
 

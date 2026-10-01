@@ -7,6 +7,7 @@ from apps.academics.models import Institution, Session, Course, Department, Clas
 from apps.accounts.models import User, StudentProfile, TeacherProfile
 from apps.attendance.models import AttendanceSession, AttendanceRecord
 from apps.attendance.utils import generate_qr_token, verify_qr_token, is_ip_in_subnet
+from apps.core.models import AuditLog
 
 @pytest.fixture
 def test_db_setup(db):
@@ -187,7 +188,7 @@ def test_teacher_cannot_change_another_teachers_attendance_record(attendance_api
     assert record.status == AttendanceRecord.Statuses.ABSENT
 
 
-def test_unenrolled_student_is_not_auto_enrolled_during_checkin(attendance_api_setup):
+def test_same_institution_unenrolled_student_can_check_in_for_teacher_review(attendance_api_setup):
     attendance_session, _, _, student, _ = attendance_api_setup
     student.sections.clear()
     client = APIClient()
@@ -199,15 +200,160 @@ def test_unenrolled_student_is_not_auto_enrolled_during_checkin(attendance_api_s
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 200
+    assert response.data["requires_teacher_review"] is True
+    assert "غير مسجل" in response.data["message"]
     assert not student.sections.filter(
         id=attendance_session.session.class_section_id
     ).exists()
-    assert not AttendanceRecord.objects.filter(
+    record = AttendanceRecord.objects.get(
         student=student,
         attendance_session=attendance_session,
-        status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+    )
+    assert record.status in [AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE]
+    assert "يتطلب مراجعة الأستاذ" in record.notes
+    assert AuditLog.objects.filter(
+        action="تسجيل حضور طالب يتطلب مراجعة الأستاذ",
+        details__student_profile_id=student.id,
     ).exists()
+
+
+def test_unknown_guest_is_recorded_as_provisional_student(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": generate_qr_token(attendance_session),
+            "student_name": "سارة حسن",
+            "device_id": "shared-tablet-1",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["is_new_student"] is True
+    assert response.data["requires_teacher_review"] is True
+    assert "بانتظار مراجعة الأستاذ" in response.data["message"]
+    profile = StudentProfile.objects.get(student_id__startswith="NEW-")
+    record = AttendanceRecord.objects.get(
+        student=profile,
+        attendance_session=attendance_session,
+    )
+    assert profile.institution_id == attendance_session.session.class_section.department.institution_id
+    assert not profile.sections.exists()
+    assert not profile.user.has_usable_password()
+    assert "يتطلب مراجعة الأستاذ" in record.notes
+    assert AuditLog.objects.filter(
+        action="تسجيل حضور طالب يتطلب مراجعة الأستاذ",
+        details__student_profile_id=profile.id,
+    ).exists()
+
+
+def test_same_device_can_register_multiple_students_and_same_name_is_idempotent(
+    attendance_api_setup,
+):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+    token = generate_qr_token(attendance_session)
+
+    for index in range(6):
+        response = client.post(
+            "/attendance/api/checkin/",
+            {
+                "token": token,
+                "student_name": f"طالب جديد {index}",
+                "device_id": "shared-tablet-many-students",
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+
+    assert StudentProfile.objects.filter(student_id__startswith="NEW-").count() == 6
+    assert AttendanceRecord.objects.filter(
+        attendance_session=attendance_session,
+        student__student_id__startswith="NEW-",
+    ).count() == 6
+
+    duplicate_response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": token,
+            "student_name": "طالب جديد 0",
+            "device_id": "shared-tablet-many-students",
+        },
+        format="json",
+    )
+    assert duplicate_response.status_code == 200
+    assert duplicate_response.data["already_recorded"] is True
+    assert StudentProfile.objects.filter(student_id__startswith="NEW-").count() == 6
+
+
+def test_student_from_another_institution_cannot_check_in(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    other_institution = Institution.objects.create(name="مؤسسة أخرى")
+    other_user = User.objects.create_user(
+        username="cross_institution_student",
+        password="test-password",
+        role=User.Roles.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=other_user,
+        student_id="OTHER-1",
+        institution=other_institution,
+    )
+    client = APIClient()
+    client.force_authenticate(user=other_user)
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {"token": generate_qr_token(attendance_session)},
+        format="json",
+    )
+
+    assert response.status_code == 403
+    assert not AttendanceRecord.objects.filter(
+        student__user=other_user,
+        attendance_session=attendance_session,
+    ).exists()
+
+
+def test_bad_qr_does_not_create_a_provisional_student(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {"token": "invalid-signature", "student_name": "اسم غير مدرج"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not StudentProfile.objects.filter(student_id__startswith="NEW-").exists()
+
+
+def test_teacher_live_list_shows_review_alert_for_new_student(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+    client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": generate_qr_token(attendance_session),
+            "student_name": "طالب يحتاج مراجعة",
+            "device_id": "review-alert-device",
+        },
+        format="json",
+    )
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.get(
+        f"/attendance/session/{attendance_session.id}/students-list/"
+    )
+
+    assert response.status_code == 200
+    assert "تنبيه للأستاذ" in response.content.decode()
+    assert "طالب جديد" in response.content.decode()
 
 
 def test_weak_or_client_claimed_inaccurate_gps_cannot_bypass_geofence(
