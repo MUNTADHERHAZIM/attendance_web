@@ -1,3 +1,5 @@
+import uuid
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
 from rest_framework import generics, permissions, status
@@ -7,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
+from django.views.decorators.http import require_POST
 from .models import StudentProfile, TeacherProfile, GuardianProfile
 from .serializers import (
     CustomTokenObtainPairSerializer, 
@@ -32,6 +36,48 @@ def is_valid_iraqi_phone(phone_str):
         clean = '0' + clean[5:]
     is_valid = bool(re.match(r'^07\d{9}$', clean))
     return is_valid, clean
+
+
+def _manageable_sections(user):
+    from apps.academics.models import ClassSection
+
+    queryset = ClassSection.objects.all()
+    if user.is_super_admin():
+        return queryset
+
+    profile = getattr(user, "teacher_profile", None)
+    institution_id = getattr(profile, "institution_id", None)
+    department_id = getattr(profile, "department_id", None)
+    if not institution_id and user.is_institution_admin():
+        profile = getattr(user, "student_profile", None)
+        institution_id = getattr(profile, "institution_id", None)
+
+    if not institution_id:
+        return queryset.none()
+    queryset = queryset.filter(department__institution_id=institution_id)
+    if user.is_teacher() and department_id:
+        queryset = queryset.filter(department_id=department_id)
+    return queryset
+
+
+def _manageable_users(user):
+    from django.db.models import Q
+
+    queryset = User.objects.all()
+    if user.is_super_admin():
+        return queryset
+    institution_id = None
+    for profile_name in ("teacher_profile", "student_profile"):
+        profile = getattr(user, profile_name, None)
+        institution_id = getattr(profile, "institution_id", None)
+        if institution_id:
+            break
+    if not institution_id:
+        return queryset.none()
+    return queryset.filter(
+        Q(student_profile__institution_id=institution_id)
+        | Q(teacher_profile__institution_id=institution_id)
+    )
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -110,12 +156,13 @@ def profile_web_view(request):
 
             # Resolve or create institution (Custom typed university takes absolute priority)
             target_institution = None
-            if new_institution_name:
+            can_reassign_institution = request.user.is_super_admin()
+            if can_reassign_institution and new_institution_name:
                 target_institution, _ = Institution.objects.get_or_create(
                     name=new_institution_name,
                     defaults={"address": "جمهورية العراق"}
                 )
-            elif institution_id and institution_id.isdigit():
+            elif can_reassign_institution and institution_id and institution_id.isdigit():
                 target_institution = Institution.objects.filter(id=int(institution_id)).first()
 
             if user.is_student():
@@ -130,7 +177,7 @@ def profile_web_view(request):
                     )
 
                 student_id = request.POST.get("student_id", "").strip()
-                study_shift = request.POST.get("study_shift", "MORNING").strip().upper()
+                study_shift = request.POST.get("study_shift", "").strip().upper()
                 birth_date_str = request.POST.get("birth_date", "").strip()
                 section_ids = request.POST.getlist("sections")
 
@@ -154,8 +201,11 @@ def profile_web_view(request):
 
                 student_profile.save()
 
-                if section_ids:
-                    valid_sections = ClassSection.objects.filter(id__in=[s for s in section_ids if s.isdigit()])
+                if section_ids and can_reassign_institution:
+                    valid_sections = ClassSection.objects.filter(
+                        id__in=[s for s in section_ids if s.isdigit()],
+                        department__institution_id=student_profile.institution_id,
+                    )
                     student_profile.sections.set(valid_sections)
 
             elif user.is_teacher():
@@ -199,8 +249,17 @@ def profile_web_view(request):
 
     profile = user.get_profile()
     from apps.academics.models import Institution, ClassSection
-    institutions = Institution.objects.all().order_by("name")
-    all_sections = ClassSection.objects.all().order_by("shift", "level", "name")
+    if user.is_super_admin():
+        institutions = Institution.objects.all().order_by("name")
+        all_sections = ClassSection.objects.all().order_by("shift", "level", "name")
+    else:
+        profile_institution_id = getattr(profile, "institution_id", None)
+        institutions = Institution.objects.filter(
+            id=profile_institution_id
+        ).order_by("name")
+        all_sections = ClassSection.objects.filter(
+            department__institution_id=profile_institution_id
+        ).order_by("shift", "level", "name")
 
     birth_date_val = ""
     if profile and hasattr(profile, "birth_date") and profile.birth_date:
@@ -235,13 +294,7 @@ class CheckTeacherCodeView(APIView):
         from apps.core.models import SystemSetting
         code = str(request.data.get("code", "")).strip().upper()
         current = SystemSetting.get_teacher_code().upper()
-        is_valid = bool(code and (code == current or code in ["EDU2026", "TEACHER2026", "FACULTY"]))
-        return Response({"valid": is_valid, "code": current if request.user.is_staff else None})
-
-    def get(self, request):
-        from apps.core.models import SystemSetting
-        current = SystemSetting.get_teacher_code()
-        return Response({"code": current})
+        return Response({"valid": bool(code and code == current)})
 
 
 class RegisterView(APIView):
@@ -257,6 +310,7 @@ class RegisterView(APIView):
         from apps.accounts.models import StudentProfile, TeacherProfile
         from apps.academics.models import Institution
         from apps.core.models import SystemSetting
+        from apps.core.captcha import consume_captcha
 
         username = str(request.data.get("name") or request.data.get("username") or "").strip()
         email = str(request.data.get("email") or "").strip()
@@ -264,6 +318,12 @@ class RegisterView(APIView):
         role = str(request.data.get("role") or "STUDENT").strip().upper()
         password = str(request.data.get("password") or "").strip()
         teacher_code = str(request.data.get("teacherCode") or request.data.get("teacher_code") or "").strip().upper()
+
+        if not consume_captcha(request, "register", request.data.get("captcha")):
+            return Response(
+                {"error": "رمز التحقق غير صحيح أو انتهت صلاحيته. حدّث الرمز وحاول مجدداً."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not username:
             return Response({"error": "يرجى إدخال اسم المستخدم."}, status=status.HTTP_400_BAD_REQUEST)
@@ -292,7 +352,7 @@ class RegisterView(APIView):
         # Validate Teacher Code
         if role == User.Roles.TEACHER:
             valid_code = SystemSetting.get_teacher_code().upper()
-            if teacher_code != valid_code and teacher_code not in ["EDU2026", "TEACHER2026", "FACULTY"]:
+            if not teacher_code or teacher_code != valid_code:
                 return Response({"error": "كود التحقق الأكاديمي للكادر التعليمي غير صحيح."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             role = User.Roles.STUDENT
@@ -306,8 +366,6 @@ class RegisterView(APIView):
                     role=role
                 )
                 user.set_password(password)
-                if role == User.Roles.TEACHER:
-                    user.is_staff = True
                 user.save()
 
                 institution_name = request.data.get("institution_name", "").strip()
@@ -379,18 +437,24 @@ def teacher_students_view(request):
         messages.error(request, "غير مصرح لك بدخول هذه الصفحة.")
         return redirect("/")
 
-    from apps.academics.models import ClassSection, Institution, Session
+    from apps.academics.models import ClassSection, Session
     from apps.attendance.models import AttendanceRecord
     from django.db.models import Q
 
-    teacher_profile = getattr(request.user, "teacher_profile", None) or TeacherProfile.objects.first()
-    institution = teacher_profile.institution if teacher_profile else Institution.objects.first()
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    if request.user.is_teacher() and not teacher_profile:
+        messages.error(request, "لا يوجد ملف أستاذ مرتبط بحسابك.")
+        return redirect("dashboard")
 
-    # Get sections taught by this teacher (or all sections of institution)
-    section_ids = Session.objects.filter(teacher=teacher_profile).values_list("class_section_id", flat=True).distinct()
-    my_sections = ClassSection.objects.filter(id__in=section_ids)
-    if not my_sections.exists():
-        my_sections = ClassSection.objects.filter(department__institution=institution)
+    if request.user.is_teacher():
+        section_ids = Session.objects.filter(
+            teacher=teacher_profile
+        ).values_list("class_section_id", flat=True).distinct()
+        my_sections = ClassSection.objects.filter(id__in=section_ids)
+        if not my_sections.exists():
+            my_sections = _manageable_sections(request.user)
+    else:
+        my_sections = _manageable_sections(request.user)
 
     # Filter by section
     selected_section_id = request.GET.get("section_id", "")
@@ -471,7 +535,7 @@ def teacher_add_student_view(request):
     phone = request.POST.get("phone", "").strip()
     email = request.POST.get("email", "").strip()
     section_id = request.POST.get("section_id", "").strip()
-    study_shift = request.POST.get("study_shift", "MORNING").strip().upper()
+    study_shift = request.POST.get("study_shift", "").strip().upper()
     rfid_card = request.POST.get("rfid_card", "").strip() or None
 
     new_sec_name = request.POST.get("new_section_name", "").strip()
@@ -495,6 +559,9 @@ def teacher_add_student_view(request):
 
     # Resolve or create section
     teacher_profile = getattr(request.user, "teacher_profile", None)
+    if not teacher_profile and not request.user.is_super_admin():
+        messages.error(request, "لا يوجد ملف أكاديمي مرتبط بحسابك لتحديد المؤسسة.")
+        return redirect("dashboard")
     if new_sec_name:
         from apps.academics.models import Department
         new_sec_level = request.POST.get("new_section_level", "المرحلة الأولى").strip()
@@ -523,7 +590,9 @@ def teacher_add_student_view(request):
             defaults={"shift": new_sec_shift}
         )
     elif section_id and section_id.isdigit():
-        section = get_object_or_404(ClassSection, id=int(section_id))
+        section = get_object_or_404(
+            _manageable_sections(request.user), id=int(section_id)
+        )
     else:
         msg = "يرجى اختيار شعبة دراسية صالحة أو إدخال اسم شعبة جديدة."
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -535,14 +604,30 @@ def teacher_add_student_view(request):
 
     # If study shift not explicitly specified, inherit from section
     if study_shift not in ["MORNING", "EVENING"]:
-        study_shift = section.shift if hasattr(section, "shift") and section.shift else "MORNING"
+        study_shift = section.shift or "MORNING"
+    if study_shift != section.shift:
+        msg = "نوع دوام الطالب يجب أن يطابق نوع دوام الشعبة."
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "error": msg}, status=400)
+        messages.error(request, msg)
+        return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
 
     # Check if student_id already taken
     existing_sp = StudentProfile.objects.filter(student_id=student_id).first()
     if existing_sp:
+        if existing_sp.institution_id != institution.id:
+            msg = "لا يمكن إلحاق طالب من مؤسسة أخرى بهذه الشعبة."
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": msg}, status=403)
+            messages.error(request, msg)
+            return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+        if existing_sp.study_shift != section.shift:
+            msg = "نوع دوام الطالب لا يطابق نوع دوام الشعبة."
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
+            return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
         existing_sp.sections.add(section)
-        existing_sp.study_shift = study_shift
-        existing_sp.save()
         msg = f"تم إلحاق الطالب ({existing_sp.user.get_full_name()}) بالشعبة {section.name} بنجاح!"
         messages.success(request, msg)
         return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
@@ -563,8 +648,14 @@ def teacher_add_student_view(request):
         }
     )
     if created:
-        user.set_password("student123")
+        user.set_unusable_password()
         user.save()
+    elif user.role != User.Roles.STUDENT:
+        msg = "اسم حساب الطالب مستخدم لحساب غير طلابي."
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "error": msg}, status=409)
+        messages.error(request, msg)
+        return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
 
     sp, sp_created = StudentProfile.objects.get_or_create(
         user=user,
@@ -575,6 +666,12 @@ def teacher_add_student_view(request):
             "rfid_card": rfid_card,
         }
     )
+    if sp.institution_id != institution.id or sp.study_shift != section.shift:
+        msg = "حساب الطالب موجود في مؤسسة أخرى أو بنوع دوام مختلف."
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "error": msg}, status=409)
+        messages.error(request, msg)
+        return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
     sp.sections.add(section)
     if not sp_created and sp.study_shift != study_shift:
         sp.study_shift = study_shift
@@ -599,14 +696,36 @@ def teacher_import_students_view(request):
     from apps.academics.models import ClassSection
     import pandas as pd
 
-    if request.method != "POST" or "excel_file" not in request.FILES:
-        messages.error(request, "يرجى اختيار ملف Excel صالح (.xlsx أو .csv)")
+    if request.method != "POST":
+        messages.error(request, "يرجى إرسال نموذج الاستيراد.")
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    excel_file = request.FILES["excel_file"]
+    import_mode = request.POST.get("import_mode", "file").strip().lower()
+    excel_file = request.FILES.get("excel_file")
+    if import_mode != "paste" and not excel_file:
+        messages.error(request, "يرجى اختيار ملف Excel أو CSV صالح.")
+        return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+
+    pasted_names = None
+    if import_mode == "paste":
+        raw_names = request.POST.get("student_names", "")
+        if len(raw_names) > 50000:
+            messages.error(request, "قائمة الأسماء كبيرة جداً؛ الحد الأقصى 500 طالب في كل عملية.")
+            return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+        pasted_names = [line.strip() for line in raw_names.splitlines() if line.strip()]
+        if len(pasted_names) > 500:
+            messages.error(request, "الحد الأقصى هو 500 طالب في كل عملية استيراد.")
+            return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+        if not pasted_names:
+            messages.error(request, "الصق اسم طالب واحداً على الأقل، كل اسم في سطر مستقل.")
+            return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
+
     section_id = request.POST.get("section_id", "").strip()
     new_sec_name = request.POST.get("new_section_name", "").strip()
     teacher_profile = getattr(request.user, "teacher_profile", None)
+    if not teacher_profile and not request.user.is_super_admin():
+        messages.error(request, "لا يوجد ملف أكاديمي مرتبط بحسابك لتحديد المؤسسة.")
+        return redirect("dashboard")
 
     if new_sec_name:
         from apps.academics.models import Department
@@ -636,12 +755,81 @@ def teacher_import_students_view(request):
             defaults={"shift": new_sec_shift}
         )
     elif section_id and section_id.isdigit():
-        section = get_object_or_404(ClassSection, id=int(section_id))
+        section = get_object_or_404(
+            _manageable_sections(request.user), id=int(section_id)
+        )
     else:
         messages.error(request, "يرجى اختيار شعبة دراسية صالحة أو إدخال بيانات الشعبة الجديدة المراد إنشاؤها.")
         return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
 
     institution = section.department.institution
+
+    if import_mode == "paste":
+        from apps.attendance.utils import normalize_arabic_text
+
+        existing_names = {
+            normalize_arabic_text(
+                student.user.get_full_name() or student.user.username
+            )
+            for student in section.students.select_related("user").all()
+        }
+        seen_names = set()
+        added_count = 0
+        skipped_count = 0
+        invalid_count = 0
+
+        with transaction.atomic():
+            for full_name in pasted_names:
+                normalized_name = normalize_arabic_text(full_name)
+                if not normalized_name or normalized_name in seen_names:
+                    skipped_count += 1
+                    continue
+                seen_names.add(normalized_name)
+
+                parts = full_name.split(maxsplit=1)
+                first_name = parts[0]
+                last_name = parts[1] if len(parts) > 1 else ""
+                if len(first_name) > 150 or len(last_name) > 150:
+                    invalid_count += 1
+                    continue
+                if normalized_name in existing_names:
+                    skipped_count += 1
+                    continue
+
+                unique_key = uuid.uuid4().hex
+                username = f"std_paste_{unique_key}"
+                user = User(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                    role=User.Roles.STUDENT,
+                )
+                user.set_unusable_password()
+                user.save()
+                student = StudentProfile.objects.create(
+                    user=user,
+                    student_id=f"AUTO-{unique_key.upper()}",
+                    institution=institution,
+                    study_shift=section.shift,
+                )
+                student.sections.add(section)
+                existing_names.add(normalized_name)
+                added_count += 1
+
+        if added_count:
+            messages.success(
+                request,
+                f"تم إنشاء وإلحاق {added_count} طالباً بالشعبة ({section.name}). "
+                f"أُنشئت لهم أرقام جامعية تلقائية، وكلمات المرور غير مفعّلة.",
+            )
+        if skipped_count or invalid_count:
+            messages.warning(
+                request,
+                f"تم تجاوز {skipped_count} اسماً مكرراً، و{invalid_count} اسماً أطول من الحد المسموح."
+            )
+        if not added_count and not skipped_count and invalid_count:
+            messages.error(request, "لم تُضف أي أسماء؛ تحقق من طول الأسماء وأعد المحاولة.")
+        return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
 
     try:
         if excel_file.name.endswith(".csv"):
@@ -695,10 +883,18 @@ def teacher_import_students_view(request):
                 "role": User.Roles.STUDENT,
             }
         )
+        if u.role != User.Roles.STUDENT:
+            continue
         sp, _ = StudentProfile.objects.get_or_create(
             user=u,
-            defaults={"student_id": raw_id, "institution": institution}
+            defaults={
+                "student_id": raw_id,
+                "institution": institution,
+                "study_shift": section.shift,
+            }
         )
+        if sp.institution_id != institution.id or sp.study_shift != section.shift:
+            continue
         sp.sections.add(section)
         added_count += 1
 
@@ -893,7 +1089,7 @@ def teacher_update_profile_view(request):
             request.user.phone = clean_phone
     request.user.save()
 
-    if institution_name:
+    if institution_name and request.user.is_super_admin():
         inst, _ = Institution.objects.get_or_create(
             name=institution_name,
             defaults={"address": "جمهورية العراق"}
@@ -934,7 +1130,11 @@ def admin_users_directory_view(request):
     if request.method == "POST":
         action = request.POST.get("action", "").strip()
         target_user_id = request.POST.get("target_user_id", "").strip()
-        target_user = User.objects.filter(id=target_user_id).first() if target_user_id.isdigit() else None
+        target_user = (
+            _manageable_users(request.user).filter(id=target_user_id).first()
+            if target_user_id.isdigit()
+            else None
+        )
 
         if target_user:
             if action == "toggle_active":
@@ -966,7 +1166,7 @@ def admin_users_directory_view(request):
     status_filter = request.GET.get("status", "ALL").strip().upper()
 
     # Base Query
-    users_qs = User.objects.all().select_related(
+    users_qs = _manageable_users(request.user).select_related(
         "student_profile__institution", 
         "teacher_profile__institution", 
         "teacher_profile__department"
@@ -1024,7 +1224,7 @@ def admin_users_directory_view(request):
     users_qs = users_qs.distinct()
 
     # Calculate global statistics
-    all_users = User.objects.all()
+    all_users = _manageable_users(request.user)
     stats = {
         "total_users": all_users.count(),
         "total_teachers": all_users.filter(role=User.Roles.TEACHER).count(),
@@ -1035,8 +1235,18 @@ def admin_users_directory_view(request):
     }
 
     # Meta choices for filter dropdowns
-    institutions = Institution.objects.all()
-    sections = ClassSection.objects.all().select_related("department")
+    if request.user.is_super_admin():
+        institutions = Institution.objects.all()
+    else:
+        institution_id = getattr(
+            getattr(request.user, "teacher_profile", None), "institution_id", None
+        ) or getattr(
+            getattr(request.user, "student_profile", None), "institution_id", None
+        )
+        institutions = Institution.objects.filter(id=institution_id)
+    sections = ClassSection.objects.filter(
+        department__institution__in=institutions
+    ).select_related("department")
     levels = ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة"]
 
     context = {
@@ -1057,13 +1267,22 @@ def admin_users_directory_view(request):
 
 
 @login_required
+@require_POST
 def teacher_delete_course_view(request, course_id):
     """Allows deleting a course/subject."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
     from apps.academics.models import Course
-    course = get_object_or_404(Course, id=course_id)
+    course = get_object_or_404(
+        Course.objects.filter(department__in=_manageable_sections(request.user).values("department_id")),
+        id=course_id,
+    )
+    if request.user.is_teacher() and course.sessions.exclude(
+        teacher__user=request.user
+    ).exists():
+        messages.error(request, "لا يمكن حذف مادة مرتبطة بمحاضرات أساتذة آخرين.")
+        return redirect(request.META.get("HTTP_REFERER", "dashboard"))
     cname = course.name
     course.delete()
     messages.success(request, f"تم حذف المادة الدراسية ({cname}) بنجاح.")
@@ -1071,13 +1290,21 @@ def teacher_delete_course_view(request, course_id):
 
 
 @login_required
+@require_POST
 def teacher_delete_section_view(request, section_id):
     """Allows deleting a class section."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
     from apps.academics.models import ClassSection
-    section = get_object_or_404(ClassSection, id=section_id)
+    section = get_object_or_404(_manageable_sections(request.user), id=section_id)
+    if request.user.is_teacher():
+        from apps.academics.models import Session
+        if Session.objects.filter(class_section=section).exclude(
+            teacher__user=request.user
+        ).exists():
+            messages.error(request, "لا يمكن حذف شعبة يستخدمها أساتذة آخرون.")
+            return redirect(request.META.get("HTTP_REFERER", "dashboard"))
     sname = f"{section.level} - {section.name}"
     section.delete()
     messages.success(request, f"تم حذف الشعبة الدراسية ({sname}) بنجاح.")
@@ -1085,19 +1312,35 @@ def teacher_delete_section_view(request, section_id):
 
 
 @login_required
+@require_POST
 def teacher_delete_student_view(request, student_id):
     """Allows deleting a single student and their user record."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("accounts:teacher_students")
-    std = get_object_or_404(StudentProfile, id=student_id)
+    std = get_object_or_404(
+        StudentProfile.objects.filter(sections__in=_manageable_sections(request.user)).distinct(),
+        id=student_id,
+    )
     name = std.user.get_full_name() or std.user.username
-    std.user.delete()
-    messages.success(request, f"تم حذف الطالب ({name}) وسجلاته بنجاح.")
+    if request.user.is_super_admin():
+        std.user.delete()
+        messages.success(request, f"تم حذف الطالب ({name}) وسجلاته بنجاح.")
+    else:
+        managed_sections = list(
+            std.sections.filter(id__in=_manageable_sections(request.user))
+        )
+        std.sections.remove(*managed_sections)
+        if not std.sections.exists():
+            std.user.delete()
+            messages.success(request, f"تم حذف الطالب ({name}) لعدم ارتباطه بأي شعبة أخرى.")
+        else:
+            messages.success(request, f"تم إلغاء تسجيل الطالب ({name}) من الشعب التي تديرها فقط.")
     return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
 
 
 @login_required
+@require_POST
 def teacher_bulk_delete_students_view(request):
     """Allows bulk deleting selected students."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
@@ -1111,14 +1354,22 @@ def teacher_bulk_delete_students_view(request):
         
         valid_ids = [int(sid) for sid in student_ids if sid.isdigit()]
         if valid_ids:
-            users = User.objects.filter(student_profile__id__in=valid_ids)
-            count = users.count()
-            users.delete()
+            students = StudentProfile.objects.filter(
+                id__in=valid_ids,
+                sections__in=_manageable_sections(request.user),
+            ).distinct()
+            count = students.count()
+            if request.user.is_super_admin():
+                User.objects.filter(student_profile__in=students).delete()
+            else:
+                for student in students:
+                    managed_sections = list(
+                        student.sections.filter(id__in=_manageable_sections(request.user))
+                    )
+                    student.sections.remove(*managed_sections)
+                    if not student.sections.exists():
+                        student.user.delete()
             messages.success(request, f"تم حذف {count} طالب بنجاح.")
         else:
             messages.warning(request, "لم يتم تحديد أي طالب للحذف.")
     return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
-
-
-
-

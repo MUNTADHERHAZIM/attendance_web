@@ -306,11 +306,13 @@
                         </div>
 
                         <div class="pt-2">
-                            <a href="{% url 'attendance:quick_start_session' session_id=sess.id %}" 
-                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-95">
-                                <span>⚡</span>
-                                <span>بدء التحضير فوراً (بلمسة واحدة)</span>
-                            </a>
+                            <form method="post" action="{% url 'attendance:quick_start_session' session_id=sess.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-95">
+                                    <span>⚡</span>
+                                    <span>بدء التحضير فوراً (بلمسة واحدة)</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 {% endfor %}
@@ -622,20 +624,24 @@
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         <div class="flex items-center justify-center gap-2">
-                                            <a href="{% url 'attendance:quick_start_session' session_id=sch.id %}" 
-                                               class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-1">
-                                                <span>⚡</span>
-                                                <span>تفعيل وبدء الآن</span>
-                                            </a>
+                                            <form method="post" action="{% url 'attendance:quick_start_session' session_id=sch.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-1">
+                                                    <span>⚡</span>
+                                                    <span>تفعيل وبدء الآن</span>
+                                                </button>
+                                            </form>
                                             <a href="{% url 'attendance:edit_session' session_id=sch.id %}" 
                                                class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all" title="تعديل الموعد أو التفاصيل">
                                                 ✏️
                                             </a>
-                                            <a href="{% url 'attendance:cancel_scheduled_session' session_id=sch.id %}" 
-                                               onclick="return confirm('هل أنت متأكد من إلغاء هذه المحاضرة المجدولة؟');"
-                                               class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all" title="إلغاء الجدولة">
-                                                🗑️
-                                            </a>
+                                            <form method="post" action="{% url 'attendance:cancel_scheduled_session' session_id=sch.id %}"
+                                                  onsubmit="return confirm('هل أنت متأكد من إلغاء هذه المحاضرة المجدولة؟');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all" title="إلغاء الجدولة">
+                                                    🗑️
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -792,9 +798,12 @@
                                 <a href="{% url 'attendance:create_custom_session' %}?course_id={{ crs.id }}" class="text-xs font-bold text-indigo-600 hover:underline">
                                     ⚡ بدء تحضير فوري
                                 </a>
-                                <a href="{% url 'accounts:teacher_delete_course' crs.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه المادة الدراسية؟')" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف المادة">
-                                    🗑️ حذف
-                                </a>
+                                <form method="post" action="{% url 'accounts:teacher_delete_course' crs.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة الدراسية؟')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف المادة">
+                                        🗑️ حذف
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     {% endfor %}
@@ -845,9 +854,12 @@
                                 <a href="{% url 'accounts:teacher_students' %}?section_id={{ sec.id }}" class="text-xs font-bold text-blue-600 hover:underline">
                                     عرض وتعديل الطلاب ➔
                                 </a>
-                                <a href="{% url 'accounts:teacher_delete_section' sec.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه الشعبة الدراسية؟')" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف الشعبة">
-                                    🗑️ حذف
-                                </a>
+                                <form method="post" action="{% url 'accounts:teacher_delete_section' sec.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه الشعبة الدراسية؟')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف الشعبة">
+                                        🗑️ حذف
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     {% endfor %}
@@ -915,9 +927,12 @@
                                             <a href="/attendance/session/{{ rec.id }}/" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
                                                 عرض السجل 👁️
                                             </a>
-                                            <a href="{% url 'attendance:delete_session' rec.id %}" onclick="return confirm('هل أنت متأكد من حذف هذه الجلسة وسجلاتها؟')" class="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors" title="حذف الجلسة">
-                                                🗑️
-                                            </a>
+                                            <form method="post" action="{% url 'attendance:delete_session' rec.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه الجلسة وسجلاتها؟')">
+                                                {% csrf_token %}
+                                                <button type="submit" class="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors" title="حذف الجلسة">
+                                                    🗑️
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

@@ -1,6 +1,7 @@
 import pytest
 import uuid
 import time
+from rest_framework.test import APIClient
 from django.utils import timezone
 from apps.academics.models import Institution, Session, Course, Department, ClassSection, AcademicYear, Semester
 from apps.accounts.models import User, StudentProfile, TeacherProfile
@@ -103,3 +104,161 @@ def test_ip_subnet_matching():
     
     # Edge/Local cases
     assert is_ip_in_subnet("::1", None) is True
+
+
+@pytest.fixture
+def attendance_api_setup(test_db_setup):
+    attendance_session = test_db_setup
+    institution = attendance_session.session.course.department.institution
+    section = attendance_session.session.class_section
+
+    other_user = User.objects.create_user(
+        username="other_teacher",
+        password="strong-test-password",
+        role=User.Roles.TEACHER,
+    )
+    TeacherProfile.objects.create(
+        user=other_user,
+        teacher_id="T2",
+        institution=institution,
+    )
+
+    student_user = User.objects.create_user(
+        username="enrolled_student",
+        password="strong-test-password",
+        role=User.Roles.STUDENT,
+    )
+    student = StudentProfile.objects.create(
+        user=student_user,
+        student_id="S100",
+        institution=institution,
+    )
+    student.sections.add(section)
+
+    record = AttendanceRecord.objects.create(
+        student=student,
+        attendance_session=attendance_session,
+        status=AttendanceRecord.Statuses.ABSENT,
+    )
+    return attendance_session, other_user, student_user, student, record
+
+
+def test_teacher_cannot_read_another_teachers_qr(attendance_api_setup):
+    attendance_session, other_user, _, _, _ = attendance_api_setup
+    client = APIClient()
+    client.force_authenticate(user=other_user)
+
+    response = client.get(
+        f"/attendance/api/session/{attendance_session.id}/qr/"
+    )
+
+    assert response.status_code == 404
+
+
+def test_malformed_freeze_qr_json_returns_bad_request(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.post(
+        f"/attendance/api/session/{attendance_session.id}/toggle-freeze/",
+        data="{",
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_teacher_cannot_change_another_teachers_attendance_record(attendance_api_setup):
+    _, other_user, _, _, record = attendance_api_setup
+    client = APIClient()
+    client.force_authenticate(user=other_user)
+
+    response = client.post(
+        "/attendance/api/record/update/",
+        {"record_id": record.id, "status": AttendanceRecord.Statuses.PRESENT},
+        format="json",
+    )
+
+    assert response.status_code == 404
+    record.refresh_from_db()
+    assert record.status == AttendanceRecord.Statuses.ABSENT
+
+
+def test_unenrolled_student_is_not_auto_enrolled_during_checkin(attendance_api_setup):
+    attendance_session, _, _, student, _ = attendance_api_setup
+    student.sections.clear()
+    client = APIClient()
+    client.force_authenticate(user=student.user)
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {"token": generate_qr_token(attendance_session)},
+        format="json",
+    )
+
+    assert response.status_code == 403
+    assert not student.sections.filter(
+        id=attendance_session.session.class_section_id
+    ).exists()
+    assert not AttendanceRecord.objects.filter(
+        student=student,
+        attendance_session=attendance_session,
+        status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+    ).exists()
+
+
+def test_weak_or_client_claimed_inaccurate_gps_cannot_bypass_geofence(
+    attendance_api_setup,
+):
+    attendance_session, _, student_user, student, _ = attendance_api_setup
+    attendance_session.requires_geofence = True
+    attendance_session.latitude = 33.3152
+    attendance_session.longitude = 44.3661
+    attendance_session.save(update_fields=["requires_geofence", "latitude", "longitude"])
+    client = APIClient()
+    client.force_authenticate(user=student_user)
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": generate_qr_token(attendance_session),
+            "latitude": 33.3152,
+            "longitude": 44.3661,
+            "gps_accuracy": 151,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not AttendanceRecord.objects.filter(
+        student=student,
+        attendance_session=attendance_session,
+        status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+    ).exists()
+
+
+def test_expired_attendance_session_is_not_extended_by_checkin(attendance_api_setup):
+    attendance_session, _, student_user, student, _ = attendance_api_setup
+    expired_at = timezone.now() - timezone.timedelta(minutes=1)
+    attendance_session.end_time = expired_at
+    attendance_session.save(update_fields=["end_time"])
+    client = APIClient()
+    client.force_authenticate(user=student_user)
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {"token": generate_qr_token(attendance_session)},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    attendance_session.refresh_from_db()
+    assert attendance_session.end_time == expired_at
+    assert not AttendanceRecord.objects.filter(
+        student=student,
+        attendance_session=attendance_session,
+        status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+    ).exists()

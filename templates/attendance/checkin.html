@@ -12,6 +12,10 @@
         loading: false,
         resultMessage: '',
         resultType: '', // 'success' or 'error'
+        offlineQueueCount: 0,
+        offlineSyncMessage: '',
+        isSyncingOfflineQueue: false,
+        offlineRetryTimer: null,
         otpCode: '',
         sessionId: '',
         gpsCoords: null,
@@ -23,6 +27,7 @@
             this.requestGPS();
             const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
+            this.sessionId = urlParams.get('session_id') || '';
             if (urlToken) {
                 this.scanning = false;
                 if (this.isLoggedIn) {
@@ -63,11 +68,11 @@
                     } else if (acc <= 300) {
                         this.gpsStatus = `📡 تحديد الموقع متوسط ±${Math.round(acc)}م`;
                     } else {
-                        this.gpsStatus = `⚠️ إشارة GPS ضعيفة داخل المبنى ±${Math.round(acc)}م — يُقبل الحضور تلقائياً`;
+                        this.gpsStatus = `⚠️ إشارة GPS ضعيفة ±${Math.round(acc)}م — حسّن الإشارة أو استخدم OTP`;
                     }
                 },
                 (err) => {
-                    this.gpsStatus = '⚠️ تعذر الحصول على الموقع — سيُقبل الحضور بدون GPS';
+                    this.gpsStatus = '⚠️ تعذر الحصول على الموقع — فعّل GPS أو استخدم OTP';
                     console.warn('Geolocation error:', err);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -169,7 +174,7 @@
 
             const payload = {
                 token: cleanToken,
-                student_name: this.guestStudentName.trim() || null,
+                student_name: this.guestStudentName.trim() || (this.isLoggedIn ? this.studentUserName : null),
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
                 gps_accuracy: this.gpsAccuracy || null,
@@ -205,7 +210,7 @@
 
             const payload = {
                 otp: this.otpCode.trim(),
-                student_name: this.guestStudentName.trim() || null,
+                student_name: this.guestStudentName.trim() || (this.isLoggedIn ? this.studentUserName : null),
                 session_id: this.sessionId || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
@@ -225,10 +230,11 @@
         },
 
         async sendCheckinPayload(payload) {
+            let response;
             try {
                 payload.device_id = this.getDeviceId();
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-                let response = await fetch('/attendance/api/checkin/', {
+                response = await fetch('/attendance/api/checkin/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -236,60 +242,151 @@
                     },
                     body: JSON.stringify(payload)
                 });
-                
-                let data = await response.json();
+            } catch (e) {
                 this.loading = false;
                 this.scanning = false;
-                
-                if (response.ok) {
-                    this.resultType = 'success';
-                    this.resultMessage = data.message || 'تم تسجيل الحضور بنجاح!';
+                if (this.storeOfflineRecord(payload)) {
+                    this.resultType = 'pending';
+                    this.resultMessage = 'تعذر الوصول إلى الخادم. حُفظ الطلب على هذا الجهاز، لكنه لم يُسجّل حضوراً بعد. ستتم محاولة إرساله عند عودة الاتصال؛ وقد يتطلب رمز QR المنتهي إعادة المسح.';
                 } else {
                     this.resultType = 'error';
-                    this.resultMessage = data.error || 'فشلت عملية التحضير.';
+                    this.resultMessage = 'تعذر الاتصال ولم يتمكن الجهاز من حفظ الطلب محلياً. لا تغلق الصفحة؛ اتصل بشبكة القاعة أو أبلغ الأستاذ لتسجيل حضورك يدوياً.';
                 }
-            } catch (e) {
-                // Offline fallback (Queue locally)
-                this.storeOfflineRecord(payload);
-                this.loading = false;
-                this.scanning = false;
-                this.resultType = 'success';
-                this.resultMessage = 'أنت غير متصل بالإنترنت حالياً! تم حفظ عملية التحضير بأمان في جهازك، وستتم المزامنة تلقائياً عند عودة الاتصال. 📡';
                 console.error(e);
+                return;
+            }
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.error('Invalid attendance response:', e);
+            }
+            this.loading = false;
+            this.scanning = false;
+
+            if (response.ok) {
+                this.resultType = 'success';
+                this.resultMessage = data.message || 'تم تسجيل الحضور بنجاح!';
+            } else {
+                this.resultType = 'error';
+                this.resultMessage = data.error || 'فشلت عملية التحضير.';
             }
         },
 
         storeOfflineRecord(payload) {
             try {
-                let queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
-                payload.queued_at = new Date().toISOString();
-                queue.push(payload);
+                let queue = this.readOfflineQueue();
+                const queuedPayload = Object.assign({}, payload, {
+                    queue_id: (window.crypto && crypto.randomUUID)
+                        ? crypto.randomUUID()
+                        : 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2),
+                    queued_at: new Date().toISOString()
+                });
+                queue.push(queuedPayload);
                 localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+                this.offlineQueueCount = queue.length;
+                this.offlineSyncMessage = 'يوجد طلب حضور محفوظ محلياً ولم يؤكده الخادم بعد.';
+                return true;
             } catch (err) {
                 console.error('Failed to cache offline record:', err);
+                return false;
             }
         },
 
-        initOfflineSync() {
-            window.addEventListener('online', async () => {
-                let queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+        readOfflineQueue() {
+            const rawQueue = localStorage.getItem('offline_attendance_queue');
+            const queue = JSON.parse(rawQueue || '[]');
+            if (!Array.isArray(queue)) throw new Error('Stored attendance queue is not an array');
+            return queue;
+        },
+
+        async syncOfflineQueue() {
+            if (this.isSyncingOfflineQueue || !navigator.onLine) return;
+            this.isSyncingOfflineQueue = true;
+            let queue = [];
+            let syncedCount = 0;
+            try {
+                queue = this.readOfflineQueue();
+                this.offlineQueueCount = queue.length;
                 if (!queue.length) return;
+                this.offlineSyncMessage = 'جاري إرسال طلبات الحضور المحفوظة...';
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-                while (queue.length > 0) {
-                    let item = queue.shift();
+                while (queue.length) {
+                    const item = queue[0];
+                    let response;
                     try {
-                        await fetch('/attendance/api/checkin/', {
+                        response = await fetch('/attendance/api/checkin/', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                             body: JSON.stringify(item)
                         });
                     } catch (e) {
-                        queue.unshift(item);
+                        this.offlineSyncMessage = 'انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز.';
+                        this.scheduleOfflineRetry(15000);
                         break;
                     }
+
+                    let data = {};
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        console.error('Invalid offline sync response:', e);
+                    }
+
+                    if (!response.ok) {
+                        this.offlineSyncMessage = response.status >= 500 || response.status === 429
+                            ? 'الخادم غير متاح مؤقتاً؛ بقيت الطلبات محفوظة وستُعاد المحاولة.'
+                            : 'رفض الخادم طلب حضور محفوظاً: ' + (data.error || 'قد يكون رمز QR انتهت صلاحيته أو أُغلقت الجلسة.') + ' بقي الطلب محفوظاً؛ أعد مسح الرمز الحالي أو راجع الأستاذ.';
+                        if (response.status >= 500 || response.status === 429) {
+                            this.scheduleOfflineRetry(response.status === 429 ? 31000 : 15000);
+                        }
+                        break;
+                    }
+
+                    queue.shift();
+                    localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+                    this.offlineQueueCount = queue.length;
+                    syncedCount += 1;
                 }
-                localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+
+                if (queue.length === 0) {
+                    this.offlineSyncMessage = syncedCount
+                        ? 'اكتملت المزامنة وسجّل الخادم طلبات الحضور المحفوظة.'
+                        : '';
+                    if (this.resultType === 'pending' && syncedCount) {
+                        this.resultType = 'success';
+                        this.resultMessage = 'أكد الخادم تسجيل الحضور بعد عودة الاتصال.';
+                    }
+                }
+            } catch (err) {
+                console.error('Offline attendance sync failed:', err);
+                this.offlineSyncMessage = 'تعذرت قراءة الطلبات المحفوظة أو مزامنتها؛ لم نحذف بيانات الجهاز.';
+            } finally {
+                this.isSyncingOfflineQueue = false;
+            }
+        },
+
+        scheduleOfflineRetry(delay) {
+            if (this.offlineRetryTimer) clearTimeout(this.offlineRetryTimer);
+            this.offlineRetryTimer = setTimeout(() => {
+                this.offlineRetryTimer = null;
+                this.syncOfflineQueue();
+            }, delay);
+        },
+
+        initOfflineSync() {
+            try {
+                this.offlineQueueCount = this.readOfflineQueue().length;
+            } catch (err) {
+                console.error('Failed to read offline attendance queue:', err);
+                this.offlineSyncMessage = 'تعذر قراءة سجل المزامنة المحلي؛ لم يتم حذف بياناته.';
+            }
+            window.addEventListener('online', () => this.syncOfflineQueue());
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) this.syncOfflineQueue();
             });
+            if (navigator.onLine) this.syncOfflineQueue();
         },
         
         resetScanner() {
@@ -412,9 +509,9 @@
     <!-- Results Panel -->
     <div x-show="resultType" class="space-y-6">
         <div class="p-6 rounded-2xl border"
-            :class="resultType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'">
-            <div class="text-4xl mb-3" x-text="resultType === 'success' ? '✔' : '✖'"></div>
-            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'عملية ناجحة' : 'تعذر تسجيل الحضور'"></h3>
+            :class="resultType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : (resultType === 'pending' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-800')">
+            <div class="text-4xl mb-3" x-text="resultType === 'success' ? '✔' : (resultType === 'pending' ? '⏳' : '✖')"></div>
+            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'تم تسجيل الحضور' : (resultType === 'pending' ? 'الحضور بانتظار المزامنة' : 'تعذر تسجيل الحضور')"></h3>
             <p class="text-sm font-bold mt-2" x-text="resultMessage"></p>
         </div>
 
@@ -428,6 +525,15 @@
                 الرئيسية
             </a>
         </div>
+    </div>
+
+    <div x-show="offlineQueueCount > 0 || offlineSyncMessage" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold space-y-2">
+        <p x-show="offlineSyncMessage" x-text="offlineSyncMessage"></p>
+        <p x-show="offlineQueueCount > 0" class="text-amber-800">الطلبات المحفوظة على هذا الجهاز: <span x-text="offlineQueueCount"></span></p>
+        <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue()" :disabled="isSyncingOfflineQueue"
+            class="px-3 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
+            إعادة محاولة المزامنة
+        </button>
     </div>
 
 </div>

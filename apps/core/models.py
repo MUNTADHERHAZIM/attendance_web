@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import secrets
 
 class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="المستخدم")
@@ -36,8 +37,8 @@ class SystemSetting(models.Model):
         obj, _ = cls.objects.get_or_create(
             key="TEACHER_VERIFICATION_CODE",
             defaults={
-                "value": "EDU2026",
-                "description": "كود التحقق الأكاديمي لتسجيل الكادر التعليمي (يمكن للادمن تغييره في أي وقت)"
+                "value": secrets.token_urlsafe(18).upper(),
+                "description": "كود تحقق عشوائي لتسجيل الكادر التعليمي (يمكن للادمن تغييره في أي وقت)"
             }
         )
         return obj.value.strip()

@@ -10,6 +10,7 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.db.models import Q
 
@@ -25,6 +26,9 @@ from rest_framework import serializers as drf_serializers
 from .models import AttendanceSession, AttendanceRecord, SyncQueue
 from .serializers import AttendanceSessionSerializer, AttendanceRecordSerializer
 from .utils import (
+    DEFAULT_QR_TOKEN_TTL,
+    MAX_DYNAMIC_QR_TOKEN_TTL,
+    FROZEN_QR_TOKEN_TTL,
     generate_qr_token,
     verify_qr_token,
     is_ip_in_subnet,
@@ -136,6 +140,53 @@ def _get_shared_device_map(attendance_session):
     return shared_map
 
 
+def _user_institution_id(user):
+    for profile_name in ("teacher_profile", "student_profile"):
+        profile = getattr(user, profile_name, None)
+        if profile and profile.institution_id:
+            return profile.institution_id
+    return None
+
+
+def _manageable_timetable_sessions(user):
+    queryset = Session.objects.all()
+    if user.is_super_admin():
+        return queryset
+    if user.is_teacher():
+        return queryset.filter(teacher__user_id=user.pk)
+    if user.is_institution_admin():
+        institution_id = _user_institution_id(user)
+        if institution_id:
+            return queryset.filter(course__department__institution_id=institution_id)
+    return queryset.none()
+
+
+def _manageable_attendance_sessions(user):
+    queryset = AttendanceSession.objects.all()
+    if user.is_super_admin():
+        return queryset
+    if user.is_teacher():
+        return queryset.filter(session__teacher__user_id=user.pk)
+    if user.is_institution_admin():
+        institution_id = _user_institution_id(user)
+        if institution_id:
+            return queryset.filter(
+                session__course__department__institution_id=institution_id
+            )
+    return queryset.none()
+
+
+def _manageable_attendance_session(user, session_id):
+    return get_object_or_404(
+        _manageable_attendance_sessions(user).select_related(
+            "session__teacher__user",
+            "session__course__department__institution",
+            "session__class_section",
+        ),
+        id=session_id,
+    )
+
+
 # =====================================================================
 # 1. API VIEWS (DRF Endpoints for mobile/PWA)
 # =====================================================================
@@ -156,7 +207,9 @@ class StartAttendanceSessionView(APIView):
         longitude = request.data.get("longitude")
         radius_meters = request.data.get("radius_meters", 50)
 
-        session_obj = get_object_or_404(Session, id=session_id)
+        session_obj = get_object_or_404(
+            _manageable_timetable_sessions(request.user), id=session_id
+        )
         now = timezone.now()
         end_time = now + timezone.timedelta(minutes=30)
         generated_otp = f"{random.randint(100000, 999999)}"
@@ -229,12 +282,16 @@ class GetDynamicQRTokenView(APIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, session_id):
-        attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
+        attendance_session = get_object_or_404(
+            _manageable_attendance_sessions(request.user),
+            id=session_id,
+            is_active=True,
+        )
         # Check custom requested speed from query param (e.g. 15, 30, 60, 120)
         speed_param = request.GET.get("speed")
         try:
             speed_val = int(speed_param) if speed_param else 30
-            speed_val = max(10, min(speed_val, 600))
+            speed_val = max(10, min(speed_val, MAX_DYNAMIC_QR_TOKEN_TTL))
         except (ValueError, TypeError):
             speed_val = 30
 
@@ -248,8 +305,13 @@ class GetDynamicQRTokenView(APIView):
             attendance_session.quick_otp = f"{random.randint(100000, 999999)}"
             attendance_session.save(update_fields=["quick_otp"])
 
-        token = generate_qr_token(attendance_session)
-        expires = 86400 if getattr(attendance_session, "is_frozen_qr", False) else speed_val
+        token_ttl = (
+            FROZEN_QR_TOKEN_TTL
+            if attendance_session.is_frozen_qr
+            else speed_val
+        )
+        token = generate_qr_token(attendance_session, ttl_seconds=token_ttl)
+        expires = token_ttl
         return Response(
             {
                 "token": token,
@@ -268,19 +330,42 @@ def toggle_freeze_qr_view(request, session_id):
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
 
-    attendance_session = get_object_or_404(AttendanceSession, id=session_id)
+    attendance_session = _manageable_attendance_session(request.user, session_id)
     if request.method == "POST":
         try:
             body = json.loads(request.body.decode("utf-8")) if request.body else {}
-            if "is_frozen" in body:
-                attendance_session.is_frozen_qr = bool(body["is_frozen"])
-            else:
-                attendance_session.is_frozen_qr = not attendance_session.is_frozen_qr
-        except Exception:
-            attendance_session.is_frozen_qr = not attendance_session.is_frozen_qr
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse(
+                {"success": False, "error": "بيانات الطلب غير صالحة"},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return JsonResponse(
+                {"success": False, "error": "يجب إرسال بيانات بصيغة JSON object"},
+                status=400,
+            )
+        if "is_frozen" in body:
+            if not isinstance(body["is_frozen"], bool):
+                return JsonResponse(
+                    {"success": False, "error": "قيمة تثبيت QR غير صالحة"},
+                    status=400,
+                )
+            new_frozen_state = body["is_frozen"]
+        else:
+            new_frozen_state = not attendance_session.is_frozen_qr
 
-        attendance_session.save(update_fields=["is_frozen_qr"])
-        token = generate_qr_token(attendance_session)
+        update_fields = ["is_frozen_qr"]
+        if new_frozen_state != attendance_session.is_frozen_qr:
+            attendance_session.qr_salt = uuid.uuid4()
+            update_fields.append("qr_salt")
+        attendance_session.is_frozen_qr = new_frozen_state
+        attendance_session.save(update_fields=update_fields)
+        token_ttl = (
+            FROZEN_QR_TOKEN_TTL
+            if attendance_session.is_frozen_qr
+            else DEFAULT_QR_TOKEN_TTL
+        )
+        token = generate_qr_token(attendance_session, ttl_seconds=token_ttl)
         msg = "تم تثبيت رمز الـ QR بنجاح (رمز ثابت مستقر طوال المحاضرة)" if attendance_session.is_frozen_qr else "تم تفعيل التدوير الديناميكي كل 15 ثانية"
         return JsonResponse({
             "success": True,
@@ -297,12 +382,15 @@ def printable_qr_sheet_view(request, session_id):
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         return HttpResponse("غير مصرح لك", status=403)
 
-    attendance_session = get_object_or_404(AttendanceSession, id=session_id)
+    attendance_session = _manageable_attendance_session(request.user, session_id)
     if not attendance_session.is_frozen_qr:
         attendance_session.is_frozen_qr = True
-        attendance_session.save(update_fields=["is_frozen_qr"])
+        attendance_session.qr_salt = uuid.uuid4()
+        attendance_session.save(update_fields=["is_frozen_qr", "qr_salt"])
 
-    token = generate_qr_token(attendance_session)
+    token = generate_qr_token(
+        attendance_session, ttl_seconds=FROZEN_QR_TOKEN_TTL
+    )
     inst = None
     try:
         inst = attendance_session.session.course.department.institution
@@ -331,7 +419,7 @@ def quick_offline_checkin_view(request):
     student_query = request.POST.get("student_query", "").strip()
     profile_id = request.POST.get("student_profile_id")
 
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    att_session = _manageable_attendance_session(request.user, session_id)
     section_students = _get_students_for_session(att_session)
 
     target_student = None
@@ -445,8 +533,6 @@ class StudentCheckInView(APIView):
         otp = request.data.get("otp")
         session_id = request.data.get("session_id")
         checkin_method = AttendanceRecord.Methods.QR
-        is_new_auto_student = False
-
         if not token and not otp:
             return Response(
                 {"error": "يرجى مسح رمز الـ QR أو إدخال رمز التحضير السريع (OTP)."},
@@ -455,34 +541,28 @@ class StudentCheckInView(APIView):
 
         # 2. Token / OTP Verification
         if token:
-            attendance_session, error_msg = verify_qr_token(token, max_age=1800)
+            attendance_session, error_msg = verify_qr_token(token)
             if not attendance_session:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         else:
             otp_clean = str(otp).strip() if otp else ""
             if not session_id:
-                # Find active session matching this OTP automatically
-                active_sessions = AttendanceSession.objects.filter(is_active=True, quick_otp=otp_clean)
-                if active_sessions.exists():
-                    attendance_session = active_sessions.order_by('-id').first()
-                else:
-                    return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهت المحاضرة."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "معرّف جلسة التحضير مطلوب مع رمز OTP."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             else:
                 attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
                 if not attendance_session.quick_otp or attendance_session.quick_otp != otp_clean:
                     return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
-        # 3. Verify session is still active (auto-extend end_time if teacher has session active)
-        if not attendance_session.is_active:
+        # 3. Never extend an expired session as a side effect of a student check-in.
+        if not attendance_session.is_active or attendance_session.end_time <= timezone.now():
             return Response(
                 {"error": "جلسة التحضير لهذه المحاضرة مغلقة حالياً من قِبل الأستاذ."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        if attendance_session.end_time < timezone.now():
-            attendance_session.end_time = timezone.now() + timezone.timedelta(minutes=60)
-            attendance_session.save(update_fields=["end_time"])
 
         class_section = attendance_session.session.class_section
 
@@ -490,9 +570,14 @@ class StudentCheckInView(APIView):
         student_profile = None
         if request.user.is_authenticated and hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
-            # Verify student is enrolled in this section
-            if not student_profile.sections.filter(id=class_section.id).exists():
-                student_profile.sections.add(class_section)
+            if (
+                student_profile.institution_id != class_section.department.institution_id
+                or not student_profile.sections.filter(id=class_section.id).exists()
+            ):
+                return Response(
+                    {"error": "حسابك غير مسجل في شعبة هذه المحاضرة. راجع إدارة القسم."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
         else:
             student_query = request.data.get("student_name") or request.data.get("student_id") or request.data.get("identifier")
             if not student_query or not str(student_query).strip():
@@ -506,29 +591,13 @@ class StudentCheckInView(APIView):
             
             matched_student, match_err = find_matching_student(student_query, class_section)
             if not matched_student:
-                # ✅ Auto-register new guest student if not found in database!
-                student_name_clean = str(student_query).strip()
-                from apps.accounts.models import User
-                new_username = f"std_auto_{uuid.uuid4().hex[:8]}"
-                
-                new_user = User.objects.create(
-                    username=new_username,
-                    first_name=student_name_clean,
-                    role=User.Roles.STUDENT,
+                return Response(
+                    {
+                        "error": match_err or "لم يتم العثور على الطالب في كشف الشعبة.",
+                        "requires_enrollment": True,
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-                inst = getattr(class_section.department, "institution", None) or Institution.objects.first()
-                new_std_id = f"NEW-{random.randint(10000, 99999)}"
-                if student_name_clean.isdigit():
-                    new_std_id = student_name_clean
-                
-                matched_student = StudentProfile.objects.create(
-                    user=new_user,
-                    student_id=new_std_id,
-                    institution=inst,
-                    study_shift=attendance_session.shift,
-                )
-                matched_student.sections.add(class_section)
-                is_new_auto_student = True
 
             student_profile = matched_student
 
@@ -567,11 +636,7 @@ class StudentCheckInView(APIView):
 
         # 7. Geolocation / GPS Geofencing Verification (Factor 2)
         # ─────────────────────────────────────────────────────────────────
-        # BYPASS RULES (GPS check is meaningless / harmful in these cases):
-        #  A) OTP method  → teacher gave code verbally; student is physically present
-        #  B) WIFI method → subnet check already proves same network / same building
-        #  C) GPS accuracy > threshold → indoor signal unreliable; benefit of the doubt
-        # ─────────────────────────────────────────────────────────────────
+        # OTP is an explicit fallback; client-supplied GPS quality never bypasses the fence.
         GPS_OTP_BYPASS_METHODS = {
             AttendanceRecord.Methods.OTP,
             AttendanceRecord.Methods.WIFI,
@@ -584,43 +649,65 @@ class StudentCheckInView(APIView):
             student_lon = request.data.get("longitude")
             gps_accuracy = request.data.get("gps_accuracy")  # metres, sent by client
 
-            # Case C: Accuracy too poor to be trusted (e.g. inside a building)
-            gps_accuracy_float = float(gps_accuracy) if gps_accuracy else None
-            if gps_accuracy_float and gps_accuracy_float > GPS_ACCURACY_BYPASS_THRESHOLD:
-                pass  # GPS unreliable indoors — skip geofence silently
-
-            elif not student_lat or not student_lon:
+            try:
+                student_lat_float = float(student_lat)
+                student_lon_float = float(student_lon)
+                gps_accuracy_float = float(gps_accuracy)
+            except (TypeError, ValueError, OverflowError):
                 return Response(
                     {
                         "error": (
-                            "تتطلب هذه المحاضرة التحقق من موقعك الجغرافي (GPS).\n"
-                            "• يرجى السماح بالوصول للموقع في متصفح هاتفك.\n"
-                            "• أو استخدم كود OTP الذي يوفره الأستاذ لتجاوز فحص الموقع."
+                            "تعذر التحقق من إحداثيات GPS ودقتها. فعّل الموقع وحاول مجدداً "
+                            "أو استخدم رمز OTP الذي يقدمه الأستاذ."
                         )
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            else:
-                target_lat = attendance_session.latitude or (institution.latitude if institution else None)
-                target_lon = attendance_session.longitude or (institution.longitude if institution else None)
-                allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 200) or 200
+            import math
+            if (
+                not math.isfinite(student_lat_float)
+                or not math.isfinite(student_lon_float)
+                or not math.isfinite(gps_accuracy_float)
+                or not -90 <= student_lat_float <= 90
+                or not -180 <= student_lon_float <= 180
+                or not 0 < gps_accuracy_float <= GPS_ACCURACY_BYPASS_THRESHOLD
+            ):
+                return Response(
+                    {
+                        "error": (
+                            "إشارة GPS غير دقيقة بما يكفي للتحقق. حاول مجدداً في مكان مفتوح "
+                            "أو استخدم رمز OTP الذي يقدمه الأستاذ."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-                if target_lat and target_lon:
-                    distance = calculate_haversine_distance(student_lat, student_lon, target_lat, target_lon)
-                    if distance is not None:
-                        # Subtract GPS accuracy from raw distance (benefit of the doubt)
-                        effective_distance = max(0, distance - (gps_accuracy_float or 0))
-                        if effective_distance > allowed_radius:
-                            return Response(
-                                {
-                                    "error": (
-                                        f"⚠️ أنت خارج نطاق المحاضرة!\n"
-                                        f"المسافة المحسوبة: {int(distance)}م — النطاق المسموح: {int(allowed_radius)}م.\n"
-                                        f"إذا كنت داخل المبنى، جرّب كود OTP بدلاً من QR لتجاوز فحص الموقع."
-                                    )
-                                },
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
+            target_lat = attendance_session.latitude or (institution.latitude if institution else None)
+            target_lon = attendance_session.longitude or (institution.longitude if institution else None)
+            allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 200) or 200
+            if target_lat is None or target_lon is None:
+                return Response(
+                    {"error": "لم يحدد الأستاذ موقعاً صالحاً لهذه الجلسة."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            distance = calculate_haversine_distance(
+                student_lat_float,
+                student_lon_float,
+                target_lat,
+                target_lon,
+            )
+            if distance is None or distance > allowed_radius:
+                distance_text = str(int(distance)) if distance is not None else "غير معروفة"
+                return Response(
+                    {
+                        "error": (
+                            f"أنت خارج نطاق المحاضرة. المسافة المحسوبة: {distance_text}م؛ "
+                            f"النطاق المسموح: {int(allowed_radius)}م."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         # 8. WiFi / Subnet restriction (if configured)
         if attendance_session.requires_wifi:
@@ -652,7 +739,7 @@ class StudentCheckInView(APIView):
         else:
             device_user_agent = raw_ua
 
-        record_notes = "✨ طالب جديد (تم التسجيل الذاتي أثناء المحاضرة)" if is_new_auto_student else None
+        record_notes = None
 
         record, created = AttendanceRecord.objects.update_or_create(
             student=student_profile,
@@ -672,14 +759,11 @@ class StudentCheckInView(APIView):
         queue_for_sync(record, SyncQueue.Actions.CREATE if created else SyncQueue.Actions.UPDATE)
 
         serializer = AttendanceRecordSerializer(record)
-        if is_new_auto_student:
-            msg = f"تم إضافتك كطالب جديد وتسجيل حضورك بنجاح ✔ ({student_profile.user.get_full_name()})"
-        else:
-            msg = (
-                "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
-                if record_status == AttendanceRecord.Statuses.PRESENT
-                else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
-            )
+        msg = (
+            "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
+            if record_status == AttendanceRecord.Statuses.PRESENT
+            else "تم تسجيل حضورك بنجاح (مع احتساب تأخير) ⏰"
+        )
         return Response({"message": msg, "record": serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -710,7 +794,12 @@ class ManualAttendanceRecordUpdateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        record = get_object_or_404(AttendanceRecord, id=record_id)
+        record = get_object_or_404(
+            AttendanceRecord.objects.filter(
+                attendance_session__in=_manageable_attendance_sessions(request.user)
+            ),
+            id=record_id,
+        )
         old_status = record.status
 
         record.status = new_status
@@ -750,7 +839,9 @@ class CloseAttendanceSessionView(APIView):
 
     def post(self, request, session_id):
         attendance_session = get_object_or_404(
-            AttendanceSession, id=session_id, is_active=True
+            _manageable_attendance_sessions(request.user),
+            id=session_id,
+            is_active=True,
         )
         attendance_session.is_active = False
         attendance_session.save(update_fields=["is_active"])
@@ -785,7 +876,9 @@ def start_session_web_view(request):
         requires_geofence = "requires_geofence" in request.POST
         generated_otp = f"{random.randint(100000, 999999)}"
 
-        session_obj = get_object_or_404(Session, id=session_id)
+        session_obj = get_object_or_404(
+            _manageable_timetable_sessions(request.user), id=session_id
+        )
         now = timezone.now()
         end_time = now + timezone.timedelta(minutes=30)
 
@@ -825,12 +918,18 @@ def session_detail_web_view(request, session_id):
         messages.error(request, "غير مصرح لك بعرض شاشة التحضير.")
         return redirect("dashboard")
 
-    attendance_session = AttendanceSession.objects.filter(id=session_id).first()
+    attendance_session = _manageable_attendance_sessions(request.user).filter(
+        id=session_id
+    ).first()
     if not attendance_session:
         # Check if session_id refers to a timetable Session schedule
-        sess_obj = Session.objects.filter(id=session_id).first()
+        sess_obj = _manageable_timetable_sessions(request.user).filter(
+            id=session_id
+        ).first()
         if sess_obj:
-            att = AttendanceSession.objects.filter(session=sess_obj).order_by("-id").first()
+            att = _manageable_attendance_sessions(request.user).filter(
+                session=sess_obj
+            ).order_by("-id").first()
             if att:
                 return redirect("attendance:session_detail_web", session_id=att.id)
             return redirect(f"/attendance/session/create-custom/?session_id={session_id}")
@@ -947,7 +1046,7 @@ def session_students_list_partial(request, session_id):
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         return HttpResponse("غير مصرح لك", status=403)
 
-    attendance_session = get_object_or_404(AttendanceSession, id=session_id)
+    attendance_session = _manageable_attendance_session(request.user, session_id)
 
     # ✅ FIX: Use helper to get section-specific students + new check-ins
     students_in_section = _get_students_for_session(attendance_session)
@@ -1009,8 +1108,10 @@ def manual_update_web_view(request):
     if new_status not in valid_statuses:
         return HttpResponse("حالة غير صالحة", status=400)
 
-    student = get_object_or_404(StudentProfile, id=student_id)
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    att_session = _manageable_attendance_session(request.user, session_id)
+    student = get_object_or_404(
+        _get_students_for_session(att_session), id=student_id
+    )
 
     method_param = request.POST.get("method")
     if method_param == "OFFLINE_MANUAL":
@@ -1059,7 +1160,7 @@ def bulk_update_web_view(request):
 
     session_id = request.POST.get("session_id")
     target_status = request.POST.get("status", "PRESENT")
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    att_session = _manageable_attendance_session(request.user, session_id)
     students_in_section = _get_students_for_session(att_session)
 
     valid_statuses = [s.value for s in AttendanceRecord.Statuses]
@@ -1101,6 +1202,8 @@ def qr_image_view(request):
     Generates and returns an offline-compatible
     QR code image on-the-fly as a PNG file. Supports custom box size for projector/HD displays.
     """
+    import urllib.parse
+
     token = request.GET.get("token", "")
     try:
         box_size = int(request.GET.get("size", 10))
@@ -1117,8 +1220,14 @@ def qr_image_view(request):
         checkin_url = f"http://{custom_host}/attendance/checkin/"
     else:
         checkin_url = request.build_absolute_uri("/attendance/checkin/")
+    query_params = []
     if token:
-        checkin_url += f"?token={token}"
+        query_params.append(f"token={urllib.parse.quote(token, safe='')}")
+    session_id = request.GET.get("session_id", "")
+    if session_id.isdigit():
+        query_params.append(f"session_id={session_id}")
+    if query_params:
+        checkin_url += "?" + "&".join(query_params)
 
     try:
         qr = qrcode.QRCode(
@@ -1152,14 +1261,16 @@ def qr_image_view(request):
 @login_required
 def student_records_web_view(request):
     """Lists the complete attendance history for the logged-in student, or multi-filtered records for admin."""
-    if request.user.is_super_admin() or request.user.is_institution_admin() or request.user.is_staff or request.user.is_superuser:
+    if request.user.is_super_admin() or request.user.is_institution_admin():
         from apps.academics.models import Institution, ClassSection, Course
         from django.db.models import Q
         from django.utils import timezone
         from datetime import timedelta, datetime
 
         # Base QuerySet
-        qs = AttendanceRecord.objects.all().select_related(
+        qs = AttendanceRecord.objects.filter(
+            attendance_session__in=_manageable_attendance_sessions(request.user)
+        ).select_related(
             "student__user",
             "student__institution",
             "attendance_session__session__course__department__institution",
@@ -1257,9 +1368,17 @@ def student_records_web_view(request):
         records = ordered_qs[:200]
 
         # Options for dropdowns
-        institutions = Institution.objects.all().order_by("name")
-        sections = ClassSection.objects.all().select_related("department__institution").order_by("name")
-        courses = Course.objects.all().select_related("department__institution").order_by("name")
+        if request.user.is_super_admin():
+            institutions = Institution.objects.all().order_by("name")
+        else:
+            institution_id = _user_institution_id(request.user)
+            institutions = Institution.objects.filter(id=institution_id).order_by("name")
+        sections = ClassSection.objects.filter(
+            department__institution__in=institutions
+        ).select_related("department__institution").order_by("name")
+        courses = Course.objects.filter(
+            department__institution__in=institutions
+        ).select_related("department__institution").order_by("name")
         levels = ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "الدراسات العليا"]
 
         context = {
@@ -1320,7 +1439,7 @@ def student_records_web_view(request):
 def teacher_sessions_web_view(request):
     """Lists the schedules/timetable sessions for the logged-in teacher or all sessions for admins."""
     if request.user.is_super_admin() or request.user.is_institution_admin():
-        sessions = Session.objects.all().select_related(
+        sessions = _manageable_timetable_sessions(request.user).select_related(
             "course", "class_section", "teacher__user"
         ).order_by("day_of_week", "start_time")
         return render(
@@ -1365,16 +1484,13 @@ def create_custom_session_view(request, timetable_id=None):
 
     teacher_profile = getattr(request.user, "teacher_profile", None)
     if teacher_profile is None:
-        teacher_profile = TeacherProfile.objects.first()
-
-    if teacher_profile is None:
         messages.error(
             request,
-            "لا يوجد ملف معلم مسجل في المؤسسة حالياً لإنشاء الجلسة باسمه.",
+            "يجب ربط حسابك بملف أستاذ قبل إنشاء جلسة حضور.",
         )
         return redirect("dashboard")
 
-    institution = teacher_profile.institution if teacher_profile else Institution.objects.first()
+    institution = teacher_profile.institution
 
     if request.method == "POST":
         course_id = request.POST.get("course_id", "").strip()
@@ -1441,7 +1557,10 @@ def create_custom_session_view(request, timetable_id=None):
         # Resolve or create Course
         course = None
         if course_id and course_id.isdigit():
-            course = Course.objects.filter(id=int(course_id)).first()
+            course = Course.objects.filter(
+                id=int(course_id),
+                department__institution=institution,
+            ).first()
 
         if not course and new_course_name:
             rand_code = f"CS{random.randint(100, 999)}"
@@ -1463,7 +1582,10 @@ def create_custom_session_view(request, timetable_id=None):
         # Resolve or create ClassSection
         class_section = None
         if class_section_id and class_section_id.isdigit():
-            class_section = ClassSection.objects.filter(id=int(class_section_id)).first()
+            class_section = ClassSection.objects.filter(
+                id=int(class_section_id),
+                department__institution=institution,
+            ).first()
 
         if not class_section and new_section_name:
             class_section, _ = ClassSection.objects.get_or_create(
@@ -1628,7 +1750,7 @@ def edit_session_view(request, session_id):
         messages.error(request, "هذه الصفحة مخصصة للمعلمين والإداريين فقط.")
         return redirect("dashboard")
 
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    att_session = _manageable_attendance_session(request.user, session_id)
     session_obj = att_session.session
     teacher_profile = getattr(request.user, "teacher_profile", None)
     institution = (
@@ -1806,9 +1928,14 @@ def quick_create_course_view(request):
     if not name:
         return JsonResponse({"success": False, "error": "يرجى كتابة اسم المادة"}, status=400)
 
-    teacher_profile = getattr(request.user, "teacher_profile", None) or TeacherProfile.objects.first()
-    institution = teacher_profile.institution if teacher_profile else Institution.objects.first()
-    department = institution.departments.first() if institution else Department.objects.first()
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    if teacher_profile is None:
+        return JsonResponse(
+            {"success": False, "error": "لا يوجد ملف أستاذ مرتبط بحسابك."},
+            status=403,
+        )
+    institution = teacher_profile.institution
+    department = teacher_profile.department or institution.departments.first()
 
     if not department and institution:
         department = Department.objects.create(institution=institution, name="قسم علوم الحاسوب", code="CS")
@@ -1853,7 +1980,12 @@ def check_session_conflict_api(request):
     else:
         data = request.GET
 
-    teacher_profile = getattr(request.user, "teacher_profile", None) or TeacherProfile.objects.first()
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    if teacher_profile is None:
+        return JsonResponse(
+            {"has_conflict": False, "error": "لا يوجد ملف أستاذ مرتبط بحسابك."},
+            status=403,
+        )
     course_id = data.get("course_id")
     class_section_id = data.get("class_section_id")
     day_of_week = data.get("day_of_week")
@@ -1863,8 +1995,25 @@ def check_session_conflict_api(request):
     room = data.get("room", "")
     session_date_str = data.get("session_date")
 
-    course = Course.objects.filter(id=int(course_id)).first() if course_id and str(course_id).isdigit() else None
-    class_section = ClassSection.objects.filter(id=int(class_section_id)).first() if class_section_id and str(class_section_id).isdigit() else None
+    course_scope = Course.objects.filter(
+        department__institution_id=teacher_profile.institution_id
+    )
+    section_scope = ClassSection.objects.filter(
+        department__institution_id=teacher_profile.institution_id
+    )
+    if teacher_profile.department_id:
+        course_scope = course_scope.filter(department_id=teacher_profile.department_id)
+        section_scope = section_scope.filter(department_id=teacher_profile.department_id)
+    course = (
+        course_scope.filter(id=int(course_id)).first()
+        if course_id and str(course_id).isdigit()
+        else None
+    )
+    class_section = (
+        section_scope.filter(id=int(class_section_id)).first()
+        if class_section_id and str(class_section_id).isdigit()
+        else None
+    )
 
     session_date = None
     if session_date_str:
@@ -1923,7 +2072,7 @@ def offline_emergency_mode_view(request, session_id):
         messages.error(request, "غير مصرح لك بالوصول لهذه الصفحة.")
         return redirect("dashboard")
 
-    attendance_session = get_object_or_404(AttendanceSession, id=session_id)
+    attendance_session = _manageable_attendance_session(request.user, session_id)
     students_in_section = _get_students_for_session(attendance_session)
 
     # Handle quick AJAX/form check-in from the page itself
@@ -1952,7 +2101,9 @@ def offline_emergency_mode_view(request, session_id):
             return JsonResponse({"success": True, "message": f"تم تحضير {count} طالب بنجاح ⚡", "count": count})
 
         elif action == "update_student" and student_profile_id:
-            student = get_object_or_404(StudentProfile, id=student_profile_id)
+            student = get_object_or_404(
+                students_in_section, id=student_profile_id
+            )
             record, created = AttendanceRecord.objects.update_or_create(
                 student=student,
                 attendance_session=attendance_session,
@@ -2054,6 +2205,7 @@ def offline_emergency_mode_view(request, session_id):
 
 
 @login_required
+@require_POST
 def quick_start_scheduled_session_view(request, session_id):
     """
     1-Click Quick Launch for scheduled sessions or recurring timetable sessions.
@@ -2064,7 +2216,9 @@ def quick_start_scheduled_session_view(request, session_id):
         return redirect("dashboard")
 
     # Check if session_id refers to an AttendanceSession
-    att_session = AttendanceSession.objects.filter(id=session_id).first()
+    att_session = _manageable_attendance_sessions(request.user).filter(
+        id=session_id
+    ).first()
     now = timezone.now()
     generated_otp = f"{random.randint(100000, 999999)}"
 
@@ -2087,7 +2241,9 @@ def quick_start_scheduled_session_view(request, session_id):
         return redirect("attendance:session_detail_web", session_id=att_session.id)
     
     # Try timetable Session
-    timetable_session = get_object_or_404(Session, id=session_id)
+    timetable_session = get_object_or_404(
+        _manageable_timetable_sessions(request.user), id=session_id
+    )
     if request.user.is_teacher() and timetable_session.teacher.user != request.user:
         messages.error(request, "غير مصرح لك بتشغيل هذه الحصة.")
         return redirect("dashboard")
@@ -2118,13 +2274,14 @@ def quick_start_scheduled_session_view(request, session_id):
 
 
 @login_required
+@require_POST
 def cancel_scheduled_session_view(request, session_id):
     """Cancels a scheduled future/inactive attendance session."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
 
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
+    att_session = _manageable_attendance_session(request.user, session_id)
     if request.user.is_teacher() and att_session.session.teacher.user != request.user and att_session.created_by != request.user:
         messages.error(request, "غير مصرح لك بإلغاء هذه الجلسة.")
         return redirect("dashboard")
@@ -2138,17 +2295,14 @@ def cancel_scheduled_session_view(request, session_id):
 
 
 @login_required
+@require_POST
 def delete_attendance_session_view(request, session_id):
     """Deletes any attendance session and its records."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
 
-    att_session = get_object_or_404(AttendanceSession, id=session_id)
-    if request.user.is_teacher() and not (request.user.is_super_admin() or request.user.is_institution_admin()):
-        if att_session.session.teacher and att_session.session.teacher.user != request.user and att_session.created_by != request.user:
-            messages.error(request, "غير مصرح لك بحذف هذه الجلسة.")
-            return redirect("dashboard")
+    att_session = _manageable_attendance_session(request.user, session_id)
 
     course_name = att_session.session.course.name if att_session.session and att_session.session.course else "المحاضرة"
     date_str = str(att_session.date)
@@ -2159,6 +2313,7 @@ def delete_attendance_session_view(request, session_id):
 
 
 @login_required
+@require_POST
 def bulk_delete_sessions_view(request):
     """Bulk deletes selected attendance sessions."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
@@ -2171,9 +2326,9 @@ def bulk_delete_sessions_view(request):
             session_ids = [s.strip() for s in raw.split(",") if s.strip()]
         valid_ids = [int(sid) for sid in session_ids if sid.isdigit()]
         if valid_ids:
-            qs = AttendanceSession.objects.filter(id__in=valid_ids)
-            if request.user.is_teacher() and not (request.user.is_super_admin() or request.user.is_institution_admin()):
-                qs = qs.filter(Q(session__teacher__user=request.user) | Q(created_by=request.user))
+            qs = _manageable_attendance_sessions(request.user).filter(
+                id__in=valid_ids
+            )
             cnt = qs.count()
             qs.delete()
             messages.success(request, f"تم حذف {cnt} جلسة تحضير بنجاح.")
@@ -2183,6 +2338,7 @@ def bulk_delete_sessions_view(request):
 
 
 @login_required
+@require_POST
 def delete_timetable_session_view(request, session_id):
     """Deletes a weekly timetable Session schedule."""
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
@@ -2190,10 +2346,10 @@ def delete_timetable_session_view(request, session_id):
         return redirect("dashboard")
 
     from apps.academics.models import Session
-    sess = get_object_or_404(Session, id=session_id)
+    sess = get_object_or_404(
+        _manageable_timetable_sessions(request.user), id=session_id
+    )
     cname = f"{sess.course.name} - شعبة {sess.class_section.name} ({sess.get_day_of_week_display()})"
     sess.delete()
     messages.success(request, f"تم حذف الحصة الأسبوعية ({cname}) بنجاح.")
     return redirect(request.META.get("HTTP_REFERER", "dashboard"))
-
-

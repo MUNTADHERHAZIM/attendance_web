@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
@@ -21,22 +23,32 @@ from apps.core.views import (
 )
 from apps.reports.views import admin_import_web_view
 from apps.accounts.views import logout_view, RegisterView, CheckTeacherCodeView
+from apps.core.captcha import captcha_image_view, consume_captcha, is_captcha_enabled
 
 # ─── Customize Django Admin to be fully Arabic ───────────────────────
 admin.site.site_header = "لوحة إدارة نظام الحضور الذكي"
 admin.site.site_title = "نظام الحضور الذكي"
 admin.site.index_title = "إدارة البيانات والعمليات الأكاديمية"
 
+
+class CaptchaAuthenticationForm(AuthenticationForm):
+    def clean(self):
+        if not consume_captcha(
+            self.request,
+            "login",
+            self.data.get("captcha_login"),
+        ):
+            raise ValidationError("رمز التحقق غير صحيح أو انتهت صلاحيته.")
+        return super().clean()
+
+
 class SmartLoginView(auth_views.LoginView):
     template_name = "login.html"
+    authentication_form = CaptchaAuthenticationForm
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        try:
-            from apps.core.models import SystemSetting
-            ctx["teacher_verification_code"] = SystemSetting.get_teacher_code()
-        except Exception:
-            ctx["teacher_verification_code"] = "EDU2026"
+        ctx["captcha_enabled"] = is_captcha_enabled()
         return ctx
 
 
@@ -49,6 +61,7 @@ urlpatterns = [
 
     # ─── Session Authentication ───────────────────────────────────────
     path("login/", SmartLoginView.as_view(), name="login"),
+    path("captcha/image/", captcha_image_view, name="captcha_image"),
     path("logout/", logout_view, name="logout"),
 
     # ─── Password Reset Flow ──────────────────────────────────────────
@@ -146,4 +159,3 @@ urlpatterns += [
 # Also serve static in dev
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

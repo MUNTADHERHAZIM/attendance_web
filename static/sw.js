@@ -3,7 +3,7 @@
 // Ultra-resilient Offline Caching, Stale-While-Revalidate & Instant Sync
 // =====================================================================
 
-const SW_VERSION = "v3.3.0";
+const SW_VERSION = "v3.4.0";
 const PRECACHE_NAME = `smart-att-precache-${SW_VERSION}`;
 const RUNTIME_CACHE = `smart-att-runtime-${SW_VERSION}`;
 const STATIC_CACHE = `smart-att-static-${SW_VERSION}`;
@@ -28,6 +28,7 @@ const NEVER_CACHE_URLS = [
     "/admin/",
     "/api/",
     "/attendance/api/",
+    "/captcha/",
     "/logout/",
     "/password-reset/",
     "/ws/",

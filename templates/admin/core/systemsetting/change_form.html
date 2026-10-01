@@ -1,0 +1,16 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    {% if original.key == "ENABLE_CAPTCHA" and has_change_permission and user.is_superuser %}
+        <li>
+            <form method="post" action="{% url 'admin:core_systemsetting_captcha_toggle' %}">
+                {% csrf_token %}
+                <button type="submit" class="button">
+                    {% if original.value|lower == "true" %}تعطيل CAPTCHA{% else %}تفعيل CAPTCHA{% endif %}
+                </button>
+            </form>
+        </li>
+    {% endif %}
+{% endblock %}

@@ -5,6 +5,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -983,20 +984,34 @@ def clear_all_audit_logs_view(request):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
+@require_POST
 def toggle_captcha_view(request):
-    """Toggle Captcha ON/OFF (super-admin / institution-admin only)."""
-    from apps.core.models import SystemSetting
-    if not (request.user.is_super_admin() or request.user.is_institution_admin()):
+    """Set CAPTCHA enforcement explicitly (super-admin only)."""
+    from apps.core.models import AuditLog, SystemSetting
+    if not request.user.is_super_admin():
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
-    if request.method == "POST":
-        current_obj, _ = SystemSetting.objects.get_or_create(
-            key="ENABLE_CAPTCHA",
-            defaults={"value": "true", "description": "تفعيل/تعطيل رمز التحقق البصري (Captcha) في صفحة تسجيل الدخول"}
-        )
-        new_val = "false" if current_obj.value.lower() == "true" else "true"
-        current_obj.value = new_val
-        current_obj.save()
-        status_ar = "مفعّل ✅" if new_val == "true" else "معطّل ❌"
-        messages.success(request, f"تم تغيير حالة رمز التحقق (Captcha) إلى: {status_ar}")
-    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+    new_val = request.POST.get("enabled")
+    if new_val not in {"true", "false"}:
+        messages.error(request, "قيمة إعداد التحقق غير صالحة.")
+        return redirect("dashboard")
+
+    setting, _ = SystemSetting.objects.get_or_create(
+        key="ENABLE_CAPTCHA",
+        defaults={
+            "value": new_val,
+            "description": "تفعيل/تعطيل رمز التحقق البصري (Captcha) في تسجيل الدخول والتسجيل",
+        },
+    )
+    setting.value = new_val
+    setting.description = "تفعيل/تعطيل رمز التحقق البصري (Captcha) في تسجيل الدخول والتسجيل"
+    setting.save(update_fields=["value", "description", "updated_at"])
+    AuditLog.objects.create(
+        user=request.user,
+        action="تغيير إعداد CAPTCHA",
+        ip_address=request.META.get("REMOTE_ADDR") or None,
+        details={"enabled": new_val == "true"},
+    )
+    status_ar = "مفعّل ✅" if new_val == "true" else "معطّل ❌"
+    messages.success(request, f"تم تحديث حالة رمز التحقق (Captcha) إلى: {status_ar}")
+    return redirect("dashboard")

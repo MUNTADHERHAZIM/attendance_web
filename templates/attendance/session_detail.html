@@ -70,7 +70,7 @@ function sessionDetailManager() {
         selectedIp: localStorage.getItem('hotspot_selected_ip') || (ds.primaryIp || '127.0.0.1'),
         serverPort: ds.serverPort || '8001',
         isHotspotActive: (localStorage.getItem('hotspot_is_active') === 'true'),
-        quickOtp: ds.quickOtp || '849201',
+        quickOtp: ds.quickOtp || '',
         csrfToken: ds.csrfToken || '',
 
         zoomQrIn: function() {
@@ -87,14 +87,17 @@ function sessionDetailManager() {
 
         getCheckinUrl: function() {
             var isLocalDomain = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+            var url;
             if (isLocalDomain && this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1' && !this.selectedIp.startsWith('10.0.4.')) {
-                return 'http://' + this.selectedIp + ':' + this.serverPort + '/attendance/checkin/';
+                url = 'http://' + this.selectedIp + ':' + this.serverPort + '/attendance/checkin/';
+            } else {
+                url = window.location.origin + '/attendance/checkin/';
             }
-            return window.location.origin + '/attendance/checkin/';
+            return url + '?session_id=' + encodeURIComponent(this.sessionId);
         },
 
         getCheckinQrUrl: function() {
-            var url = '/attendance/qr-image/?size=12';
+            var url = '/attendance/qr-image/?size=12&session_id=' + encodeURIComponent(this.sessionId);
             var isLocalDomain = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
             if (isLocalDomain && this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1' && !this.selectedIp.startsWith('10.0.4.')) {
                 url += '&host=' + encodeURIComponent(this.selectedIp + ':' + this.serverPort);
@@ -154,7 +157,7 @@ function sessionDetailManager() {
 
         getQrUrl: function(boxSize) {
             var size = boxSize || 10;
-            var url = '/attendance/qr-image/?token=' + encodeURIComponent(this.token || '') + '&size=' + size + '&v=' + this.qrTimestamp;
+            var url = '/attendance/qr-image/?token=' + encodeURIComponent(this.token || '') + '&session_id=' + encodeURIComponent(this.sessionId) + '&size=' + size + '&v=' + this.qrTimestamp;
             if (this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1') {
                 url += '&host=' + encodeURIComponent(this.selectedIp + ':' + this.serverPort);
             }

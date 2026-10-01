@@ -1,22 +1,38 @@
 import ipaddress
+import hmac
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
-from django.conf import settings
 
-def generate_qr_token(attendance_session):
+
+DEFAULT_QR_TOKEN_TTL = 30
+MAX_DYNAMIC_QR_TOKEN_TTL = 120
+FROZEN_QR_TOKEN_TTL = 24 * 60 * 60
+
+
+def generate_qr_token(attendance_session, ttl_seconds=None):
     """
-    Generates a secure, timestamped signature containing the session ID and current salt.
+    Signs the session ID, current rotating salt, and the token's maximum lifetime.
     """
+    if ttl_seconds is None:
+        ttl_seconds = (
+            FROZEN_QR_TOKEN_TTL
+            if attendance_session.is_frozen_qr
+            else DEFAULT_QR_TOKEN_TTL
+        )
+    max_ttl = FROZEN_QR_TOKEN_TTL if attendance_session.is_frozen_qr else MAX_DYNAMIC_QR_TOKEN_TTL
+    ttl_seconds = int(ttl_seconds)
+    if not 1 <= ttl_seconds <= max_ttl:
+        raise ValueError("QR token lifetime is outside the allowed range")
+
     signer = TimestampSigner()
-    # Package the session ID and the current rotating salt
-    data = f"{attendance_session.id}:{attendance_session.qr_salt}"
+    data = f"{attendance_session.id}:{attendance_session.qr_salt}:{ttl_seconds}"
     return signer.sign(data)
 
 
-def verify_qr_token(token_str, max_age=1800):
+def verify_qr_token(token_str, max_age=FROZEN_QR_TOKEN_TTL):
     """
     Verifies that:
     1. The signature is mathematically valid (uses settings.SECRET_KEY).
-    2. The token is not expired (max_age 1800 seconds = 30 minutes).
+    2. The signed token lifetime has not elapsed.
     3. The token contains the active session ID.
     Supports raw signatures, URL-encoded tokens, full URLs, and unquoted strings.
     """
@@ -48,17 +64,27 @@ def verify_qr_token(token_str, max_age=1800):
         # Load model lazily to avoid circular imports
         from .models import AttendanceSession
 
-        # Verify timestamp signature (valid for max_age seconds, default 30 minutes)
-        try:
-            unsigned_data = signer.unsign(token_str, max_age=max_age)
-        except (BadSignature, SignatureExpired):
-            # Also try without max_age if signature expired slightly or unquoting was needed
-            unsigned_data = signer.unsign(urllib.parse.unquote(token_str), max_age=max_age)
-
+        unsigned_data = signer.unsign(token_str)
         parts = unsigned_data.split(":")
+        if len(parts) != 3:
+            return None, "توقيع الرمز غير صالح"
+
         session_id = int(parts[0])
+        token_salt = parts[1]
+        token_ttl = int(parts[2])
 
         attendance_session = AttendanceSession.objects.get(id=session_id, is_active=True)
+        max_ttl = (
+            FROZEN_QR_TOKEN_TTL
+            if attendance_session.is_frozen_qr
+            else MAX_DYNAMIC_QR_TOKEN_TTL
+        )
+        if not 1 <= token_ttl <= max_ttl:
+            return None, "توقيع الرمز غير صالح"
+        if not hmac.compare_digest(str(attendance_session.qr_salt), token_salt):
+            return None, "تم تجديد الرمز، يرجى مسح رمز QR الحالي"
+
+        signer.unsign(token_str, max_age=min(token_ttl, max_age))
         return attendance_session, None
 
     except SignatureExpired:
@@ -204,5 +230,3 @@ def find_matching_student(query, class_section):
         return None, "يوجد تشابه بين عدة أسماء في الشعبة. يرجى إدخال اسمك الثلاثي كاملاً أو كتابة رقمك الجامعي."
         
     return None, f"لم يتم العثور على طالب باسم '{query_clean}' في كشف هذه الشعبة ({class_section.name}). تأكد من كتابة اسمك الثلاثي كما هو مسجل أو أدخل رقمك الجامعي."
-
-

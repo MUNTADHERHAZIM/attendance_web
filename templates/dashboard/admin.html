@@ -344,6 +344,28 @@
                 </form>
             </div>
 
+            {% if can_manage_captcha %}
+            <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900">حماية تسجيل الدخول والتسجيل</h3>
+                        <p class="text-xs text-slate-500 mt-1">التحقق يُفحص على الخادم، وليس اعتماداً على JavaScript فقط.</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-black {% if captcha_enabled %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                        {% if captcha_enabled %}مفعّل{% else %}معطّل{% endif %}
+                    </span>
+                </div>
+                <form method="POST" action="{% url 'reports:toggle_captcha' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="enabled" value="{% if captcha_enabled %}false{% else %}true{% endif %}">
+                    <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-xs font-black text-white transition-colors {% if captcha_enabled %}bg-rose-600 hover:bg-rose-700{% else %}bg-emerald-600 hover:bg-emerald-700{% endif %}">
+                        {% if captcha_enabled %}تعطيل CAPTCHA{% else %}تفعيل CAPTCHA{% endif %}
+                    </button>
+                </form>
+                <p class="text-[11px] text-slate-400">هذا الإعداد عام للنظام، لذلك يظهر للمدير الأعلى فقط.</p>
+            </div>
+            {% endif %}
+
             <!-- Quick administrative links -->
             <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
                 <h3 class="text-sm font-black text-slate-900 border-b border-slate-100 pb-2.5">أدوات إدارية سريعة</h3>

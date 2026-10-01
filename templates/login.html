@@ -400,6 +400,12 @@ select.form-input { cursor: pointer; appearance: none; }
     display: block;
     width: 100%; height: 52px;
 }
+.captcha-canvas-box img {
+    display: block;
+    width: 100%;
+    height: 64px;
+    object-fit: contain;
+}
 .captcha-reload-btn {
     width: 44px; flex-shrink: 0;
     background: var(--slate-100);
@@ -693,7 +699,7 @@ select.form-input { cursor: pointer; appearance: none; }
             {% if form.errors %}
             <div class="alert alert-error">
                 <span class="alert-icon">⚠️</span>
-                <span>اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من بياناتك وحاول مجدداً.</span>
+                <span>{% for error in form.non_field_errors %}{{ error }}{% empty %}اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من بياناتك وحاول مجدداً.{% endfor %}</span>
             </div>
             {% endif %}
 
@@ -740,41 +746,24 @@ select.form-input { cursor: pointer; appearance: none; }
                 </div>
 
                 <!-- CAPTCHA -->
-                <div class="field-label" style="margin-bottom:.4rem">
+                <div x-show="captchaEnabled" class="field-label" style="margin-bottom:.4rem">
                     <label>رمز التحقق (Captcha Code) *</label>
-                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="genCaptcha('login')">🔄 تجديد الرمز</span>
+                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="refreshCaptcha('login')">🔄 تجديد الرمز</span>
                 </div>
-                <div class="captcha-row">
-                    <div class="captcha-canvas-box" @click="genCaptcha('login')" title="انقر لتجديد الرمز">
-                        <canvas id="cvLogin" width="280" height="52"></canvas>
+                <div x-show="captchaEnabled" class="captcha-row">
+                    <div class="captcha-canvas-box" @click="refreshCaptcha('login')" title="انقر لتجديد الرمز">
+                        <img id="captchaLoginImage" alt="رمز التحقق" width="280" height="64">
                     </div>
-                    <button type="button" class="captcha-reload-btn" @click="genCaptcha('login')" title="تجديد">
+                    <button type="button" class="captcha-reload-btn" @click="refreshCaptcha('login')" title="تجديد">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                     </button>
                 </div>
 
-                <!-- Captcha Input (Single uppercase) -->
-                <input type="text" class="form-input captcha-input"
-                       :class="capLoginStatus === 'ok' ? 'is-ok' : capLoginStatus === 'err' ? 'is-error' : ''"
+                <input x-show="captchaEnabled" type="text" name="captcha_login" class="form-input captcha-input"
                        x-model="capLoginInput"
-                       @input="capLoginInput = capLoginInput.toUpperCase(); checkCap('login')"
-                       placeholder="اكتب رمز التحقق أعلاه (كابتل)"
+                       @input="capLoginInput = capLoginInput.toUpperCase()"
+                       placeholder="اكتب رمز التحقق أعلاه"
                        maxlength="6" autocomplete="off" spellcheck="false">
-
-                <div class="cap-status" x-show="capLoginStatus">
-                    <template x-if="capLoginStatus === 'ok'">
-                        <span style="color:var(--green-500);display:flex;align-items:center;gap:.35rem;">
-                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-500)"></span>
-                            رمز التحقق صحيح ✔
-                        </span>
-                    </template>
-                    <template x-if="capLoginStatus === 'err'">
-                        <span style="color:var(--red-500);display:flex;align-items:center;gap:.35rem;">
-                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red-500)"></span>
-                            رمز التحقق غير مطابق للرمز الظاهر بالصورة ✖
-                        </span>
-                    </template>
-                </div>
 
                 <!-- Remember -->
                 <div class="check-row" style="margin-top:.85rem">
@@ -784,7 +773,7 @@ select.form-input { cursor: pointer; appearance: none; }
 
                 <!-- Submit -->
                 <button type="submit" class="btn-primary"
-                        :disabled="capLoginStatus !== 'ok' || loading">
+                        :disabled="(captchaEnabled && capLoginInput.trim().length !== 6) || loading">
                     <template x-if="!loading">
                         <span>تسجيل الدخول</span>
                     </template>
@@ -1016,45 +1005,28 @@ select.form-input { cursor: pointer; appearance: none; }
                 </div>
 
                 <!-- CAPTCHA -->
-                <div class="field-label" style="margin-top:.9rem;margin-bottom:.4rem">
+                <div x-show="captchaEnabled" class="field-label" style="margin-top:.9rem;margin-bottom:.4rem">
                     <label>رمز التحقق (Captcha Code) *</label>
-                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="genCaptcha('reg')">🔄 تجديد الرمز</span>
+                    <span style="font-size:.72rem;font-weight:600;color:var(--indigo-600);cursor:pointer;" @click="refreshCaptcha('register')">🔄 تجديد الرمز</span>
                 </div>
-                <div class="captcha-row">
-                    <div class="captcha-canvas-box" @click="genCaptcha('reg')" title="انقر لتجديد الرمز">
-                        <canvas id="cvReg" width="280" height="52"></canvas>
+                <div x-show="captchaEnabled" class="captcha-row">
+                    <div class="captcha-canvas-box" @click="refreshCaptcha('register')" title="انقر لتجديد الرمز">
+                        <img id="captchaRegisterImage" alt="رمز التحقق" width="280" height="64">
                     </div>
-                    <button type="button" class="captcha-reload-btn" @click="genCaptcha('reg')" title="تجديد">
+                    <button type="button" class="captcha-reload-btn" @click="refreshCaptcha('register')" title="تجديد">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                     </button>
                 </div>
 
-                <!-- Single Captcha Input -->
-                <input type="text" class="form-input captcha-input"
-                       :class="capRegStatus === 'ok' ? 'is-ok' : capRegStatus === 'err' ? 'is-error' : ''"
-                       x-model="capRegInput" 
-                       @input="capRegInput = capRegInput.toUpperCase(); checkCap('reg')"
-                       placeholder="اكتب رمز التحقق أعلاه (كابتل)"
+                <input x-show="captchaEnabled" type="text" class="form-input captcha-input"
+                       x-model="capRegInput"
+                       @input="capRegInput = capRegInput.toUpperCase()"
+                       placeholder="اكتب رمز التحقق أعلاه"
                        maxlength="6" autocomplete="off" spellcheck="false">
-
-                <div class="cap-status" x-show="capRegStatus">
-                    <template x-if="capRegStatus === 'ok'">
-                        <span style="color:var(--green-500);display:flex;align-items:center;gap:.35rem;">
-                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-500)"></span>
-                            رمز التحقق صحيح ✔
-                        </span>
-                    </template>
-                    <template x-if="capRegStatus === 'err'">
-                        <span style="color:var(--red-500);display:flex;align-items:center;gap:.35rem;">
-                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red-500)"></span>
-                            رمز التحقق غير مطابق للرمز الظاهر بالصورة ✖
-                        </span>
-                    </template>
-                </div>
 
                 <!-- Submit -->
                 <button type="submit" class="btn-primary" style="margin-top:1rem"
-                        :disabled="capRegStatus !== 'ok' || pwdMatchStatus !== 'ok' || regLoading || !!regNameError || !!regPhoneError || !isPhoneValid || (reg.role === 'TEACHER' && !reg.teacherCode)">
+                        :disabled="(captchaEnabled && capRegInput.trim().length !== 6) || pwdMatchStatus !== 'ok' || regLoading || !!regNameError || !!regPhoneError || !isPhoneValid || (reg.role === 'TEACHER' && !reg.teacherCode)">
                     <template x-if="!regLoading"><span>إرسال طلب التسجيل</span></template>
                     <template x-if="regLoading">
                         <span style="display:flex;align-items:center;gap:.5rem">
@@ -1090,8 +1062,9 @@ document.addEventListener('alpine:init', () => {
         roleDropdownOpen: false,
 
         /* CAPTCHA (Single uppercase) */
-        capLoginText: '', capLoginInput: '', capLoginStatus: '',
-        capRegText:   '', capRegInput:   '', capRegStatus:   '',
+        capLoginInput: '',
+        capRegInput: '',
+        captchaEnabled: {{ captcha_enabled|yesno:'true,false' }},
 
         /* register form */
         reg: {
@@ -1103,7 +1076,6 @@ document.addEventListener('alpine:init', () => {
             confirmPassword: '',
             teacherCode: ''
         },
-        dynamicTeacherCode: '{{ teacher_verification_code|default:"EDU2026"|escapejs }}',
         regDone: false,
         regLoading: false,
         regError: '',
@@ -1116,10 +1088,10 @@ document.addEventListener('alpine:init', () => {
         /* ─ init ─ */
         init() {
             this.$nextTick(() => {
-                this.genCaptcha('login');
-                this.genCaptcha('reg');
+                if (this.captchaEnabled) {
+                    this.refreshCaptcha('login');
+                }
             });
-            this.fetchTeacherCode();
             // Restore registration draft from localStorage
             this.loadRegDraft();
         },
@@ -1150,16 +1122,6 @@ document.addEventListener('alpine:init', () => {
         },
         clearRegDraft() {
             try { localStorage.removeItem('reg_draft'); } catch(e) {}
-        },
-
-        async fetchTeacherCode() {
-            try {
-                const res = await fetch('/api/teacher-code/');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.code) this.dynamicTeacherCode = data.code;
-                }
-            } catch(e) {}
         },
 
         /* ─ english name validation ─ */
@@ -1219,105 +1181,29 @@ document.addEventListener('alpine:init', () => {
         /* ─ tab ─ */
         setTab(t) {
             this.tab = t;
-            this.capLoginInput = ''; this.capLoginStatus = '';
-            this.capRegInput   = ''; this.capRegStatus   = '';
+            this.capLoginInput = '';
+            this.capRegInput = '';
             this.roleDropdownOpen = false;
             this.teacherCodeError = '';
-            this.$nextTick(() => { this.genCaptcha(t === 'register' ? 'reg' : 'login'); });
-        },
-
-        /* ─ captcha ─ */
-        genCaptcha(which) {
-            const pool = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let txt = '';
-            for (let i = 0; i < 5; i++) txt += pool[Math.floor(Math.random() * pool.length)];
-
-            const id = which === 'login' ? 'cvLogin' : 'cvReg';
-            const cv = document.getElementById(id);
-            if (!cv) return;
-            const ctx = cv.getContext('2d');
-            const W = cv.width, H = cv.height;
-
-            /* --- background --- */
-            const bg = ctx.createLinearGradient(0, 0, W, H);
-            bg.addColorStop(0, '#f8fafc');
-            bg.addColorStop(1, '#f1f5f9');
-            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-
-            /* subtle grid */
-            ctx.strokeStyle = 'rgba(148,163,184,.18)'; ctx.lineWidth = 1;
-            for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-            for (let y = 0; y < H; y += 24) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-            /* noise dots */
-            for (let i = 0; i < 50; i++) {
-                ctx.fillStyle = `rgba(100,116,139,${Math.random()*.15})`;
-                ctx.beginPath();
-                ctx.arc(Math.random()*W, Math.random()*H, Math.random()*1.5+.3, 0, Math.PI*2);
-                ctx.fill();
-            }
-
-            /* distortion lines */
-            const lc = ['rgba(79,70,229,.25)', 'rgba(99,102,241,.2)', 'rgba(139,92,246,.18)'];
-            for (let i = 0; i < 3; i++) {
-                ctx.strokeStyle = lc[i]; ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(Math.random()*W, Math.random()*H);
-                ctx.quadraticCurveTo(Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H);
-                ctx.stroke();
-            }
-
-            /* characters */
-            const pal = ['#4338ca','#6d28d9','#0369a1','#059669','#b45309','#be185d'];
-            const step = (W - 32) / txt.length;
-            for (let i = 0; i < txt.length; i++) {
-                ctx.save();
-                const x = 16 + i * step + step / 2;
-                const y = H / 2 + (Math.random() * 6 - 3);
-                const angle = (Math.random() - .5) * .32;
-                ctx.translate(x, y); ctx.rotate(angle);
-                ctx.font = `900 ${Math.floor(20 + Math.random()*5)}px 'Courier New', monospace`;
-                ctx.fillStyle = pal[i % pal.length];
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(txt[i], 0, 0);
-                ctx.restore();
-            }
-
-            /* --- store & reset inputs --- */
-            if (which === 'login') {
-                this.capLoginText = txt;
-                this.capLoginInput = '';
-                this.capLoginStatus = '';
-            } else {
-                this.capRegText = txt;
-                this.capRegInput = '';
-                this.capRegStatus = '';
+            if (this.captchaEnabled) {
+                this.$nextTick(() => this.refreshCaptcha(t === 'register' ? 'register' : 'login'));
             }
         },
 
-        checkCap(which) {
-            if (which === 'login') {
-                const inVal = (this.capLoginInput || '').trim().toUpperCase();
-                if (!inVal) {
-                    this.capLoginStatus = '';
-                } else {
-                    this.capLoginStatus = inVal === this.capLoginText ? 'ok' : 'err';
-                }
-            } else {
-                const inVal = (this.capRegInput || '').trim().toUpperCase();
-                if (!inVal) {
-                    this.capRegStatus = '';
-                } else {
-                    this.capRegStatus = inVal === this.capRegText ? 'ok' : 'err';
-                }
+        refreshCaptcha(purpose) {
+            const imageId = purpose === 'login' ? 'captchaLoginImage' : 'captchaRegisterImage';
+            const image = document.getElementById(imageId);
+            if (image) {
+                image.src = `/captcha/image/?purpose=${purpose}&_=${Date.now()}`;
             }
+            if (purpose === 'login') this.capLoginInput = '';
+            else this.capRegInput = '';
         },
 
         /* ─ login submit ─ */
         onLoginSubmit(e) {
-            if (this.capLoginStatus !== 'ok') {
+            if (this.captchaEnabled && this.capLoginInput.trim().length !== 6) {
                 e.preventDefault();
-                this.genCaptcha('login');
                 return;
             }
             this.loading = true;
@@ -1325,21 +1211,10 @@ document.addEventListener('alpine:init', () => {
 
         /* ─ register submit ─ */
         async onRegSubmit() {
-            if (this.capRegStatus !== 'ok' || this.pwdMatchStatus !== 'ok' || this.regNameError) return;
+            if ((this.captchaEnabled && this.capRegInput.trim().length !== 6) || this.pwdMatchStatus !== 'ok' || this.regNameError) return;
             if (!this.validateIraqiPhone()) return;
 
             this.regError = '';
-
-            // Security check: Teacher Passcode (Configured by Admin)
-            if (this.reg.role === 'TEACHER') {
-                const code = (this.reg.teacherCode || '').trim().toUpperCase();
-                const expected = (this.dynamicTeacherCode || 'EDU2026').trim().toUpperCase();
-                if (code !== expected && code !== 'EDU2026' && code !== 'TEACHER2026' && code !== 'FACULTY') {
-                    this.teacherCodeError = 'كود الكادر التعليمي غير صحيح! يرجى مراجعة إدارة الكلية للحصول على الكود المعتمد.';
-                    return;
-                }
-                this.teacherCodeError = '';
-            }
 
             this.regLoading = true;
             try {
@@ -1359,7 +1234,8 @@ document.addEventListener('alpine:init', () => {
                         phone: this.reg.phone,
                         role: this.reg.role,
                         password: this.reg.password,
-                        teacherCode: this.reg.teacherCode
+                        teacherCode: this.reg.teacherCode,
+                        captcha: this.capRegInput
                     })
                 });
 
@@ -1373,9 +1249,13 @@ document.addEventListener('alpine:init', () => {
                     }, 1400);
                 } else {
                     this.regError = data.error || 'تعذر إنشاء الحساب، يرجى التحقق من صحة البيانات.';
+                    this.capRegInput = '';
+                    if (this.captchaEnabled) this.refreshCaptcha('register');
                 }
             } catch (err) {
                 this.regError = 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مجدداً.';
+                this.capRegInput = '';
+                if (this.captchaEnabled) this.refreshCaptcha('register');
             } finally {
                 this.regLoading = false;
             }

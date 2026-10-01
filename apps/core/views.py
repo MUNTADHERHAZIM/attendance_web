@@ -128,6 +128,7 @@ def dashboard_view(request):
             "attendance_rate_today": round(attendance_rate_today, 1),
             "critical_students": critical_students,
             "captcha_enabled": captcha_enabled,
+            "can_manage_captcha": user.is_super_admin(),
         }
         return render(request, "dashboard/admin.html", context)
 
@@ -438,6 +439,5 @@ def custom_csrf_failure_view(request, reason=""):
 def offline_view(request):
     """Fallback offline view served by Service Worker when network is unavailable."""
     return render(request, "offline.html")
-
 
 

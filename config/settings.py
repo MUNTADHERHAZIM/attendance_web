@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import environ
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 # Setup environ
 env = environ.Env(
@@ -18,8 +19,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
-if "*" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ["*"]
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip() and host.strip() != "*"]
 
 # Auto-detect local network IP addresses for Hotspot / Zero-Internet mode
 import socket
@@ -46,15 +46,24 @@ def get_local_ip_addresses():
         pass
     return ips
 
+_LOCAL_IP_ADDRESSES = get_local_ip_addresses()
+if DEBUG:
+    ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + _LOCAL_IP_ADDRESSES))
+if not ALLOWED_HOSTS:
+    raise ImproperlyConfigured(
+        "ALLOWED_HOSTS must contain explicit host names or IP addresses; '*' is not allowed."
+    )
+
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8001",
     "http://localhost:8001",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
-    "https://*.pythonanywhere.com",
-    "http://*.pythonanywhere.com",
 ]
-for _ip in get_local_ip_addresses():
+for _host in ALLOWED_HOSTS:
+    if _host not in {"127.0.0.1", "localhost"} and not _host.startswith("127."):
+        CSRF_TRUSTED_ORIGINS.append(f"https://{_host}")
+for _ip in _LOCAL_IP_ADDRESSES:
     CSRF_TRUSTED_ORIGINS.extend([
         f"http://{_ip}:8001",
         f"http://{_ip}:8000",

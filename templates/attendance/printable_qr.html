@@ -340,7 +340,7 @@
         <!-- 📷 HIGH-RES QR CODE -->
         <div class="qr-wrapper">
             <div class="qr-box">
-                <img src="/attendance/qr-image/?token={{ token|urlencode }}&size=12" 
+                <img src="/attendance/qr-image/?token={{ token|urlencode }}&session_id={{ attendance_session.id }}&size=12" 
                      alt="QR Code" 
                      class="qr-image">
             </div>
@@ -364,7 +364,7 @@
         <!-- Instructions & Security Footer -->
         <div class="sheet-footer">
             <p class="warning-text">
-                ⚠️ يمنع تصوير الرمز أو مشاركته خارج القاعة - النظام مبرمج للتحقق من الموقع الجغرافي وبصمة الهاتف.
+                ⚠️ هذا رمز ثابت طويل العمر؛ لا تشاركه خارج القاعة، واستخدم التدوير الديناميكي متى أمكن. فحص GPS ومؤشرات الجهاز قابلة للتزييف.
             </p>
             <p class="branding-text">
                 نظام الحضور الذكي الأكاديمي | تطوير: MUNTADHER HAZIM (07724978301)
