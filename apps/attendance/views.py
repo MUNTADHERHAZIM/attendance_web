@@ -572,7 +572,12 @@ class StudentCheckInView(APIView):
         is_new_student = False
         requires_teacher_review = False
         provisional_name = None
-        if request.user.is_authenticated and hasattr(request.user, "student_profile"):
+        force_guest_checkin = request.data.get("guest_checkin") is True
+        if (
+            request.user.is_authenticated
+            and hasattr(request.user, "student_profile")
+            and not force_guest_checkin
+        ):
             student_profile = request.user.student_profile
             if student_profile.institution_id != class_section.department.institution_id:
                 return Response(
@@ -814,7 +819,11 @@ class StudentCheckInView(APIView):
                     "method": checkin_method,
                     "ip_address": ip,
                     "device_user_agent": device_user_agent,
-                    "modified_by": request.user if request.user.is_authenticated else None,
+                    "modified_by": (
+                        request.user
+                        if request.user.is_authenticated and not force_guest_checkin
+                        else None
+                    ),
                     "notes": record_notes,
                 },
             )
@@ -823,7 +832,11 @@ class StudentCheckInView(APIView):
 
         if requires_teacher_review:
             AuditLog.objects.create(
-                user=request.user if request.user.is_authenticated else None,
+                user=(
+                    request.user
+                    if request.user.is_authenticated and not force_guest_checkin
+                    else None
+                ),
                 action="تسجيل حضور طالب يتطلب مراجعة الأستاذ",
                 details={
                     "attendance_session_id": attendance_session.id,

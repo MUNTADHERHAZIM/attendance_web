@@ -12,40 +12,100 @@
     <link rel="icon" type="image/png" href="{% static 'images/pwa/favicon-32x32.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
     
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Cairo', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            900: '#1e1b4b',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
     <style>
+        * { box-sizing: border-box; }
+        html, body { min-height: 100%; margin: 0; }
         body {
-            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 16px;
+            color: #f8fafc;
+            font-family: system-ui, "Segoe UI", sans-serif;
             background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 100%);
         }
+        body > div {
+            width: 100%;
+            max-width: 32rem;
+            padding: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, .3);
+            border-radius: 24px;
+            background: rgba(30, 41, 59, .96);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+            text-align: center;
+            margin: auto;
+        }
+        body > div > div:first-child, body > div > div:nth-child(2) { display: none; }
+        body > div > div:nth-child(3) {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 112px;
+            height: 112px;
+            margin: 0 auto 20px;
+        }
+        body > div > div:nth-child(3) > div:last-child {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border: 2px solid #fbbf24;
+            border-radius: 18px;
+            background: #0f172a;
+        }
+        body > div > div:nth-child(4) {
+            display: inline-block;
+            margin: 0 0 12px;
+            padding: 6px 12px;
+            border: 1px solid rgba(251, 191, 36, .4);
+            border-radius: 999px;
+            color: #fcd34d;
+            font-size: 12px;
+        }
+        h1 { margin: .4rem 0 .75rem; font-size: clamp(1.5rem, 7vw, 2rem); }
+        h2 { margin: 0; }
+        p { line-height: 1.7; }
+        .hidden { display: none !important; }
+        button, input, textarea { font: inherit; }
+        button { min-height: 44px; cursor: pointer; border: 1px solid rgba(148, 163, 184, .4); border-radius: 12px; }
+        button:disabled { cursor: wait; opacity: .65; }
+        input, textarea {
+            display: block;
+            width: 100%;
+            margin: 6px 0 12px;
+            padding: 12px;
+            border: 1px solid #64748b;
+            border-radius: 12px;
+            background: #0f172a;
+            color: #f8fafc;
+            text-align: right;
+        }
+        #offline-qr-token { text-align: left; }
+        #offline-camera-preview { max-height: 260px; object-fit: cover; }
+        #offline-checkin-title { margin-bottom: 8px; }
+        section[aria-labelledby="offline-checkin-title"],
+        section[aria-live="polite"] { text-align: right; }
+        section[aria-labelledby="offline-checkin-title"] > div.grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        section[aria-labelledby="offline-checkin-title"] button { padding: 10px; font-size: 12px; }
+        section[aria-labelledby="offline-checkin-title"] p,
+        section[aria-live="polite"] p { font-size: 12px; color: #cbd5e1; }
+        section { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(148, 163, 184, .25); }
+        #retry-btn { width: 100%; border: 0; background: #4f46e5; color: white; font-weight: 800; }
+        #offline-camera-button, #offline-sync-button { background: #334155; color: white; }
+        #offline-sync-button { width: 100%; }
+        section[aria-labelledby="offline-checkin-title"] button:last-of-type { background: #4f46e5; color: white; }
+        #offline-queue-count { font-weight: 900; }
+        @media (max-width: 420px) { body > div { padding: 20px 16px; } }
         @keyframes radarPulse {
             0% { transform: scale(0.9); opacity: 0.8; }
             50% { transform: scale(1.35); opacity: 0.2; }
@@ -89,7 +149,7 @@
             انقطع الاتصال بالشبكة
         </h1>
         <p class="text-sm text-slate-300 leading-relaxed mb-6">
-            النظام يعمل بكفاءة عالية دون اتصال. تم حفظ واجهات التطبيق في ذاكرة جهازك، وعند عودة الشبكة ستتم المزامنة تلقائياً.
+            يمكنك حفظ طلب الحضور على هذا الجهاز دون اتصال. لن يُعتمد الحضور إلا بعد عودة الاتصال والتحقق منه بواسطة الخادم.
         </p>
 
         <!-- Retry Button with Live Check -->
@@ -103,31 +163,221 @@
             <p id="status-feedback" class="text-xs font-semibold text-slate-400 min-h-[1.25rem]"></p>
         </div>
 
-        <!-- Quick Local Actions -->
-        <div class="pt-5 border-t border-slate-700/60 text-right">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 text-center">الوصول السريع للشاشات المخزنة</p>
-            <div class="grid grid-cols-2 gap-2.5">
-                <a href="/attendance/checkin/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
-                    <span class="text-base">📷</span>
-                    <span>مسح QR الحضور</span>
-                </a>
-                <a href="/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
-                    <span class="text-base">📊</span>
-                    <span>لوحة التحكم</span>
-                </a>
-                <a href="/attendance/student/records/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
-                    <span class="text-base">📑</span>
-                    <span>سجلات الحضور</span>
-                </a>
-                <a href="/login/" class="flex items-center space-x-reverse space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl border border-slate-600/50 text-xs font-bold text-slate-200 transition-colors">
-                    <span class="text-base">🔑</span>
-                    <span>تسجيل الدخول</span>
-                </a>
+        <section class="pt-5 border-t border-slate-700/60 text-right space-y-3" aria-labelledby="offline-checkin-title">
+            <h2 id="offline-checkin-title" class="text-sm font-extrabold text-white">تسجيل حضور دون اتصال</h2>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                امسح رمز الأستاذ أو الصقه، ثم احفظ الطلب على هذا الجهاز. سيظل الطلب غير مؤكد حتى يصل إلى الخادم ويقبله.
+                قد تنتهي صلاحية QR المتجدد قبل المزامنة؛ اطلب من الأستاذ استخدام QR الثابت للمحاضرة.
+            </p>
+            <label for="offline-student-name" class="block text-xs font-bold text-slate-200">اسم الطالب الكامل أو الرقم الجامعي</label>
+            <input id="offline-student-name" type="text" maxlength="150" autocomplete="name"
+                   placeholder="اكتب الاسم أو الرقم الجامعي"
+                   class="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-3 text-sm text-white placeholder:text-slate-500">
+            <label for="offline-qr-token" class="block text-xs font-bold text-slate-200">رمز QR أو رابط الحضور</label>
+            <textarea id="offline-qr-token" rows="2" dir="ltr" autocomplete="off"
+                      placeholder="الصق هنا الرمز أو الرابط الموجود داخل QR"
+                      class="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-3 text-sm text-white placeholder:text-slate-500"></textarea>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="offline-camera-button" type="button" onclick="startOfflineScanner()"
+                        class="rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
+                    📷 مسح بالكاميرا
+                </button>
+                <button type="button" onclick="saveOfflineCheckin()"
+                        class="rounded-xl bg-indigo-600 px-3 py-3 text-xs font-extrabold text-white">
+                    حفظ طلب الحضور
+                </button>
             </div>
-        </div>
+            <video id="offline-camera-preview" class="hidden w-full rounded-xl bg-black" playsinline></video>
+            <p id="offline-checkin-feedback" role="status" aria-live="polite" class="min-h-5 text-xs font-bold text-amber-300"></p>
+        </section>
+
+        <section class="mt-4 border-t border-slate-700/60 pt-4 text-right" aria-live="polite">
+            <p class="text-xs font-bold text-slate-200">الطلبات المحفوظة على هذا الجهاز:
+                <span id="offline-queue-count" class="text-amber-300">0</span>
+            </p>
+            <p id="offline-queue-message" class="mt-2 text-xs leading-relaxed text-slate-300"></p>
+            <button id="offline-sync-button" type="button" onclick="openCheckinForSync()"
+                    class="mt-3 w-full rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
+                إعادة المحاولة عند عودة الاتصال
+            </button>
+        </section>
     </div>
 
     <script>
+        let offlineCameraStream = null;
+        let offlineScanInProgress = false;
+
+        function readOfflineQueue() {
+            const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+            if (!Array.isArray(queue)) throw new Error('Invalid offline attendance queue');
+            return queue;
+        }
+
+        function refreshOfflineQueue() {
+            try {
+                const queue = readOfflineQueue();
+                document.getElementById('offline-queue-count').textContent = String(queue.length);
+                document.getElementById('offline-queue-message').textContent = queue.length
+                    ? 'لم يؤكد الخادم تسجيل هذه الطلبات بعد. لا تمسح بيانات المتصفح قبل مزامنتها.'
+                    : 'لا توجد طلبات معلقة على هذا الجهاز.';
+            } catch (error) {
+                console.error('Could not read offline attendance queue:', error);
+                document.getElementById('offline-queue-message').textContent =
+                    'تعذر قراءة الطلبات المحلية. لم يتم حذف أي بيانات.';
+            }
+        }
+
+        function extractQrToken(value) {
+            const text = value.trim();
+            if (!text) return '';
+            try {
+                const url = new URL(text);
+                return url.searchParams.get('token') || text;
+            } catch (_) {
+                const match = text.match(/[?&]token=([^&]+)/);
+                if (!match) return text;
+                try {
+                    return decodeURIComponent(match[1]);
+                } catch (_) {
+                    return match[1];
+                }
+            }
+        }
+
+        function getOfflineDeviceId() {
+            let id = localStorage.getItem('attendance_device_uuid');
+            if (!id) {
+                id = 'dev_' + (window.crypto && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : Date.now().toString(36) + Math.random().toString(36).slice(2));
+                localStorage.setItem('attendance_device_uuid', id);
+            }
+            return id;
+        }
+
+        function stopOfflineScanner() {
+            offlineScanInProgress = false;
+            if (offlineCameraStream) {
+                offlineCameraStream.getTracks().forEach(track => track.stop());
+                offlineCameraStream = null;
+            }
+            const video = document.getElementById('offline-camera-preview');
+            video.pause();
+            video.srcObject = null;
+            video.classList.add('hidden');
+        }
+
+        async function startOfflineScanner() {
+            const feedback = document.getElementById('offline-checkin-feedback');
+            if (!('BarcodeDetector' in window)) {
+                feedback.textContent = 'المسح بالكاميرا غير مدعوم في هذا المتصفح. الصق رابط QR أو رمزه في الحقل.';
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                feedback.textContent = 'تعذر فتح الكاميرا. استخدم حقل لصق رمز QR.';
+                return;
+            }
+
+            try {
+                const detector = new BarcodeDetector({ formats: ['qr_code'] });
+                offlineCameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                const video = document.getElementById('offline-camera-preview');
+                video.srcObject = offlineCameraStream;
+                video.classList.remove('hidden');
+                await video.play();
+                offlineScanInProgress = true;
+                feedback.textContent = 'وجّه الكاميرا نحو رمز الأستاذ.';
+
+                const scanFrame = async () => {
+                    if (!offlineScanInProgress) return;
+                    try {
+                        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                            const codes = await detector.detect(video);
+                            if (codes.length && codes[0].rawValue) {
+                                document.getElementById('offline-qr-token').value = codes[0].rawValue;
+                                feedback.textContent = 'تمت قراءة الرمز. أدخل اسم الطالب ثم احفظ الطلب.';
+                                stopOfflineScanner();
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Offline QR scan failed:', error);
+                    }
+                    if (offlineScanInProgress) requestAnimationFrame(scanFrame);
+                };
+                requestAnimationFrame(scanFrame);
+            } catch (error) {
+                stopOfflineScanner();
+                console.error('Could not start offline camera:', error);
+                feedback.textContent = 'لم تعمل الكاميرا. تحقق من الإذن أو الصق رمز QR يدوياً.';
+            }
+        }
+
+        function saveOfflineCheckin() {
+            const feedback = document.getElementById('offline-checkin-feedback');
+            const studentName = document.getElementById('offline-student-name').value.trim();
+            const token = extractQrToken(document.getElementById('offline-qr-token').value);
+            if (!studentName) {
+                feedback.textContent = 'اكتب اسم الطالب أو رقمه الجامعي أولاً.';
+                document.getElementById('offline-student-name').focus();
+                return;
+            }
+            if (!token) {
+                feedback.textContent = 'امسح رمز الأستاذ أو الصق الرمز قبل الحفظ.';
+                document.getElementById('offline-qr-token').focus();
+                return;
+            }
+
+            try {
+                const queue = readOfflineQueue();
+                const alreadyQueued = queue.some(item =>
+                    item.token === token &&
+                    item.student_name &&
+                    item.student_name.trim().toLocaleLowerCase() === studentName.toLocaleLowerCase()
+                );
+                if (alreadyQueued) {
+                    feedback.textContent = 'هذا الطالب وهذا الرمز محفوظان مسبقاً على الجهاز.';
+                    return;
+                }
+                if (queue.length >= 500) {
+                    feedback.textContent = 'وصلت الطلبات المحفوظة إلى الحد الآمن (500). اتصل بالشبكة لمزامنتها أولاً.';
+                    return;
+                }
+
+                queue.push({
+                    token: token,
+                    student_name: studentName,
+                    guest_checkin: true,
+                    device_id: getOfflineDeviceId(),
+                    queue_id: window.crypto && crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2),
+                    queued_at: new Date().toISOString()
+                });
+                localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+                refreshOfflineQueue();
+                document.getElementById('offline-qr-token').value = '';
+                feedback.textContent = 'حُفظ الطلب محلياً فقط؛ لم يُسجّل حضوراً مؤكداً بعد.';
+            } catch (error) {
+                console.error('Could not save offline check-in:', error);
+                feedback.textContent = 'تعذر حفظ الطلب محلياً. تأكد من توفر مساحة في ذاكرة الجهاز.';
+            }
+        }
+
+        function openCheckinForSync() {
+            if (!navigator.onLine) {
+                document.getElementById('offline-checkin-feedback').textContent =
+                    'لا يوجد اتصال حالياً. ستبقى الطلبات محفوظة على الجهاز.';
+                return;
+            }
+            document.getElementById('offline-queue-message').textContent =
+                'جاري فتح شاشة المزامنة الآمنة؛ ستبقى الطلبات محفوظة حتى يؤكدها الخادم.';
+            window.location.assign('/attendance/checkin/?sync_offline=' + Date.now());
+        }
+
         function testConnection() {
             const btn = document.getElementById('retry-btn');
             const icon = document.getElementById('retry-icon');
@@ -145,9 +395,7 @@
                     if (res.ok) {
                         feedback.textContent = '⚡ تم استعادة الاتصال! جاري التوجيه...';
                         feedback.className = 'text-xs font-semibold text-emerald-400';
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 800);
+                        setTimeout(openCheckinForSync, 800);
                     } else {
                         throw new Error('Server unreachable');
                     }
@@ -163,17 +411,19 @@
                 });
         }
 
-        // Automatically reload when network comes back online
+        // Open the regular check-in page so its CSRF-aware queue sync can run.
         window.addEventListener('online', function() {
             const feedback = document.getElementById('status-feedback');
             if (feedback) {
                 feedback.textContent = '⚡ عادت الشبكة للعمل! جاري إعادة التحميل...';
                 feedback.className = 'text-xs font-semibold text-emerald-400';
             }
-            setTimeout(function() {
-                window.location.reload();
-            }, 1000);
+            setTimeout(openCheckinForSync, 1000);
         });
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'offline_attendance_queue') refreshOfflineQueue();
+        });
+        refreshOfflineQueue();
     </script>
 </body>
 </html>

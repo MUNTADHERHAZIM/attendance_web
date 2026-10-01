@@ -251,6 +251,34 @@ def test_unknown_guest_is_recorded_as_provisional_student(attendance_api_setup):
     ).exists()
 
 
+def test_offline_guest_queue_keeps_the_submitted_student_name_for_signed_in_users(
+    attendance_api_setup,
+):
+    attendance_session, _, student_user, _, _ = attendance_api_setup
+    client = APIClient()
+    client.force_authenticate(user=student_user)
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": generate_qr_token(attendance_session),
+            "student_name": "ضيف من الجهاز",
+            "guest_checkin": True,
+            "device_id": "offline-shared-device",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    profile = StudentProfile.objects.get(student_id__startswith="NEW-")
+    assert profile.user.get_full_name() == "ضيف من الجهاز"
+    assert not AttendanceRecord.objects.filter(
+        student__user=student_user,
+        attendance_session=attendance_session,
+        status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
+    ).exists()
+
+
 def test_same_device_can_register_multiple_students_and_same_name_is_idempotent(
     attendance_api_setup,
 ):
@@ -331,6 +359,20 @@ def test_bad_qr_does_not_create_a_provisional_student(attendance_api_setup):
 
     assert response.status_code == 400
     assert not StudentProfile.objects.filter(student_id__startswith="NEW-").exists()
+
+
+def test_offline_fallback_has_self_contained_checkin_controls(db):
+    response = APIClient().get("/offline/")
+
+    assert response.status_code == 200
+    page = response.content.decode()
+    assert 'id="offline-student-name"' in page
+    assert 'id="offline-qr-token"' in page
+    assert "function saveOfflineCheckin()" in page
+    assert "function startOfflineScanner()" in page
+    assert "offline_attendance_queue" in page
+    assert "cdn.tailwindcss.com" not in page
+    assert 'href="/attendance/checkin/"' not in page
 
 
 def test_teacher_live_list_shows_review_alert_for_new_student(attendance_api_setup):
