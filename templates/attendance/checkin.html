@@ -1,8 +1,76 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}تسجيل الحضور الذكي - نظام الحضور والغياب{% endblock %}
+{% block title %}{% trans "تسجيل الحضور الذكي - نظام الحضور والغياب" %}{% endblock %}
 
 {% block content %}
+{% trans "تم تأكيد الحضور" as checkin_success_label %}
+{% trans "الحضور بانتظار المزامنة أو مراجعة الأستاذ" as checkin_pending_label %}
+{% trans "تعذر تسجيل الحضور" as checkin_error_label %}
+{% trans "المتصفح لا يدعم تحديد الموقع" as gps_unsupported %}
+{% trans "موقعك محدد بدقة ±%sم" as gps_precise %}
+{% trans "تحديد الموقع متوسط ±%sم" as gps_approximate %}
+{% trans "⚠️ إشارة GPS ضعيفة ±%sم — حسّن الإشارة أو استخدم OTP" as gps_weak %}
+{% trans "⚠️ تعذر الحصول على الموقع — فعّل GPS أو استخدم OTP" as gps_unavailable %}
+{% trans "تعذر تشغيل الكاميرا: يرجى إعطاء صلاحية الكاميرا للمتصفح، أو استخدم خيار كود التحضير السريع (OTP)." as camera_error %}
+{% trans "تم مسح الرمز بنجاح! يرجى إدخال اسمك الكامل أو رقمك الجامعي بالأسفل لتثبيت الحضور." as qr_scanned_prompt %}
+{% trans "يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور" as guest_name_required %}
+{% trans "يرجى إدخال كود التحضير المكون من 6 أرقام" as otp_required %}
+{% trans "تعذر الوصول إلى الخادم. حُفظ الطلب على هذا الجهاز، لكنه لم يُسجّل حضوراً بعد. ستتم محاولة إرساله عند عودة الاتصال؛ وقد يتطلب رمز QR المنتهي إعادة المسح." as offline_saved_notice %}
+{% trans "تعذر الاتصال ولم يتمكن الجهاز من حفظ الطلب محلياً. لا تغلق الصفحة؛ اتصل بشبكة القاعة أو أبلغ الأستاذ لتسجيل حضورك يدوياً." as offline_save_error %}
+{% trans "تم تسجيل الحضور بنجاح!" as checkin_success_fallback %}
+{% trans "فشلت عملية التحضير." as checkin_failed_fallback %}
+{% trans "يوجد طلب حضور محفوظ محلياً ولم يؤكده الخادم بعد." as offline_request_unconfirmed %}
+{% trans "اسم غير محفوظ" as unknown_student %}
+{% trans "يحتاج مراجعة الأستاذ" as needs_teacher_review %}
+{% trans "محفوظ على هذا الجهاز بانتظار المزامنة" as saved_waiting_sync %}
+{% trans "تعذر قراءة سجل المزامنة المحلي؛ لم يتم حذف بياناته." as local_sync_read_error %}
+{% trans "جاري إرسال طلبات الحضور المحفوظة..." as sending_saved_requests %}
+{% trans "انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز." as sync_connection_lost %}
+{% trans "الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة." as sync_server_busy %}
+{% trans "رفض الخادم هذا الطلب؛ راجع الأستاذ." as sync_server_rejected %}
+{% trans "وصل الطلب إلى قائمة مراجعة الأستاذ." as sync_queued_for_review %}
+{% trans "أكد الخادم تسجيل الحضور بعد عودة الاتصال." as sync_checkin_confirmed %}
+{% trans "وصل طلبك للأستاذ للمراجعة، ولم يُسجل حضوراً مؤكداً بعد." as sync_checkin_needs_review %}
+{% trans "تعذرت قراءة الطلبات المحفوظة أو مزامنتها؛ لم نحذف بيانات الجهاز." as sync_general_error %}
+{% trans "أكد الخادم تسجيل %s طلب حضور" as sync_confirmed_count %}
+{% trans "أُرسل %s طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد" as sync_review_count %}
+{% trans "أكد الخادم %s طلباً. بقي %s طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: %s" as sync_review_remaining %}
+{% trans "بقي %s طلباً محفوظاً ولم يؤكدها الخادم بعد." as sync_pending_count %}
+<script>
+const checkinI18n = {
+    gpsUnsupported: "{{ gps_unsupported|escapejs }}",
+    gpsPrecise: "{{ gps_precise|escapejs }}",
+    gpsApproximate: "{{ gps_approximate|escapejs }}",
+    gpsWeak: "{{ gps_weak|escapejs }}",
+    gpsUnavailable: "{{ gps_unavailable|escapejs }}",
+    cameraError: "{{ camera_error|escapejs }}",
+    qrScannedPrompt: "{{ qr_scanned_prompt|escapejs }}",
+    guestNameRequired: "{{ guest_name_required|escapejs }}",
+    otpRequired: "{{ otp_required|escapejs }}",
+    offlineSavedNotice: "{{ offline_saved_notice|escapejs }}",
+    offlineSaveError: "{{ offline_save_error|escapejs }}",
+    successFallback: "{{ checkin_success_fallback|escapejs }}",
+    failedFallback: "{{ checkin_failed_fallback|escapejs }}",
+    offlineRequestUnconfirmed: "{{ offline_request_unconfirmed|escapejs }}",
+    unknownStudent: "{{ unknown_student|escapejs }}",
+    needsTeacherReview: "{{ needs_teacher_review|escapejs }}",
+    savedWaitingSync: "{{ saved_waiting_sync|escapejs }}",
+    localSyncReadError: "{{ local_sync_read_error|escapejs }}",
+    sendingSavedRequests: "{{ sending_saved_requests|escapejs }}",
+    syncConnectionLost: "{{ sync_connection_lost|escapejs }}",
+    syncServerBusy: "{{ sync_server_busy|escapejs }}",
+    syncServerRejected: "{{ sync_server_rejected|escapejs }}",
+    syncQueuedForReview: "{{ sync_queued_for_review|escapejs }}",
+    syncCheckinConfirmed: "{{ sync_checkin_confirmed|escapejs }}",
+    syncCheckinNeedsReview: "{{ sync_checkin_needs_review|escapejs }}",
+    syncGeneralError: "{{ sync_general_error|escapejs }}",
+    syncConfirmedCount: "{{ sync_confirmed_count|escapejs }}",
+    syncReviewCount: "{{ sync_review_count|escapejs }}",
+    syncReviewRemaining: "{{ sync_review_remaining|escapejs }}",
+    syncPendingCount: "{{ sync_pending_count|escapejs }}"
+};
+</script>
 <div class="max-w-md mx-auto bg-white border border-slate-200 shadow-xl rounded-2xl p-6 space-y-6 text-center" x-data="{ 
         mode: 'qr', // 'qr' or 'otp'
         isLoggedIn: {{ is_logged_in|yesno:'true,false' }},
@@ -21,7 +89,7 @@
         sessionId: '',
         gpsCoords: null,
         gpsAccuracy: null,
-        gpsStatus: 'جاري التحقق من الموقع...',
+        gpsStatus: '{% trans "جاري التحقق من الموقع..." %}',
         _gpsWatcher: null,
 
         init() {
@@ -49,7 +117,7 @@
 
         async requestGPS() {
             if (!('geolocation' in navigator)) {
-                this.gpsStatus = 'المتصفح لا يدعم تحديد الموقع';
+                this.gpsStatus = checkinI18n.gpsUnsupported;
                 return;
             }
             // Use watchPosition to continuously improve accuracy and pick the best indoor reading
@@ -67,15 +135,15 @@
                         this.gpsAccuracy = Math.round(acc);
                     }
                     if (acc <= 50) {
-                        this.gpsStatus = `📍 موقعك محدد بدقة ±${Math.round(acc)}م`;
+                        this.gpsStatus = checkinI18n.gpsPrecise.replace('%s', Math.round(acc));
                     } else if (acc <= 300) {
-                        this.gpsStatus = `📡 تحديد الموقع متوسط ±${Math.round(acc)}م`;
+                        this.gpsStatus = checkinI18n.gpsApproximate.replace('%s', Math.round(acc));
                     } else {
-                        this.gpsStatus = `⚠️ إشارة GPS ضعيفة ±${Math.round(acc)}م — حسّن الإشارة أو استخدم OTP`;
+                        this.gpsStatus = checkinI18n.gpsWeak.replace('%s', Math.round(acc));
                     }
                 },
                 (err) => {
-                    this.gpsStatus = '⚠️ تعذر الحصول على الموقع — فعّل GPS أو استخدم OTP';
+                    this.gpsStatus = checkinI18n.gpsUnavailable;
                     console.warn('Geolocation error:', err);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -99,7 +167,7 @@
                 .catch((err) => {
                     this.scanning = false;
                     this.resultType = 'error';
-                    this.resultMessage = 'تعذر تشغيل الكاميرا: يرجى إعطاء صلاحية الكاميرا للمتصفح، أو استخدم خيار كود التحضير السريع (OTP).';
+                    this.resultMessage = checkinI18n.cameraError;
                     console.error(err);
                 });
 
@@ -126,7 +194,7 @@
                         if (!this.isLoggedIn && !this.guestStudentName.trim()) {
                             this.pendingToken = code.data;
                             this.scanning = false;
-                            alert('تم مسح الرمز بنجاح! يرجى إدخال اسمك الكامل أو رقمك الجامعي بالأسفل لتثبيت الحضور.');
+                            alert(checkinI18n.qrScannedPrompt);
                             return;
                         }
 
@@ -143,7 +211,7 @@
         
         async submitToken(token) {
             if (!this.isLoggedIn && !this.guestStudentName.trim()) {
-                alert('يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور');
+                alert(checkinI18n.guestNameRequired);
                 return;
             }
 
@@ -189,11 +257,11 @@
 
         async submitOTP() {
             if (!this.otpCode || this.otpCode.length < 4) {
-                alert('يرجى إدخال كود التحضير المكون من 6 أرقام');
+                alert(checkinI18n.otpRequired);
                 return;
             }
             if (!this.isLoggedIn && !this.guestStudentName.trim()) {
-                alert('يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور');
+                alert(checkinI18n.guestNameRequired);
                 return;
             }
 
@@ -251,10 +319,10 @@
                 this.scanning = false;
                 if (this.storeOfflineRecord(payload)) {
                     this.resultType = 'pending';
-                    this.resultMessage = 'تعذر الوصول إلى الخادم. حُفظ الطلب على هذا الجهاز، لكنه لم يُسجّل حضوراً بعد. ستتم محاولة إرساله عند عودة الاتصال؛ وقد يتطلب رمز QR المنتهي إعادة المسح.';
+                    this.resultMessage = checkinI18n.offlineSavedNotice;
                 } else {
                     this.resultType = 'error';
-                    this.resultMessage = 'تعذر الاتصال ولم يتمكن الجهاز من حفظ الطلب محلياً. لا تغلق الصفحة؛ اتصل بشبكة القاعة أو أبلغ الأستاذ لتسجيل حضورك يدوياً.';
+                    this.resultMessage = checkinI18n.offlineSaveError;
                 }
                 console.error(e);
                 return;
@@ -273,10 +341,10 @@
                 this.resultType = data.requires_teacher_review || data.is_new_student
                     ? 'pending'
                     : 'success';
-                this.resultMessage = data.message || 'تم تسجيل الحضور بنجاح!';
+                this.resultMessage = data.message || checkinI18n.successFallback;
             } else {
                 this.resultType = 'error';
-                this.resultMessage = data.error || 'فشلت عملية التحضير.';
+                this.resultMessage = data.error || checkinI18n.failedFallback;
             }
         },
 
@@ -293,7 +361,7 @@
                 queue.push(queuedPayload);
                 localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
                 this.refreshOfflineQueue();
-                this.offlineSyncMessage = 'يوجد طلب حضور محفوظ محلياً ولم يؤكده الخادم بعد.';
+                this.offlineSyncMessage = checkinI18n.offlineRequestUnconfirmed;
                 return true;
             } catch (err) {
                 console.error('Failed to cache offline record:', err);
@@ -313,14 +381,14 @@
                 const queue = this.readOfflineQueue();
                 this.offlineQueueCount = queue.length;
                 this.offlineQueueItems = queue.map(item => ({
-                    name: item.student_name || 'اسم غير محفوظ',
+                    name: item.student_name || checkinI18n.unknownStudent,
                     state: item.sync_status === 'needs_review'
-                        ? (item.sync_error || 'يحتاج مراجعة الأستاذ')
-                        : 'محفوظ على هذا الجهاز بانتظار المزامنة'
+                        ? (item.sync_error || checkinI18n.needsTeacherReview)
+                        : checkinI18n.savedWaitingSync
                 }));
             } catch (err) {
                 console.error('Failed to refresh offline queue display:', err);
-                this.offlineSyncMessage = 'تعذر قراءة سجل المزامنة المحلي؛ لم يتم حذف بياناته.';
+                this.offlineSyncMessage = checkinI18n.localSyncReadError;
             }
         },
 
@@ -345,7 +413,7 @@
                 }
                 this.refreshOfflineQueue();
                 if (!queue.length) return;
-                this.offlineSyncMessage = 'جاري إرسال طلبات الحضور المحفوظة...';
+                this.offlineSyncMessage = checkinI18n.sendingSavedRequests;
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 for (let index = 0; index < queue.length; index += 1) {
                     const item = queue[index];
@@ -363,7 +431,7 @@
                             body: JSON.stringify(Object.assign({}, item, { offline_checkin: true }))
                         });
                     } catch (e) {
-                        this.offlineSyncMessage = 'انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز.';
+                        this.offlineSyncMessage = checkinI18n.syncConnectionLost;
                         remaining.push(item, ...queue.slice(index + 1));
                         this.scheduleOfflineRetry(15000);
                         break;
@@ -378,13 +446,13 @@
 
                     if (!response.ok) {
                         if (response.status >= 500 || response.status === 429) {
-                            this.offlineSyncMessage = 'الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة.';
+                            this.offlineSyncMessage = checkinI18n.syncServerBusy;
                             remaining.push(item, ...queue.slice(index + 1));
                             this.scheduleOfflineRetry(response.status === 429 ? 31000 : 15000);
                             break;
                         }
                         item.sync_status = 'needs_review';
-                        item.sync_error = data.error || 'رفض الخادم هذا الطلب؛ راجع الأستاذ.';
+                        item.sync_error = data.error || checkinI18n.syncServerRejected;
                         item.sync_failed_at = new Date().toISOString();
                         remaining.push(item);
                         reviewCount += 1;
@@ -398,7 +466,7 @@
                         || data.is_new_student
                     ) {
                         serverReviewCount += 1;
-                        firstReviewError ||= data.message || 'وصل الطلب إلى قائمة مراجعة الأستاذ.';
+                        firstReviewError ||= data.message || checkinI18n.syncQueuedForReview;
                         continue;
                     }
                     syncedCount += 1;
@@ -408,25 +476,28 @@
                 this.refreshOfflineQueue();
                 if (remaining.length === 0) {
                     const syncParts = [];
-                    if (syncedCount) syncParts.push(`أكد الخادم تسجيل ${syncedCount} طلب حضور`);
+                    if (syncedCount) syncParts.push(checkinI18n.syncConfirmedCount.replace('%s', syncedCount));
                     if (serverReviewCount) {
-                        syncParts.push(`أُرسل ${serverReviewCount} طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد`);
+                        syncParts.push(checkinI18n.syncReviewCount.replace('%s', serverReviewCount));
                     }
                     this.offlineSyncMessage = syncParts.join('؛ ');
                     if (serverReviewCount && this.resultType === 'pending') {
-                        this.resultMessage = 'وصل طلبك للأستاذ للمراجعة، ولم يُسجل حضوراً مؤكداً بعد.';
+                        this.resultMessage = checkinI18n.syncCheckinNeedsReview;
                     } else if (this.resultType === 'pending' && syncedCount) {
                         this.resultType = 'success';
-                        this.resultMessage = 'أكد الخادم تسجيل الحضور بعد عودة الاتصال.';
+                        this.resultMessage = checkinI18n.syncCheckinConfirmed;
                     }
                 } else if (reviewCount) {
-                    this.offlineSyncMessage = `أكد الخادم ${syncedCount} طلباً. بقي ${reviewCount} طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: ${firstReviewError}`;
+                    this.offlineSyncMessage = checkinI18n.syncReviewRemaining
+                        .replace('%s', syncedCount)
+                        .replace('%s', reviewCount)
+                        .replace('%s', firstReviewError);
                 } else if (!this.offlineSyncMessage) {
-                    this.offlineSyncMessage = `بقي ${remaining.length} طلباً محفوظاً ولم يؤكدها الخادم بعد.`;
+                    this.offlineSyncMessage = checkinI18n.syncPendingCount.replace('%s', remaining.length);
                 }
             } catch (err) {
                 console.error('Offline attendance sync failed:', err);
-                this.offlineSyncMessage = 'تعذرت قراءة الطلبات المحفوظة أو مزامنتها؛ لم نحذف بيانات الجهاز.';
+                this.offlineSyncMessage = checkinI18n.syncGeneralError;
             } finally {
                 this.isSyncingOfflineQueue = false;
             }
@@ -465,12 +536,12 @@
 
     <!-- Top Badge / Header -->
     <div class="space-y-1">
-        <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">تسجيل حضور المحاضرة</h2>
+        <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">{% trans "تسجيل حضور المحاضرة" %}</h2>
         <template x-if="isLoggedIn">
-            <p class="text-xs text-emerald-600 font-bold">مرحباً بك: <span x-text="studentUserName"></span></p>
+            <p class="text-xs text-emerald-600 font-bold">{% trans "مرحباً بك:" %} <span x-text="studentUserName"></span></p>
         </template>
         <template x-if="!isLoggedIn">
-            <p class="text-xs text-slate-400 font-semibold">تحضير سريع للطلاب بدون حساب عبر مطابقة الاسم الذكية</p>
+            <p class="text-xs text-slate-400 font-semibold">{% trans "تحضير سريع للطلاب بدون حساب عبر مطابقة الاسم الذكية" %}</p>
         </template>
     </div>
 
@@ -479,16 +550,14 @@
         class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-right space-y-2">
         <div class="flex items-center justify-between">
             <label class="block text-xs font-bold text-indigo-900">
-                👤 اسم الطالب الكامل أو الرقم الجامعي *
+                {% trans "👤 اسم الطالب الكامل أو الرقم الجامعي *" %}
             </label>
-            <span class="text-[10px] bg-indigo-200/80 text-indigo-800 px-2 py-0.5 rounded font-bold">مطابقة ذكية للغة
-                العربية</span>
+            <span class="text-[10px] bg-indigo-200/80 text-indigo-800 px-2 py-0.5 rounded font-bold">{% trans "مطابقة ذكية للغة العربية" %}</span>
         </div>
-        <input type="text" x-model="guestStudentName" placeholder="مثال: فاطمة علي حسن أو 20261055"
+        <input type="text" x-model="guestStudentName" placeholder="{% trans 'مثال: فاطمة علي حسن أو 20261055' %}"
             class="w-full text-sm font-bold h-11 px-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none bg-white">
         <p class="text-[11px] text-indigo-700 leading-relaxed font-medium">
-            💡 يتعرف النظام على الأسماء بدقة ويتجاهل الفروقات الإملائية تلقائياً مثل التاء المربوطة والهاء (فاطمة =
-            فاطمه) والألف والهمزات (أحمد = احمد) وحركات التشكيل.
+            {% trans "💡 يتعرف النظام على الأسماء بدقة ويتجاهل الفروقات الإملائية تلقائياً مثل التاء المربوطة والهاء (فاطمة = فاطمه) والألف والهمزات (أحمد = احمد) وحركات التشكيل." %}
         </p>
     </div>
 
@@ -496,11 +565,11 @@
     <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl text-xs font-bold" x-show="!resultType">
         <button type="button" @click="mode = 'qr'; resetScanner()" class="py-2.5 rounded-lg transition-all"
             :class="mode === 'qr' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-            📷 مسح الـ QR
+            {% trans "📷 مسح الـ QR" %}
         </button>
         <button type="button" @click="mode = 'otp'; scanning = false" class="py-2.5 rounded-lg transition-all"
             :class="mode === 'otp' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-            🔢 كود الطوارئ (OTP)
+            {% trans "🔢 كود الطوارئ (OTP)" %}
         </button>
     </div>
 
@@ -508,16 +577,16 @@
     <div class="p-2.5 rounded-xl text-xs font-bold text-right flex items-center justify-between"
         :class="gpsCoords ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'">
         <span x-text="gpsStatus"></span>
-        <button type="button" @click="requestGPS()" class="text-[11px] underline">تحديث 🔄</button>
+        <button type="button" @click="requestGPS()" class="text-[11px] underline">{% trans "تحديث" %} 🔄</button>
     </div>
 
     <!-- Pending Token Notice (When scanned before entering name) -->
     <div x-show="pendingToken && !resultType"
         class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-right text-xs text-emerald-800 space-y-2">
-        <p class="font-bold">✔ تم قراءة رمز المحاضرة بنجاح!</p>
+        <p class="font-bold">✔ {% trans "تم قراءة رمز المحاضرة بنجاح!" %}</p>
         <button type="button" @click="submitToken(pendingToken)"
             class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm">
-            تأكيد تسجيل الحضور الآن 🚀
+            {% trans "تأكيد تسجيل الحضور الآن" %} 🚀
         </button>
     </div>
 
@@ -542,7 +611,7 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                 </path>
             </svg>
-            <span class="text-sm font-bold">جاري مطابقة الاسم والموقع...</span>
+            <span class="text-sm font-bold">{% trans "جاري مطابقة الاسم والموقع..." %}</span>
         </div>
     </div>
 
@@ -550,19 +619,19 @@
     <div x-show="mode === 'otp' && !resultType" class="space-y-4 py-2 text-right">
         <div
             class="p-3 bg-indigo-50/70 border border-indigo-150 rounded-xl text-xs text-indigo-900 leading-relaxed font-medium">
-            💡 أدخل كود التحضير السريع (6 أرقام) المعروض على شاشة الأستاذ لتسجيل الحضور فورياً.
+            {% trans "💡 أدخل كود التحضير السريع (6 أرقام) المعروض على شاشة الأستاذ لتسجيل الحضور فورياً." %}
         </div>
 
         <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700">رمز التحضير السريع (OTP) *</label>
+            <label class="block text-xs font-bold text-slate-700">{% trans "رمز التحضير السريع (OTP) *" %}</label>
             <input type="text" x-model="otpCode" maxlength="6" placeholder="مثال: 849201" dir="ltr"
                 class="w-full text-center tracking-widest text-2xl font-black font-mono h-14 border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none">
         </div>
 
         <button type="button" @click="submitOTP()" :disabled="loading || !otpCode"
             class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-md shadow-indigo-100">
-            <span x-show="!loading">تسجيل الحضور بالكود 🚀</span>
-            <span x-show="loading">جاري التحقق...</span>
+            <span x-show="!loading">{% trans "تسجيل الحضور بالكود" %} 🚀</span>
+            <span x-show="loading">{% trans "جاري التحقق..." %}</span>
         </button>
     </div>
 
@@ -571,25 +640,25 @@
         <div class="p-6 rounded-2xl border"
             :class="resultType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : (resultType === 'pending' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-800')">
             <div class="text-4xl mb-3" x-text="resultType === 'success' ? '✔' : (resultType === 'pending' ? '⏳' : '✖')"></div>
-            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'تم تأكيد الحضور' : (resultType === 'pending' ? 'الحضور بانتظار المزامنة أو مراجعة الأستاذ' : 'تعذر تسجيل الحضور')"></h3>
+            <h3 class="text-lg font-black" x-text="resultType === 'success' ? '{{ checkin_success_label|escapejs }}' : (resultType === 'pending' ? '{{ checkin_pending_label|escapejs }}' : '{{ checkin_error_label|escapejs }}')"></h3>
             <p class="text-sm font-bold mt-2" x-text="resultMessage"></p>
         </div>
 
         <div class="flex space-x-reverse space-x-3">
             <button @click="resetScanner()"
                 class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
-                إعادة المحاولة 🔄
+                {% trans "إعادة المحاولة" %} 🔄
             </button>
             <a href="/"
                 class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
-                الرئيسية
+                {% trans "الرئيسية" %}
             </a>
         </div>
     </div>
 
     <div x-show="offlineQueueCount > 0 || offlineSyncMessage" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold space-y-2">
         <p x-show="offlineSyncMessage" x-text="offlineSyncMessage"></p>
-        <p x-show="offlineQueueCount > 0" class="text-amber-800">طلبات هذا الجهاز فقط (لا يراها الأستاذ قبل إرسالها للخادم): <span x-text="offlineQueueCount"></span></p>
+        <p x-show="offlineQueueCount > 0" class="text-amber-800">{% trans "طلبات هذا الجهاز فقط (لا يراها الأستاذ قبل إرسالها للخادم):" %} <span x-text="offlineQueueCount"></span></p>
         <ul x-show="offlineQueueCount > 0" class="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2">
             <template x-for="(item, index) in offlineQueueItems" :key="index">
                 <li class="border-b border-slate-100 py-1 last:border-0">
@@ -600,7 +669,7 @@
         </ul>
         <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue(true)" :disabled="isSyncingOfflineQueue"
             class="px-3 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
-            إعادة محاولة المزامنة / إعادة فحص المرفوض
+            {% trans "إعادة محاولة المزامنة / إعادة فحص المرفوض" %}
         </button>
     </div>
 

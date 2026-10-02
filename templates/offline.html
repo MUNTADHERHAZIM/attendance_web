@@ -1,14 +1,73 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
+{% trans "أنت تعمل في وضع عدم الاتصال (Offline)" as offline_status_label %}
+{% trans "انقطع الاتصال بالشبكة" as offline_title %}
+{% trans "يمكنك حفظ طلب الحضور على هذا الجهاز دون اتصال. لن يُعتمد الحضور إلا بعد عودة الاتصال والتحقق منه بواسطة الخادم." as offline_intro %}
+{% trans "إعادة فحص الاتصال" as retry_connection_label %}
+{% trans "تسجيل حضور دون اتصال" as offline_checkin_label %}
+{% trans "امسح رمز الأستاذ أو الصقه، ثم احفظ الطلب على هذا الجهاز. سيظل الطلب غير مؤكد حتى يصل إلى الخادم ويقبله. قد تنتهي صلاحية QR المتجدد قبل المزامنة؛ اطلب من الأستاذ استخدام QR الثابت للمحاضرة." as offline_checkin_help %}
+{% trans "اسم الطالب الكامل أو الرقم الجامعي" as student_name_label %}
+{% trans "اكتب الاسم أو الرقم الجامعي" as student_name_placeholder %}
+{% trans "رمز QR أو رابط الحضور" as qr_token_label %}
+{% trans "الصق هنا الرمز أو الرابط الموجود داخل QR" as qr_token_placeholder %}
+{% trans "أو رمز الأستاذ السريع (OTP)" as otp_label %}
+{% trans "أدخل رمز OTP المكوّن من 6 أرقام" as otp_placeholder %}
+{% trans "رقم الجلسة (يُملأ تلقائياً من رابط QR)" as session_id_label %}
+{% trans "رقم الجلسة" as session_id_placeholder %}
+{% trans "مسح بالكاميرا" as scan_camera_label %}
+{% trans "حفظ طلب الحضور" as save_checkin_label %}
+{% trans "الطلبات المحفوظة على هذا الجهاز:" as saved_requests_label %}
+{% trans "إعادة المحاولة عند عودة الاتصال" as retry_sync_label %}
+{% trans "هذه الطلبات محفوظة على هذا الجهاز فقط، ولا يراها الأستاذ قبل مزامنتها. أعد فتح هذا المتصفح عند عودة الاتصال." as msg_queue_wait %}
+{% trans "لا توجد طلبات معلقة على هذا الجهاز." as msg_queue_empty %}
+{% trans "اسم غير محفوظ" as msg_unknown_student %}
+{% trans "يحتاج إعادة فحص أو مراجعة الأستاذ" as msg_needs_review %}
+{% trans "بانتظار المزامنة" as msg_pending_sync %}
+{% trans "تعذر قراءة الطلبات المحلية. لم يتم حذف أي بيانات." as msg_queue_read_error %}
+{% trans "المسح بالكاميرا غير مدعوم في هذا المتصفح. الصق رابط QR أو رمزه في الحقل." as msg_camera_unsupported %}
+{% trans "تعذر فتح الكاميرا. استخدم حقل لصق رمز QR." as msg_camera_unavailable %}
+{% trans "وجّه الكاميرا نحو رمز الأستاذ." as msg_camera_prompt %}
+{% trans "تمت قراءة الرمز. أدخل اسم الطالب ثم احفظ الطلب." as msg_code_scanned %}
+{% trans "لم تعمل الكاميرا. تحقق من الإذن أو الصق رمز QR يدوياً." as msg_camera_failed %}
+{% trans "اكتب اسم الطالب أو رقمه الجامعي أولاً." as msg_enter_student %}
+{% trans "امسح QR أو أدخل رمز OTP ورقم الجلسة." as msg_enter_code %}
+{% trans "هذا الطالب وهذا الرمز محفوظان مسبقاً على الجهاز." as msg_duplicate_request %}
+{% trans "وصلت الطلبات المحفوظة إلى الحد الآمن (500). اتصل بالشبكة لمزامنتها أولاً." as msg_queue_limit %}
+{% trans "حُفظ الطلب محلياً فقط؛ لم يُسجّل حضوراً مؤكداً بعد." as msg_saved_locally %}
+{% trans "تعذر حفظ الطلب محلياً. تأكد من توفر مساحة في ذاكرة الجهاز." as msg_save_failed %}
+{% trans "لا يوجد اتصال حالياً. ستبقى الطلبات محفوظة على الجهاز." as msg_offline_sync_wait %}
+{% trans "جاري فتح شاشة المزامنة الآمنة؛ ستبقى الطلبات محفوظة حتى يؤكدها الخادم." as msg_opening_sync %}
+{% trans "جاري الفحص..." as msg_checking %}
+{% trans "جاري محاولة الاتصال بالخادم..." as msg_connecting %}
+{% trans "⚡ تم استعادة الاتصال! جاري التوجيه..." as msg_connection_restored %}
+{% trans "❌ لا يمكن الوصول إلى الخادم حالياً. يرجى التحقق من الشبكة." as msg_server_unreachable %}
+{% trans "⚡ عادت الشبكة للعمل! جاري إعادة التحميل..." as msg_network_returned %}
+{% trans "لديك طلبات حضور محفوظة على هذا الجهاز. ابقَ في الصفحة أو أعد فتح الموقع عند عودة الإنترنت." as msg_before_leave %}
+{% trans "تعذر الاتصال بالخادم. أعد المحاولة عند توفر الشبكة." as msg_sync_navigation_failed %}
+{% trans "تم تسجيل الحضور على الخادم." as msg_server_confirmed %}
+{% trans "وصل الطلب إلى قائمة مراجعة الأستاذ." as msg_teacher_review %}
+{% trans "رفض الخادم هذا الطلب؛ راجع الأستاذ." as msg_server_rejected %}
+{% trans "انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز." as msg_sync_interrupted %}
+{% trans "الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة." as msg_server_busy %}
+{% trans "وصل طلبك للأستاذ للمراجعة، ولم يُسجل حضوراً مؤكداً بعد." as msg_review_pending %}
+{% trans "أكد الخادم تسجيل الحضور بعد عودة الاتصال." as msg_checkin_confirmed %}
+{% trans "بقيت طلبات محفوظة ولم يؤكدها الخادم بعد." as msg_remaining_unconfirmed %}
+{% trans "تعذرت قراءة الطلبات المحفوظة أو مزامنتها؛ لم نحذف بيانات الجهاز." as msg_sync_error %}
+{% trans "أكد الخادم %s طلباً." as msg_confirmed_count %}
+{% trans "أُرسل %s طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد." as msg_review_count %}
+{% trans "بقي %s طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: %s" as msg_review_remaining %}
+{% trans "بقي %s طلباً محفوظاً ولم يؤكدها الخادم بعد." as msg_pending_remaining %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="h-full bg-slate-900">
+<html lang="{{ LANGUAGE_CODE }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr' }}" class="h-full bg-slate-900">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>وضع عدم الاتصال | نظام الحضور الذكي</title>
+    <title>{% trans "وضع عدم الاتصال" %} | {% trans "نظام الحضور الذكي" %}</title>
     
     <!-- PWA & Meta -->
     <meta name="theme-color" content="#0f172a">
-    <link rel="manifest" href="{% url 'manifest' %}">
+    <link rel="manifest" href="{% url 'manifest_json' %}">
     <link rel="icon" type="image/png" href="{% static 'images/pwa/favicon-32x32.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
     
@@ -85,13 +144,13 @@
             border-radius: 12px;
             background: #0f172a;
             color: #f8fafc;
-            text-align: right;
+            text-align: start;
         }
         #offline-qr-token { text-align: left; }
         #offline-camera-preview { max-height: 260px; object-fit: cover; }
         #offline-checkin-title { margin-bottom: 8px; }
         section[aria-labelledby="offline-checkin-title"],
-        section[aria-live="polite"] { text-align: right; }
+        section[aria-live="polite"] { text-align: start; }
         .radar-wave, .radar-wave-delay {
             position: absolute;
             inset: 0;
@@ -160,15 +219,15 @@
         <!-- Status Badge -->
         <div class="inline-flex items-center space-x-reverse space-x-2 px-3.5 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 rounded-full text-xs font-bold mb-4">
             <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span>أنت تعمل في وضع عدم الاتصال (Offline)</span>
+            <span>{{ offline_status_label }}</span>
         </div>
 
         <!-- Heading & Details -->
         <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-3">
-            انقطع الاتصال بالشبكة
+            {{ offline_title }}
         </h1>
         <p class="text-sm text-slate-300 leading-relaxed mb-6">
-            يمكنك حفظ طلب الحضور على هذا الجهاز دون اتصال. لن يُعتمد الحضور إلا بعد عودة الاتصال والتحقق منه بواسطة الخادم.
+            {{ offline_intro }}
         </p>
 
         <!-- Retry Button with Live Check -->
@@ -177,53 +236,50 @@
                 <svg id="retry-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span id="retry-text">إعادة فحص الاتصال</span>
+                <span id="retry-text">{{ retry_connection_label }}</span>
             </button>
             <p id="status-feedback" class="text-xs font-semibold text-slate-400 min-h-[1.25rem]"></p>
         </div>
 
-        <section class="pt-5 border-t border-slate-700/60 text-right space-y-3" aria-labelledby="offline-checkin-title">
-            <h2 id="offline-checkin-title" class="text-sm font-extrabold text-white">تسجيل حضور دون اتصال</h2>
-            <p class="text-xs text-slate-300 leading-relaxed">
-                امسح رمز الأستاذ أو الصقه، ثم احفظ الطلب على هذا الجهاز. سيظل الطلب غير مؤكد حتى يصل إلى الخادم ويقبله.
-                قد تنتهي صلاحية QR المتجدد قبل المزامنة؛ اطلب من الأستاذ استخدام QR الثابت للمحاضرة.
-            </p>
-            <label for="offline-student-name" class="block text-xs font-bold text-slate-200">اسم الطالب الكامل أو الرقم الجامعي</label>
+        <section class="pt-5 border-t border-slate-700/60 text-start space-y-3" aria-labelledby="offline-checkin-title">
+            <h2 id="offline-checkin-title" class="text-sm font-extrabold text-white">{{ offline_checkin_label }}</h2>
+            <p class="text-xs text-slate-300 leading-relaxed">{{ offline_checkin_help }}</p>
+            <label for="offline-student-name" class="block text-xs font-bold text-slate-200">{{ student_name_label }}</label>
             <input id="offline-student-name" type="text" maxlength="150" autocomplete="name"
-                   placeholder="اكتب الاسم أو الرقم الجامعي"
+                   placeholder="{{ student_name_placeholder }}"
                    class="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-3 text-sm text-white placeholder:text-slate-500">
-            <label for="offline-qr-token" class="block text-xs font-bold text-slate-200">رمز QR أو رابط الحضور</label>
+            <label for="offline-qr-token" class="block text-xs font-bold text-slate-200">{{ qr_token_label }}</label>
             <textarea id="offline-qr-token" rows="2" dir="ltr" autocomplete="off"
-                      placeholder="الصق هنا الرمز أو الرابط الموجود داخل QR"
+                      placeholder="{{ qr_token_placeholder }}"
                       class="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-3 text-sm text-white placeholder:text-slate-500"></textarea>
-            <label for="offline-otp-code" class="block text-xs font-bold text-slate-200">أو رمز الأستاذ السريع (OTP)</label>
+            <label for="offline-otp-code" class="block text-xs font-bold text-slate-200">{{ otp_label }}</label>
             <input id="offline-otp-code" type="text" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code"
-                   placeholder="أدخل رمز OTP المكوّن من 6 أرقام">
-            <label for="offline-session-id" class="block text-xs font-bold text-slate-200">رقم الجلسة (يُملأ تلقائياً من رابط QR)</label>
-            <input id="offline-session-id" type="number" min="1" inputmode="numeric" placeholder="رقم الجلسة">
+                   placeholder="{{ otp_placeholder }}">
+            <label for="offline-session-id" class="block text-xs font-bold text-slate-200">{{ session_id_label }}</label>
+            <input id="offline-session-id" type="number" min="1" inputmode="numeric" placeholder="{{ session_id_placeholder }}">
             <div class="grid grid-cols-2 gap-2">
                 <button id="offline-camera-button" type="button" onclick="startOfflineScanner()"
                         class="rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
-                    📷 مسح بالكاميرا
+                    📷 {{ scan_camera_label }}
                 </button>
                 <button type="button" onclick="saveOfflineCheckin()"
                         class="rounded-xl bg-indigo-600 px-3 py-3 text-xs font-extrabold text-white">
-                    حفظ طلب الحضور
+                    {{ save_checkin_label }}
                 </button>
             </div>
             <video id="offline-camera-preview" class="hidden w-full rounded-xl bg-black" playsinline></video>
             <p id="offline-checkin-feedback" role="status" aria-live="polite" class="min-h-5 text-xs font-bold text-amber-300"></p>
         </section>
 
-        <section class="mt-4 border-t border-slate-700/60 pt-4 text-right" aria-live="polite">
-            <p class="text-xs font-bold text-slate-200">الطلبات المحفوظة على هذا الجهاز:
+        <section class="mt-4 border-t border-slate-700/60 pt-4 text-start" aria-live="polite">
+            <p class="text-xs font-bold text-slate-200">{{ saved_requests_label }}
                 <span id="offline-queue-count" class="text-amber-300">0</span>
             </p>
             <p id="offline-queue-message" class="mt-2 text-xs leading-relaxed text-slate-300"></p>
             <ul id="offline-queue-items" class="max-h-36 space-y-1 overflow-y-auto rounded-lg bg-slate-800/80 p-2 text-right text-[11px] text-slate-200"></ul>
             <button id="offline-sync-button" type="button" onclick="openCheckinForSync()"
                     class="mt-3 w-full rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
-                إعادة المحاولة عند عودة الاتصال
+                {{ retry_sync_label }}
             </button>
         </section>
     </div>
@@ -231,6 +287,47 @@
     <script>
         let offlineCameraStream = null;
         let offlineScanInProgress = false;
+        const offlineMessages = {
+            queueWait: "{{ msg_queue_wait|escapejs }}",
+            queueEmpty: "{{ msg_queue_empty|escapejs }}",
+            unknownStudent: "{{ msg_unknown_student|escapejs }}",
+            needsReview: "{{ msg_needs_review|escapejs }}",
+            pendingSync: "{{ msg_pending_sync|escapejs }}",
+            queueReadError: "{{ msg_queue_read_error|escapejs }}",
+            cameraUnsupported: "{{ msg_camera_unsupported|escapejs }}",
+            cameraUnavailable: "{{ msg_camera_unavailable|escapejs }}",
+            cameraPrompt: "{{ msg_camera_prompt|escapejs }}",
+            codeScanned: "{{ msg_code_scanned|escapejs }}",
+            cameraFailed: "{{ msg_camera_failed|escapejs }}",
+            enterStudent: "{{ msg_enter_student|escapejs }}",
+            enterCode: "{{ msg_enter_code|escapejs }}",
+            duplicateRequest: "{{ msg_duplicate_request|escapejs }}",
+            queueLimit: "{{ msg_queue_limit|escapejs }}",
+            savedLocally: "{{ msg_saved_locally|escapejs }}",
+            saveFailed: "{{ msg_save_failed|escapejs }}",
+            offlineSyncWait: "{{ msg_offline_sync_wait|escapejs }}",
+            openingSync: "{{ msg_opening_sync|escapejs }}",
+            checking: "{{ msg_checking|escapejs }}",
+            connecting: "{{ msg_connecting|escapejs }}",
+            connectionRestored: "{{ msg_connection_restored|escapejs }}",
+            serverUnreachable: "{{ msg_server_unreachable|escapejs }}",
+            networkReturned: "{{ msg_network_returned|escapejs }}",
+            beforeLeave: "{{ msg_before_leave|escapejs }}",
+            syncNavigationFailed: "{{ msg_sync_navigation_failed|escapejs }}",
+            serverConfirmed: "{{ msg_server_confirmed|escapejs }}",
+            teacherReview: "{{ msg_teacher_review|escapejs }}",
+            serverRejected: "{{ msg_server_rejected|escapejs }}",
+            syncInterrupted: "{{ msg_sync_interrupted|escapejs }}",
+            serverBusy: "{{ msg_server_busy|escapejs }}",
+            reviewPending: "{{ msg_review_pending|escapejs }}",
+            checkinConfirmed: "{{ msg_checkin_confirmed|escapejs }}",
+            remainingUnconfirmed: "{{ msg_remaining_unconfirmed|escapejs }}",
+            syncError: "{{ msg_sync_error|escapejs }}",
+            confirmedCount: "{{ msg_confirmed_count|escapejs }}",
+            reviewCount: "{{ msg_review_count|escapejs }}",
+            reviewRemaining: "{{ msg_review_remaining|escapejs }}",
+            pendingRemaining: "{{ msg_pending_remaining|escapejs }}"
+        };
 
         function readOfflineQueue() {
             const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
@@ -243,29 +340,28 @@
                 const queue = readOfflineQueue();
                 document.getElementById('offline-queue-count').textContent = String(queue.length);
                 document.getElementById('offline-queue-message').textContent = queue.length
-                    ? 'هذه الطلبات محفوظة على هذا الجهاز فقط، ولا يراها الأستاذ قبل مزامنتها. أعد فتح هذا المتصفح عند عودة الاتصال.'
-                    : 'لا توجد طلبات معلقة على هذا الجهاز.';
+                    ? offlineMessages.queueWait
+                    : offlineMessages.queueEmpty;
                 const list = document.getElementById('offline-queue-items');
                 list.replaceChildren();
                 queue.forEach(item => {
                     const row = document.createElement('li');
                     row.className = 'border-b border-slate-700 py-1 last:border-0';
                     const name = document.createElement('strong');
-                    name.textContent = item.student_name || 'اسم غير محفوظ';
+                    name.textContent = item.student_name || offlineMessages.unknownStudent;
                     const state = document.createElement('span');
                     state.className = 'block text-slate-400';
                     state.textContent = item.sync_error || (
                         item.sync_status === 'needs_review'
-                            ? 'يحتاج إعادة فحص أو مراجعة الأستاذ'
-                            : 'بانتظار المزامنة'
+                            ? offlineMessages.needsReview
+                            : offlineMessages.pendingSync
                     );
                     row.append(name, state);
                     list.appendChild(row);
                 });
             } catch (error) {
                 console.error('Could not read offline attendance queue:', error);
-                document.getElementById('offline-queue-message').textContent =
-                    'تعذر قراءة الطلبات المحلية. لم يتم حذف أي بيانات.';
+                document.getElementById('offline-queue-message').textContent = offlineMessages.queueReadError;
             }
         }
 
@@ -317,11 +413,11 @@
         async function startOfflineScanner() {
             const feedback = document.getElementById('offline-checkin-feedback');
             if (!('BarcodeDetector' in window)) {
-                feedback.textContent = 'المسح بالكاميرا غير مدعوم في هذا المتصفح. الصق رابط QR أو رمزه في الحقل.';
+                feedback.textContent = offlineMessages.cameraUnsupported;
                 return;
             }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                feedback.textContent = 'تعذر فتح الكاميرا. استخدم حقل لصق رمز QR.';
+                feedback.textContent = offlineMessages.cameraUnavailable;
                 return;
             }
 
@@ -336,7 +432,7 @@
                 video.classList.remove('hidden');
                 await video.play();
                 offlineScanInProgress = true;
-                feedback.textContent = 'وجّه الكاميرا نحو رمز الأستاذ.';
+                feedback.textContent = offlineMessages.cameraPrompt;
 
                 const scanFrame = async () => {
                     if (!offlineScanInProgress) return;
@@ -345,7 +441,7 @@
                             const codes = await detector.detect(video);
                             if (codes.length && codes[0].rawValue) {
                                 document.getElementById('offline-qr-token').value = codes[0].rawValue;
-                                feedback.textContent = 'تمت قراءة الرمز. أدخل اسم الطالب ثم احفظ الطلب.';
+                                feedback.textContent = offlineMessages.codeScanned;
                                 stopOfflineScanner();
                                 return;
                             }
@@ -359,7 +455,7 @@
             } catch (error) {
                 stopOfflineScanner();
                 console.error('Could not start offline camera:', error);
-                feedback.textContent = 'لم تعمل الكاميرا. تحقق من الإذن أو الصق رمز QR يدوياً.';
+                feedback.textContent = offlineMessages.cameraFailed;
             }
         }
 
@@ -371,12 +467,12 @@
             const sessionId = document.getElementById('offline-session-id').value.trim();
             const useOtp = /^\d{6}$/.test(otp) && /^\d+$/.test(sessionId);
             if (!studentName) {
-                feedback.textContent = 'اكتب اسم الطالب أو رقمه الجامعي أولاً.';
+                feedback.textContent = offlineMessages.enterStudent;
                 document.getElementById('offline-student-name').focus();
                 return;
             }
             if (!token && !useOtp) {
-                feedback.textContent = 'امسح QR أو أدخل رمز OTP ورقم الجلسة.';
+                feedback.textContent = offlineMessages.enterCode;
                 document.getElementById('offline-otp-code').focus();
                 return;
             }
@@ -389,11 +485,11 @@
                     item.student_name.trim().toLocaleLowerCase() === studentName.toLocaleLowerCase()
                 );
                 if (alreadyQueued) {
-                    feedback.textContent = 'هذا الطالب وهذا الرمز محفوظان مسبقاً على الجهاز.';
+                    feedback.textContent = offlineMessages.duplicateRequest;
                     return;
                 }
                 if (queue.length >= 500) {
-                    feedback.textContent = 'وصلت الطلبات المحفوظة إلى الحد الآمن (500). اتصل بالشبكة لمزامنتها أولاً.';
+                    feedback.textContent = offlineMessages.queueLimit;
                     return;
                 }
 
@@ -418,10 +514,10 @@
                 refreshOfflineQueue();
                 document.getElementById('offline-qr-token').value = '';
                 document.getElementById('offline-otp-code').value = '';
-                feedback.textContent = 'حُفظ الطلب محلياً فقط؛ لم يُسجّل حضوراً مؤكداً بعد.';
+                feedback.textContent = offlineMessages.savedLocally;
             } catch (error) {
                 console.error('Could not save offline check-in:', error);
-                feedback.textContent = 'تعذر حفظ الطلب محلياً. تأكد من توفر مساحة في ذاكرة الجهاز.';
+                feedback.textContent = offlineMessages.saveFailed;
             }
         }
 
@@ -437,12 +533,10 @@
 
         function openCheckinForSync() {
             if (!navigator.onLine) {
-                document.getElementById('offline-checkin-feedback').textContent =
-                    'لا يوجد اتصال حالياً. ستبقى الطلبات محفوظة على الجهاز.';
+                document.getElementById('offline-checkin-feedback').textContent = offlineMessages.offlineSyncWait;
                 return;
             }
-            document.getElementById('offline-queue-message').textContent =
-                'جاري فتح شاشة المزامنة الآمنة؛ ستبقى الطلبات محفوظة حتى يؤكدها الخادم.';
+            document.getElementById('offline-queue-message').textContent = offlineMessages.openingSync;
             sessionStorage.setItem('attendance_sync_navigation', '1');
             window.location.assign('/attendance/checkin/?sync_offline=' + Date.now());
         }
@@ -454,15 +548,15 @@
             const feedback = document.getElementById('status-feedback');
 
             icon.classList.add('animate-spin');
-            text.textContent = 'جاري الفحص...';
+            text.textContent = offlineMessages.checking;
             btn.disabled = true;
-            feedback.textContent = 'جاري محاولة الاتصال بالخادم...';
+            feedback.textContent = offlineMessages.connecting;
             feedback.className = 'text-xs font-semibold text-slate-300';
 
             fetch('/?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
                 .then(function(res) {
                     if (res.ok) {
-                        feedback.textContent = '⚡ تم استعادة الاتصال! جاري التوجيه...';
+                        feedback.textContent = offlineMessages.connectionRestored;
                         feedback.className = 'text-xs font-semibold text-emerald-400';
                         setTimeout(openCheckinForSync, 800);
                     } else {
@@ -470,12 +564,12 @@
                     }
                 })
                 .catch(function() {
-                    feedback.textContent = '❌ لا يمكن الوصول إلى الخادم حالياً. يرجى التحقق من الشبكة.';
+                    feedback.textContent = offlineMessages.serverUnreachable;
                     feedback.className = 'text-xs font-semibold text-rose-400';
                 })
                 .finally(function() {
                     icon.classList.remove('animate-spin');
-                    text.textContent = 'إعادة فحص الاتصال';
+                    text.textContent = "{{ retry_connection_label|escapejs }}";
                     btn.disabled = false;
                 });
         }
@@ -484,7 +578,7 @@
         window.addEventListener('online', function() {
             const feedback = document.getElementById('status-feedback');
             if (feedback) {
-                feedback.textContent = '⚡ عادت الشبكة للعمل! جاري إعادة التحميل...';
+                feedback.textContent = offlineMessages.networkReturned;
                 feedback.className = 'text-xs font-semibold text-emerald-400';
             }
             setTimeout(openCheckinForSync, 1000);
@@ -497,7 +591,7 @@
                 const queue = readOfflineQueue();
                 if (queue.length) {
                     event.preventDefault();
-                    event.returnValue = 'لديك طلبات حضور محفوظة على هذا الجهاز. ابقَ في الصفحة أو أعد فتح الموقع عند عودة الإنترنت.';
+                    event.returnValue = offlineMessages.beforeLeave;
                 }
             } catch (error) {
                 console.error('Could not check saved attendance before leaving:', error);

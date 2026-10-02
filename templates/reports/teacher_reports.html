@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}تقارير الحضور وسجل الغيابات - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "تقارير الحضور وسجل الغيابات الأكاديمي" %} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6 no-print" x-data="{
@@ -27,7 +28,7 @@
             
             <!-- Left Info -->
             <div class="flex items-center space-x-reverse space-x-4">
-                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-all shadow-xs" title="العودة">
+                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-all shadow-xs" title="{% trans 'العودة' %}">
                     <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                     </svg>
@@ -35,16 +36,16 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            📊 تقارير أستاذ المادة
+                            📊 {% trans "تقارير أستاذ المادة" %}
                         </span>
-                        <span class="text-xs font-mono font-bold text-slate-400">جامعة بغداد</span>
+                        <span class="text-xs font-mono font-bold text-slate-400">{{ teacher.institution.name }}</span>
                     </div>
                     <h1 class="text-2xl font-black text-slate-900 mt-1">
-                        تقارير الحضور وسجل الغيابات الأكاديمي
+                        {% trans "تقارير الحضور وسجل الغيابات الأكاديمي" %}
                     </h1>
                     <p class="text-xs text-slate-400 font-semibold mt-0.5">
-                        الأستاذ: <span class="text-slate-700 font-bold">{{ teacher.user.get_full_name }}</span> | 
-                        الكلية: <span class="text-slate-600">كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
+                        {% trans "الأستاذ:" %} <span class="text-slate-700 font-bold">{{ teacher.user.get_full_name }}</span> |
+                        {% trans "الكلية:" %} <span class="text-slate-600">{% trans "كلية علوم الحاسوب وتكنولوجيا المعلومات" %}</span>
                     </p>
                 </div>
             </div>
@@ -54,25 +55,25 @@
                 <a href="{% url 'reports:teacher_export_excel' %}?period={{ period }}{% if date_param %}&date={{ date_param }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200 hover:scale-[1.01] active:scale-95">
                     <span>📥</span>
-                    <span>تصدير (Excel)</span>
+                    <span>{% trans "تصدير (Excel)" %}</span>
                 </a>
 
                 <a href="{% url 'reports:teacher_export_csv' %}?period={{ period }}{% if date_param %}&date={{ date_param }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                    class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
                     <span>📄</span>
-                    <span>تصدير (CSV)</span>
+                    <span>{% trans "تصدير (CSV)" %}</span>
                 </a>
 
                 <button onclick="window.print()" 
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
                     <span>🖨️</span>
-                    <span>طباعة التقرير الرسمي</span>
+                    <span>{% trans "طباعة التقرير الرسمي" %}</span>
                 </button>
 
                 <a href="{% url 'accounts:teacher_students' %}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-brand-200 text-brand-700 bg-brand-50 hover:bg-brand-100 transition-all shadow-xs">
                     <span>👥</span>
-                    <span>إدارة الطلاب</span>
+                    <span>{% trans "إدارة الطلاب" %}</span>
                 </a>
             </div>
 
@@ -84,9 +85,9 @@
         <!-- Card 1: Sessions Held -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400">المحاضرات المنعقدة</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "المحاضرات المنعقدة" %}</p>
                 <p class="text-3xl font-black text-slate-900 mt-1">{{ total_sessions_held }}</p>
-                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">جلسة حضور مسجلة</p>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">{% trans "جلسة حضور مسجلة" %}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
                 🏛️
@@ -96,12 +97,12 @@
         <!-- Card 2: Overall Attendance Rate -->
         <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-emerald-800">متوسط الحضور العام</p>
+                <p class="text-xs font-bold text-emerald-800">{% trans "متوسط الحضور العام" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-3xl font-black text-emerald-700">{{ overall_attendance_rate }}%</span>
                 </div>
                 <p class="text-[11px] font-semibold text-emerald-600 mt-0.5">
-                    حاضر: {{ total_present_count }} | متأخر: {{ total_late_count }}
+                    {% trans "حاضر:" %} {{ total_present_count }} | {% trans "متأخر:" %} {{ total_late_count }}
                 </p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl font-bold shadow-sm shadow-emerald-200">
@@ -112,12 +113,12 @@
         <!-- Card 3: Regular Students -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400">الطلاب المنتظمون</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "الطلاب المنتظمون" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-3xl font-black text-brand-700">{{ regular_count }}</span>
-                    <span class="text-xs font-bold text-slate-400">طالب</span>
+                    <span class="text-xs font-bold text-slate-400">{% trans "طالب" %}</span>
                 </div>
-                <p class="text-[11px] font-semibold text-emerald-600 mt-0.5">نسبة حضورهم > 90%</p>
+                <p class="text-[11px] font-semibold text-emerald-600 mt-0.5">{% trans "نسبة حضورهم > 90%" %}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
                 ✓
@@ -127,14 +128,14 @@
         <!-- Card 4: At-Risk Students (Warning threshold) -->
         <div class="bg-gradient-to-br from-rose-50/80 to-amber-50/50 border border-rose-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-rose-800">مهددون بالإنذار / الحرمان</p>
+                <p class="text-xs font-bold text-rose-800">{% trans "مهددون بالإنذار / الحرمان" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-3xl font-black text-rose-700">{{ at_risk_count }}</span>
-                    <span class="text-xs font-bold text-rose-600">طالب</span>
+                    <span class="text-xs font-bold text-rose-600">{% trans "طالب" %}</span>
                 </div>
                 <p class="text-[11px] font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                     {% if at_risk_count > 0 %}<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>{% endif %}
-                    تجاوز نسبة الغياب 10-15%
+                    {% trans "تجاوز نسبة الغياب 10-15%" %}
                 </p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center text-xl font-bold shadow-sm shadow-rose-200">
@@ -148,27 +149,27 @@
         <!-- Quick Period Tabs -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs font-black text-slate-700">الفترة الزمنية للتقرير:</span>
+                <span class="text-xs font-black text-slate-700">{% trans "الفترة الزمنية للتقرير:" %}</span>
                 <div class="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
                     <a href="?period=today{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                        class="px-3 py-1.5 rounded-lg transition-all {% if period == 'today' %}bg-white text-brand-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                        📅 اليوم
+                        📅 {% trans "اليوم" %}
                     </a>
                     <a href="?period=yesterday{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                        class="px-3 py-1.5 rounded-lg transition-all {% if period == 'yesterday' %}bg-white text-brand-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                        🗓️ أمس
+                        🗓️ {% trans "أمس" %}
                     </a>
                     <a href="?period=week{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                        class="px-3 py-1.5 rounded-lg transition-all {% if period == 'week' %}bg-white text-brand-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                        📊 هذا الأسبوع (7 أيام)
+                        📊 {% trans "هذا الأسبوع (7 أيام)" %}
                     </a>
                     <a href="?period=month{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                        class="px-3 py-1.5 rounded-lg transition-all {% if period == 'month' %}bg-white text-brand-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                        📈 هذا الشهر (30 يوماً)
+                        📈 {% trans "هذا الشهر (30 يوماً)" %}
                     </a>
                     <a href="?period=all{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if selected_course_id %}&course_id={{ selected_course_id }}{% endif %}{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                        class="px-3 py-1.5 rounded-lg transition-all {% if period == 'all' or not period %}bg-white text-brand-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                        🎓 كامل الفصل الدراسي
+                        🎓 {% trans "كامل الفصل الدراسي" %}
                     </a>
                 </div>
             </div>
@@ -178,14 +179,14 @@
                 {% if shift_filter %}<input type="hidden" name="shift" value="{{ shift_filter }}">{% endif %}
                 {% if selected_course_id %}<input type="hidden" name="course_id" value="{{ selected_course_id }}">{% endif %}
                 {% if selected_section_id %}<input type="hidden" name="section_id" value="{{ selected_section_id }}">{% endif %}
-                <span class="text-xs font-bold text-slate-500">أو تاريخ محدد:</span>
+                <span class="text-xs font-bold text-slate-500">{% trans "أو تاريخ محدد:" %}</span>
                 <input type="date" 
                        name="date" 
                        value="{{ date_param }}" 
                        onchange="this.form.submit()" 
                        class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
                 {% if date_param %}
-                    <a href="?period=all" class="text-xs text-rose-500 hover:underline">✕ إلغاء</a>
+                    <a href="?period=all" class="text-xs text-rose-500 hover:underline">✕ {% trans "إلغاء" %}</a>
                 {% endif %}
             </form>
         </div>
@@ -201,7 +202,7 @@
                 <input type="text" 
                        x-model="q" 
                        @input="filterLedger()"
-                       placeholder="ابحث باسم الطالب أو رقمه الجامعي..." 
+                       placeholder="{% trans 'ابحث باسم الطالب أو رقمه الجامعي...' %}"
                        class="w-full pr-9 pl-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all bg-slate-50/50">
             </div>
 
@@ -209,7 +210,7 @@
             <div class="sm:col-span-3 relative" x-data="{ 
                 open: false, 
                 value: '{{ selected_course_id }}', 
-                label: '{% for c in my_courses %}{% if selected_course_id == c.id|stringformat:'s' %}{{ c.name|escapejs }} ({{ c.code|escapejs }}){% endif %}{% endfor %}' || 'جميع المواد الدراسية' 
+                label: '{% for c in my_courses %}{% if selected_course_id == c.id|stringformat:'s' %}{{ c.name|escapejs }} ({{ c.code|escapejs }}){% endif %}{% endfor %}' || '{% trans "جميع المواد الدراسية" %}'
             }">
                 <input type="hidden" name="course_id" :value="value">
                 <button type="button" 
@@ -229,10 +230,10 @@
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-98"
                      class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                    <div @click="value = ''; label = 'جميع المواد الدراسية'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                    <div @click="value = ''; label = '{% trans "جميع المواد الدراسية" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                          class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                          :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                        <span>جميع المواد الدراسية</span>
+                        <span>{% trans "جميع المواد الدراسية" %}</span>
                         <span x-show="value === ''" class="text-brand-600">✓</span>
                     </div>
                     {% for c in my_courses %}
@@ -250,7 +251,7 @@
             <div class="sm:col-span-3 relative" x-data="{ 
                 open: false, 
                 value: '{{ selected_section_id }}', 
-                label: '{% for sec in my_sections %}{% if selected_section_id == sec.id|stringformat:'s' %}{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }}){% endif %}{% endfor %}' || 'جميع الشعب' 
+                label: '{% for sec in my_sections %}{% if selected_section_id == sec.id|stringformat:'s' %}{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %}){% endif %}{% endfor %}' || '{% trans "جميع الشعب" %}'
             }">
                 <input type="hidden" name="section_id" :value="value">
                 <button type="button" 
@@ -270,17 +271,17 @@
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-98"
                      class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                    <div @click="value = ''; label = 'جميع الشعب'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                    <div @click="value = ''; label = '{% trans "جميع الشعب" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                          class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                          :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                        <span>جميع الشعب</span>
+                        <span>{% trans "جميع الشعب" %}</span>
                         <span x-show="value === ''" class="text-brand-600">✓</span>
                     </div>
                     {% for sec in my_sections %}
-                        <div @click="value = '{{ sec.id }}'; label = '{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }})'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                        <div @click="value = '{{ sec.id }}'; label = '{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})'; open = false; $nextTick(() => $el.closest('form').submit())"
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === '{{ sec.id }}' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span class="truncate">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</span>
+                            <span class="truncate">{{ sec.level }} - {{ sec.name }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})</span>
                             <span x-show="value === '{{ sec.id }}'" class="text-brand-600">✓</span>
                         </div>
                     {% endfor %}
@@ -291,7 +292,7 @@
             <div class="sm:col-span-2 relative" x-data="{ 
                 open: false, 
                 value: '{{ shift_filter }}', 
-                label: '{% if shift_filter == 'MORNING' %}☀️ صباحي فقط{% elif shift_filter == 'EVENING' %}🌙 مسائي فقط{% else %}الدوام: الكل{% endif %}' 
+                label: '{% if shift_filter == 'MORNING' %}☀️ {% trans "صباحي فقط" %}{% elif shift_filter == 'EVENING' %}🌙 {% trans "مسائي فقط" %}{% else %}{% trans "الدوام: الكل" %}{% endif %}'
             }">
                 <input type="hidden" name="shift" :value="value">
                 <button type="button" 
@@ -311,22 +312,22 @@
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-98"
                      class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                    <div @click="value = ''; label = 'الدوام: الكل'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                    <div @click="value = ''; label = '{% trans "الدوام: الكل" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                          class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                          :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                        <span>الدوام: الكل</span>
+                        <span>{% trans "الدوام: الكل" %}</span>
                         <span x-show="value === ''" class="text-brand-600">✓</span>
                     </div>
-                    <div @click="value = 'MORNING'; label = '☀️ صباحي فقط'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                    <div @click="value = 'MORNING'; label = '☀️ {% trans "صباحي فقط" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                          class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                          :class="value === 'MORNING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                        <span>☀️ صباحي فقط</span>
+                        <span>☀️ {% trans "صباحي فقط" %}</span>
                         <span x-show="value === 'MORNING'" class="text-brand-600">✓</span>
                     </div>
-                    <div @click="value = 'EVENING'; label = '🌙 مسائي فقط'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                    <div @click="value = 'EVENING'; label = '🌙 {% trans "مسائي فقط" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                          class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                          :class="value === 'EVENING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                        <span>🌙 مسائي فقط</span>
+                        <span>🌙 {% trans "مسائي فقط" %}</span>
                         <span x-show="value === 'EVENING'" class="text-brand-600">✓</span>
                     </div>
                 </div>
@@ -341,20 +342,20 @@
                 <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-brand-50/60 via-white to-indigo-50/50">
                     <div>
                         <h2 class="text-base font-black text-slate-900 flex items-center gap-2">
-                            <span>📋 كشف حضور اليوم التفصيلي (سجل توقيت وطريقة الحضور)</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-brand-100 text-brand-800">{{ daily_roll_call|length }} طالب</span>
+                            <span>📋 {% trans "كشف حضور اليوم التفصيلي (سجل توقيت وطريقة الحضور)" %}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-brand-100 text-brand-800">{{ daily_roll_call|length }} {% trans "طالب" %}</span>
                         </h2>
                         <p class="text-xs text-slate-500 font-semibold mt-0.5">
-                            تاريخ المحاضرة: <strong class="text-slate-800 font-mono">{{ selected_date|date:"Y-m-d"|default:date_param|default:"اليوم" }}</strong>
-                            | يشمل توقيت المسح وطريقة التحضير (📱 QR ديناميكي أو 📶 بدون إنترنت)
+                            {% trans "تاريخ المحاضرة:" %} <strong class="text-slate-800 font-mono">{{ selected_date|date:"Y-m-d"|default:date_param|default:_("اليوم") }}</strong>
+                            | {% trans "يشمل توقيت المسح وطريقة التحضير (📱 QR ديناميكي أو 📶 بدون إنترنت)" %}
                         </p>
                     </div>
                     <div class="flex items-center gap-2 text-xs font-bold">
                         <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">
-                            حاضر: {{ total_present_count }}
+                            {% trans "حاضر:" %} {{ total_present_count }}
                         </span>
                         <span class="px-3 py-1 bg-rose-50 text-rose-700 rounded-xl border border-rose-200">
-                            غائب: {{ total_absent_count }}
+                            {% trans "غائب:" %} {{ total_absent_count }}
                         </span>
                     </div>
                 </div>
@@ -363,13 +364,13 @@
                     <table class="min-w-full divide-y divide-slate-100 text-right">
                         <thead>
                             <tr class="bg-slate-50/90 text-right border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
-                                <th class="px-5 py-3.5">اسم الطالب</th>
-                                <th class="px-4 py-3.5 text-center">الرقم الجامعي</th>
-                                <th class="px-4 py-3.5 text-center">الشعبة والمادة</th>
-                                <th class="px-3 py-3.5 text-center">نوع الدراسة</th>
-                                <th class="px-4 py-3.5 text-center">حالة الحضور</th>
-                                <th class="px-4 py-3.5 text-center">وقت التسجيل</th>
-                                <th class="px-4 py-3.5 text-center">طريقة التحضير</th>
+                                <th class="px-5 py-3.5">{% trans "اسم الطالب" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الرقم الجامعي" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الشعبة والمادة" %}</th>
+                                <th class="px-3 py-3.5 text-center">{% trans "نوع الدراسة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "حالة الحضور" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "وقت التسجيل" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "طريقة التحضير" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium text-xs sm:text-sm">
@@ -388,7 +389,7 @@
                                     </td>
                                     <td class="px-3 py-3.5 whitespace-nowrap text-center text-xs">
                                         <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold
-                                              {% if row.shift_display == 'مسائي' %}bg-indigo-50 text-indigo-700 border border-indigo-200
+                                              {% if row.shift_display == 'مسائي' or row.shift_display == 'Evening' %}bg-indigo-50 text-indigo-700 border border-indigo-200
                                               {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
                                             {{ row.shift_display }}
                                         </span>
@@ -421,20 +422,20 @@
             <div class="bg-white border border-slate-200/80 rounded-2xl p-8 text-center shadow-xs">
                 <span class="text-4xl">📅</span>
                 <h3 class="text-base font-black text-slate-800 mt-2">
-                    لا توجد جلسات تحضير منعقدة في هذا التاريخ ({{ selected_date|date:"Y-m-d"|default:date_param|default:"اليوم" }})
+                    {% trans "لا توجد جلسات تحضير منعقدة في هذا التاريخ" %} ({{ selected_date|date:"Y-m-d"|default:date_param|default:_("اليوم") }})
                 </h3>
                 <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                    لم يتم تسجيل أي محاضرة في هذا اليوم بعد. يمكنك اختيار تاريخ آخر، أو مراجعة إجمالي الفصل الدراسي، أو بدء جلسة تحضير ذكية الآن.
+                    {% trans "لم يتم تسجيل أي محاضرة في هذا اليوم بعد. يمكنك اختيار تاريخ آخر، أو مراجعة إجمالي الفصل الدراسي، أو بدء جلسة تحضير ذكية الآن." %}
                 </p>
                 <div class="mt-4 flex flex-wrap justify-center gap-2">
                     <a href="?period=all" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 transition-all shadow-xs">
-                        🎓 عرض إجمالي الفصل الدراسي
+                        🎓 {% trans "عرض إجمالي الفصل الدراسي" %}
                     </a>
                     <a href="?period=yesterday" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">
-                        🗓️ عرض كشف أمس
+                        🗓️ {% trans "عرض كشف أمس" %}
                     </a>
                     <a href="{% url 'attendance:create_custom_session' %}" class="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all">
-                        🚀 بدء جلسة تحضير جديدة
+                        🚀 {% trans "بدء جلسة تحضير جديدة" %}
                     </a>
                 </div>
             </div>
@@ -446,10 +447,10 @@
         <div class="p-5 border-b border-slate-100 flex items-center justify-between">
             <div>
                 <h2 class="text-base font-black text-slate-900 flex items-center gap-2">
-                    <span>كشف الحضور والغياب والموقف الأكاديمي لكل طالب</span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">{{ total_students_count }} طالب</span>
+                    <span>{% trans "كشف الحضور والغياب والموقف الأكاديمي لكل طالب" %}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">{{ total_students_count }} {% trans "طالب" %}</span>
                 </h2>
-                <p class="text-xs text-slate-400 font-semibold mt-0.5">وفق ضوابط ونظام المقررات لجامعة بغداد (نسبة الحرمان 15%)</p>
+                <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "وفق ضوابط ونظام المقررات لجامعة بغداد (نسبة الحرمان 15%)" %}</p>
             </div>
         </div>
 
@@ -457,16 +458,16 @@
             <table class="min-w-full divide-y divide-slate-100 text-right">
                 <thead>
                     <tr class="bg-slate-50/90 text-right border-b border-slate-200">
-                        <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">اسم الطالب الكامل</th>
-                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">الرقم الجامعي</th>
-                        <th class="px-3 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">المقررة</th>
-                        <th class="px-3 py-3.5 text-center text-xs font-bold text-emerald-600 uppercase">حاضر</th>
-                        <th class="px-3 py-3.5 text-center text-xs font-bold text-amber-600 uppercase">متأخر</th>
-                        <th class="px-3 py-3.5 text-center text-xs font-bold text-rose-600 uppercase">غائب</th>
-                        <th class="px-3 py-3.5 text-center text-xs font-bold text-slate-400 uppercase">بعذر</th>
-                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">نسبة الحضور</th>
-                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">الموقف الأكاديمي</th>
-                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">الإجراءات</th>
+                        <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">{% trans "اسم الطالب الكامل" %}</th>
+                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الرقم الجامعي" %}</th>
+                        <th class="px-3 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "المقررة" %}</th>
+                        <th class="px-3 py-3.5 text-center text-xs font-bold text-emerald-600 uppercase">{% trans "حاضر" %}</th>
+                        <th class="px-3 py-3.5 text-center text-xs font-bold text-amber-600 uppercase">{% trans "متأخر" %}</th>
+                        <th class="px-3 py-3.5 text-center text-xs font-bold text-rose-600 uppercase">{% trans "غائب" %}</th>
+                        <th class="px-3 py-3.5 text-center text-xs font-bold text-slate-400 uppercase">{% trans "بعذر" %}</th>
+                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "نسبة الحضور" %}</th>
+                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الموقف الأكاديمي" %}</th>
+                        <th class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الإجراءات" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
@@ -522,7 +523,7 @@
                             <td class="px-4 py-3.5 whitespace-nowrap text-center text-xs font-bold">
                                 <a href="{% url 'reports:admin_student_detail' item.profile.id %}" 
                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors">
-                                    <span>تفاصيل السجل</span>
+                                    <span>{% trans "تفاصيل السجل" %}</span>
                                 </a>
                             </td>
                         </tr>
@@ -531,7 +532,7 @@
                             <td colspan="10" class="px-6 py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center space-y-2">
                                     <span class="text-3xl">👥</span>
-                                    <p class="font-bold text-slate-600 text-sm">لا توجد سجلات مطابقة في هذه الفترة.</p>
+                                    <p class="font-bold text-slate-600 text-sm">{% trans "لا توجد سجلات مطابقة في هذه الفترة." %}</p>
                                 </div>
                             </td>
                         </tr>
@@ -544,20 +545,20 @@
     <!-- 🏛️ RECENT SESSIONS TABLE -->
     <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 class="text-base font-black text-slate-900">سجل جلسات المحاضرات السابقة</h3>
-            <span class="text-xs text-slate-400 font-semibold">{{ attendance_sessions.count }} جلسة</span>
+            <h3 class="text-base font-black text-slate-900">{% trans "سجل جلسات المحاضرات السابقة" %}</h3>
+            <span class="text-xs text-slate-400 font-semibold">{% blocktrans count counter=attendance_sessions.count %}{{ counter }} جلسة{% plural %}{{ counter }} جلسات{% endblocktrans %}</span>
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-right">
                 <thead>
                     <tr class="bg-slate-50 text-right border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
-                        <th class="px-5 py-3">المادة</th>
-                        <th class="px-4 py-3 text-center">الشعبة</th>
-                        <th class="px-4 py-3 text-center">التاريخ واليوم</th>
-                        <th class="px-4 py-3 text-center">القاعة</th>
-                        <th class="px-4 py-3 text-center">الحالة</th>
-                        <th class="px-4 py-3 text-center">إجراءات</th>
+                        <th class="px-5 py-3">{% trans "المادة" %}</th>
+                        <th class="px-4 py-3 text-center">{% trans "الشعبة" %}</th>
+                        <th class="px-4 py-3 text-center">{% trans "التاريخ واليوم" %}</th>
+                        <th class="px-4 py-3 text-center">{% trans "القاعة" %}</th>
+                        <th class="px-4 py-3 text-center">{% trans "الحالة" %}</th>
+                        <th class="px-4 py-3 text-center">{% trans "إجراءات" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs font-semibold">
@@ -578,19 +579,19 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {% if att.is_active %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-600{% endif %}">
-                                    {{ att.is_active|yesno:"نشطة الآن,منتهية" }}
+                                    {% if att.is_active %}{% trans "نشطة الآن" %}{% else %}{% trans "منتهية" %}{% endif %}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center space-x-reverse space-x-2">
-                                <a href="/attendance/session/{{ att.id }}/" class="text-brand-600 hover:text-brand-800 font-bold">شاشة التحضير</a>
+                                <a href="/attendance/session/{{ att.id }}/" class="text-brand-600 hover:text-brand-800 font-bold">{% trans "شاشة التحضير" %}</a>
                                 <span class="text-slate-300">|</span>
-                                <a href="{% url 'reports:export_excel' att.id %}" class="text-emerald-600 hover:text-emerald-800 font-bold">تنزيل Excel</a>
+                                <a href="{% url 'reports:export_excel' att.id %}" class="text-emerald-600 hover:text-emerald-800 font-bold">{% trans "تنزيل Excel" %}</a>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
                             <td colspan="6" class="px-4 py-8 text-center text-slate-400 font-semibold">
-                                لا توجد جلسات تحضير مسجلة في هذا النطاق.
+                                {% trans "لا توجد جلسات تحضير مسجلة في هذا النطاق." %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -601,8 +602,8 @@
 
     <!-- Institutional Footer -->
     <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
-        <p>جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</p>
-        <p class="font-bold text-slate-500 font-mono">المطور: MUNTADHER HAZIM | هاتف: 07724978301</p>
+        <p>{{ teacher.institution.name }}</p>
+        <p class="font-bold text-slate-500 font-mono">{% trans "المطور:" %} MUNTADHER HAZIM | {% trans "هاتف:" %} 07724978301</p>
     </div>
 
 </div>
@@ -613,30 +614,30 @@
 <div class="hidden print-only p-8 text-right">
     <div class="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-black">جمهورية العراق - وزارة التعليم العالي والبحث العلمي</h1>
-            <h2 class="text-lg font-bold">جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</h2>
-            <h3 class="text-base font-semibold mt-1">تقرير وسجل الحضور والغيابات الأكاديمي لمواد الأستاذ</h3>
+            <h1 class="text-xl font-black">{% trans "جمهورية العراق - وزارة التعليم العالي والبحث العلمي" %}</h1>
+            <h2 class="text-lg font-bold">{{ teacher.institution.name }}</h2>
+            <h3 class="text-base font-semibold mt-1">{% trans "تقرير وسجل الحضور والغيابات الأكاديمي لمواد الأستاذ" %}</h3>
         </div>
         <div class="text-left text-xs font-mono">
-            <p>التاريخ: {% now "Y-m-d" %}</p>
-            <p>الأستاذ: {{ teacher.user.get_full_name }}</p>
-            <p>الفترة: {{ period }}</p>
+            <p>{% trans "التاريخ:" %} {% now "Y-m-d" %}</p>
+            <p>{% trans "الأستاذ:" %} {{ teacher.user.get_full_name }}</p>
+            <p>{% trans "الفترة:" %} {{ period }}</p>
         </div>
     </div>
 
     <table class="min-w-full border border-slate-400 text-xs">
         <thead>
             <tr class="bg-slate-100 border-b border-slate-400">
-                <th class="border border-slate-400 p-2 text-right">ت</th>
-                <th class="border border-slate-400 p-2 text-right">اسم الطالب</th>
-                <th class="border border-slate-400 p-2 text-center">الرقم الجامعي</th>
-                <th class="border border-slate-400 p-2 text-center">الشعبة</th>
-                <th class="border border-slate-400 p-2 text-center">المحاضرات</th>
-                <th class="border border-slate-400 p-2 text-center">حضور</th>
-                <th class="border border-slate-400 p-2 text-center">تأخير</th>
-                <th class="border border-slate-400 p-2 text-center">غياب</th>
-                <th class="border border-slate-400 p-2 text-center">نسبة الحضور</th>
-                <th class="border border-slate-400 p-2 text-center">الموقف الأكاديمي</th>
+                <th class="border border-slate-400 p-2 text-right">{% trans "ت" %}</th>
+                <th class="border border-slate-400 p-2 text-right">{% trans "اسم الطالب" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "الرقم الجامعي" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "الشعبة" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "المحاضرات" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "حضور" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "تأخير" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "غياب" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "نسبة الحضور" %}</th>
+                <th class="border border-slate-400 p-2 text-center">{% trans "الموقف الأكاديمي" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -659,20 +660,20 @@
 
     <div class="mt-12 flex justify-between items-center text-xs font-bold pt-4 border-t border-slate-300">
         <div>
-            <p>توقيع أستاذ المادة:</p>
+            <p>{% trans "توقيع أستاذ المادة:" %}</p>
             <p class="mt-4">{{ teacher.user.get_full_name }}</p>
         </div>
         <div>
-            <p>مصادقة رئيس القسم الأكاديمي:</p>
+            <p>{% trans "مصادقة رئيس القسم الأكاديمي:" %}</p>
             <p class="mt-4">_________________________</p>
         </div>
         <div>
-            <p>ختم الكلية / شؤون الطلبة:</p>
+            <p>{% trans "ختم الكلية / شؤون الطلبة:" %}</p>
             <p class="mt-4">_________________________</p>
         </div>
     </div>
     <div class="mt-6 text-center text-[10px] text-slate-400">
-        نظام الحضور الذكي | المطور: MUNTADHER HAZIM 07724978301
+        {% trans "نظام الحضور الذكي" %} | {% trans "المطور:" %} MUNTADHER HAZIM 07724978301
     </div>
 </div>
 {% endblock %}

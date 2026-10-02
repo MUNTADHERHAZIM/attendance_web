@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_CODE == 'ar' %}rtl{% else %}ltr{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تسجيل الحضور الذكية - {{ attendance_session.session.course.name }}</title>
+    <title>{% trans "لوحة تسجيل الحضور الذكية" %} - {{ attendance_session.session.course.name }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         /* ─── Self-Contained Complete Styling (100% Offline & Print Compatible) ─── */
@@ -294,11 +295,11 @@
     <div class="top-action-bar no-print">
         <a href="{% url 'attendance:session_detail_web' attendance_session.id %}" class="btn-back">
             <span>➔</span>
-            <span>العودة لشاشة المحاضرة المباشرة</span>
+            <span>{% trans "العودة لشاشة المحاضرة المباشرة" %}</span>
         </a>
         <button onclick="window.print()" class="btn-print">
             <span>🖨️</span>
-            <span>طباعة لوحة الـ QR فوراً (A4)</span>
+            <span>{% trans "طباعة لوحة الـ QR فوراً (A4)" %}</span>
         </button>
     </div>
 
@@ -308,32 +309,32 @@
         <!-- Header Ribbon -->
         <div class="sheet-header">
             <div class="header-col-right">
-                <p class="country-title">جمهورية العراق</p>
+                <p class="country-title">{% trans "جمهورية العراق" %}</p>
                 <p class="inst-name">{{ institution.name|default:"جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات" }}</p>
-                <p class="dept-name">{{ attendance_session.session.course.department.name|default:"قسم علوم الحاسوب" }}</p>
+                <p class="dept-name">{{ attendance_session.session.course.department.name|default:_("قسم علوم الحاسوب") }}</p>
             </div>
             <div class="badge-logo">
                 🎓
             </div>
             <div class="header-col-left">
-                <p>التاريخ: {{ attendance_session.date }}</p>
-                <p>القاعة: {{ attendance_session.session.room|default:"القاعة الذكية" }}</p>
-                <p class="shift-pill">دوام: {% if attendance_session.shift == 'MORNING' %}☀️ صباحي{% else %}🌙 مسائي{% endif %}</p>
+                <p>{% trans "التاريخ:" %} {{ attendance_session.date }}</p>
+                <p>{% trans "القاعة:" %} {{ attendance_session.session.room|default:_("القاعة الذكية") }}</p>
+                <p class="shift-pill">{% trans "الدوام:" %} {% if attendance_session.shift == 'MORNING' %}☀️ {% trans "صباحي" %}{% else %}🌙 {% trans "مسائي" %}{% endif %}</p>
             </div>
         </div>
 
         <!-- Lecture Details -->
         <div>
             <span class="sheet-badge">
-                لوحة تسجيل الحضور الذكية الرسمية
+                {% trans "لوحة تسجيل الحضور الذكية الرسمية" %}
             </span>
             <h1 class="course-title">{{ attendance_session.session.course.name }}</h1>
             <p class="course-meta">
-                رمز المقرر: <span>{{ attendance_session.session.course.code }}</span> | 
-                الشعبة: {{ attendance_session.session.class_section.level }} - {{ attendance_session.session.class_section.name }}
+                {% trans "رمز المقرر:" %} <span>{{ attendance_session.session.course.code }}</span> |
+                {% trans "الشعبة:" %} {{ attendance_session.session.class_section.level }} - {{ attendance_session.session.class_section.name }}
             </p>
             <p class="teacher-meta">
-                أستاذ المادة: <strong>{{ attendance_session.session.teacher.user.get_full_name|default:attendance_session.session.teacher.user.username }}</strong>
+                {% trans "أستاذ المادة:" %} <strong>{{ attendance_session.session.teacher.user.get_full_name|default:attendance_session.session.teacher.user.username }}</strong>
             </p>
         </div>
 
@@ -346,28 +347,28 @@
             </div>
             <p class="qr-instruction">
                 <span>📱</span>
-                <span>امسح الرمز بكاميرا الهاتف لتسجيل الحضور فوراً</span>
+                <span>{% trans "امسح الرمز بكاميرا الهاتف لتسجيل الحضور فوراً" %}</span>
             </p>
         </div>
 
         <!-- 🔢 Quick Offline OTP Code -->
         {% if attendance_session.quick_otp %}
             <div class="otp-card">
-                <p class="otp-label">للطلاب بدون كاميرا أو في حال ضعف الإنترنت:</p>
+                <p class="otp-label">{% trans "للطلاب بدون كاميرا أو في حال ضعف الإنترنت:" %}</p>
                 <div class="otp-code">
                     {{ attendance_session.quick_otp }}
                 </div>
-                <p class="otp-sub">أدخل كود الـ OTP في شاشة تسجيل الحضور</p>
+                <p class="otp-sub">{% trans "أدخل كود الـ OTP في شاشة تسجيل الحضور" %}</p>
             </div>
         {% endif %}
 
         <!-- Instructions & Security Footer -->
         <div class="sheet-footer">
             <p class="warning-text">
-                ⚠️ هذا رمز ثابت طويل العمر؛ لا تشاركه خارج القاعة، واستخدم التدوير الديناميكي متى أمكن. فحص GPS ومؤشرات الجهاز قابلة للتزييف.
+                {% trans "⚠️ هذا رمز ثابت طويل العمر؛ لا تشاركه خارج القاعة، واستخدم التدوير الديناميكي متى أمكن. فحص GPS ومؤشرات الجهاز قابلة للتزييف." %}
             </p>
             <p class="branding-text">
-                نظام الحضور الذكي الأكاديمي | تطوير: MUNTADHER HAZIM (07724978301)
+                {% trans "نظام الحضور الذكي الأكاديمي" %} | {% trans "تطوير:" %} MUNTADHER HAZIM (07724978301)
             </p>
         </div>
 

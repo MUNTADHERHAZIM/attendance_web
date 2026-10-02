@@ -1,9 +1,12 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ LANGUAGE_CODE }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 - غير مصرح بالدخول | نظام الحضور الذكي</title>
+    <title>403 - {% trans "غير مصرح بالدخول" %} | {% trans "نظام الحضور الذكي" %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -116,24 +119,24 @@
 <body>
     <div class="error-card">
         <div class="code-badge">403</div>
-        <h1 class="title">غير مصرح بالدخول</h1>
+        <h1 class="title">{% trans "غير مصرح بالدخول" %}</h1>
         <p class="desc">
-            ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة أو البيانات. يرجى مراجعة إدارة النظام إذا كنت تعتقد أن هذا خطأ.
+            {% trans "ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة أو البيانات. يرجى مراجعة إدارة النظام إذا كنت تعتقد أن هذا خطأ." %}
         </p>
 
         <div class="btn-group">
             <a href="/" class="btn btn-primary">
                 <span>🏠</span>
-                <span>العودة للوحة التحكم</span>
+                <span>{% trans "العودة للوحة التحكم" %}</span>
             </a>
             <a href="/login/" class="btn btn-secondary">
                 <span>🔑</span>
-                <span>تسجيل الدخول بحساب آخر</span>
+                <span>{% trans "تسجيل الدخول بحساب آخر" %}</span>
             </a>
         </div>
 
         <div class="footer-credit">
-            نظام الحضور والغياب الذكي &bull; المطور: <strong>MUNTADHER HAZIM</strong> (07724978301)
+            {% trans "نظام الحضور والغياب الذكي" %} &bull; {% trans "المطور:" %} <strong>MUNTADHER HAZIM</strong> (07724978301)
         </div>
     </div>
 </body>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}جدول محاضراتي - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "جدول محاضراتي" %} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -8,17 +9,17 @@
     <div class="flex justify-between items-center border-b border-slate-100 pb-4">
         <div>
             {% if is_admin %}
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">جدول المحاضرات والجلسات الدراسية</h1>
-                <p class="text-xs text-slate-400 font-semibold mt-1">عرض شامل لجميع محاضرات وأوقات المؤسسة</p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "جدول المحاضرات والجلسات الدراسية" %}</h1>
+                <p class="text-xs text-slate-400 font-semibold mt-1">{% trans "عرض شامل لجميع محاضرات وأوقات المؤسسة" %}</p>
             {% else %}
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">جدول محاضراتي الدراسي الأسبوعي</h1>
-                <p class="text-xs text-slate-400 font-semibold mt-1">المعلم: {{ user.get_full_name }}</p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "جدول محاضراتي الدراسي الأسبوعي" %}</h1>
+                <p class="text-xs text-slate-400 font-semibold mt-1">{% trans "المعلم:" %} {{ user.get_full_name }}</p>
             {% endif %}
         </div>
         <div>
             <a href="{% url 'attendance:create_custom_session' %}" 
                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-md shadow-brand-100">
-                ➕ بدء تحضير لمحاضرة طارئة
+                ➕ {% trans "بدء تحضير لمحاضرة طارئة" %}
             </a>
         </div>
     </div>
@@ -31,14 +32,14 @@
                     <thead>
                         <tr class="bg-slate-50">
                             {% if is_admin %}
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المعلم</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "المعلم" %}</th>
                             {% endif %}
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">الفصل الدراسي / الشعبة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">اليوم</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الوقت والمحاضرة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">القاعة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التحكم بالجلسة</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "المادة" %}</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "الفصل الدراسي / الشعبة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "اليوم" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الوقت والمحاضرة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "القاعة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "التحكم بالجلسة" %}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium text-sm">
@@ -72,11 +73,11 @@
                                         <div class="flex items-center justify-center space-x-reverse space-x-2">
                                             <label class="inline-flex items-center text-xs text-slate-500 font-semibold cursor-pointer">
                                                 <input type="checkbox" name="requires_wifi" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 ml-1">
-                                                إلزام WiFi
+                                                {% trans "إلزام WiFi" %}
                                             </label>
                                             <button type="submit" 
                                                     class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-bold rounded-lg text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-sm">
-                                                تفعيل التحضير
+                                                {% trans "تفعيل التحضير" %}
                                             </button>
                                         </div>
                                     </form>
@@ -88,7 +89,7 @@
             </div>
         {% else %}
             <div class="text-center py-12 text-slate-400 font-semibold text-sm">
-                جدول المحاضرات فارغ. يرجى مراجعة إدارة الكلية لإضافة الحصص.
+                {% trans "جدول المحاضرات فارغ. يرجى مراجعة إدارة الكلية لإضافة الحصص." %}
             </div>
         {% endif %}
     </div>

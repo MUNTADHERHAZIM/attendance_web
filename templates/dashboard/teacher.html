@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}لوحة الأستاذ الجامعي - {{ teacher.institution.name }}{% endblock %}
+{% block title %}{% blocktrans with institution=teacher.institution.name %}University instructor dashboard - {{ institution }}{% endblocktrans %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8" 
@@ -28,7 +29,7 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-brand-500/20 text-brand-300 border border-brand-500/30">
                             <span>👨‍🏫</span>
-                            <span>لوحة الأستاذ الجامعي المستقلة</span>
+                            <span>{% trans "لوحة الأستاذ الجامعي المستقلة" %}</span>
                         </span>
                         <span class="text-xs font-mono text-slate-400 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
                             {{ teacher.teacher_id }}
@@ -47,11 +48,11 @@
                         <span class="text-slate-500">•</span>
                         <span class="flex items-center gap-1.5 text-indigo-300">
                             <span>🎓</span>
-                            <span>{{ teacher.department.name|default:teacher.specialization|default:"القسم الأكاديمي" }}</span>
+                            <span>{{ teacher.department.name|default:teacher.specialization|default:_("القسم الأكاديمي") }}</span>
                         </span>
                         <span class="text-slate-500">•</span>
                         <span class="text-slate-400">
-                            {{ teacher.specialization|default:"عضو هيئة التدريس" }}
+                            {{ teacher.specialization|default:_("عضو هيئة التدريس") }}
                         </span>
                     </div>
                 </div>
@@ -62,17 +63,17 @@
                 <button @click="showProfileModal = true" 
                         class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all shadow-xs backdrop-blur-xs">
                     <span>✏️</span>
-                    <span>تعديل الجامعة والقسم</span>
+                    <span>{% trans "تعديل الجامعة والقسم" %}</span>
                 </button>
                 <button @click="showScheduleModal = true" 
                         class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-400/30 transition-all shadow-xs backdrop-blur-xs hover:scale-105">
                     <span>📅</span>
-                    <span>جدولة محاضرة قادمة</span>
+                    <span>{% trans "جدولة محاضرة قادمة" %}</span>
                 </button>
                 <a href="{% url 'attendance:create_custom_session' %}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 transition-all shadow-md shadow-brand-500/25 hover:scale-[1.02] active:scale-95">
                     <span>⚡</span>
-                    <span>بدء محاضرة فورية</span>
+                    <span>{% trans "بدء محاضرة فورية" %}</span>
                 </a>
             </div>
         </div>
@@ -87,8 +88,8 @@
                 👥
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-400">إدارة الطلاب</p>
-                <p class="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">+ إضافة طلاب للشعب</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "إدارة الطلاب" %}</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">+ {% trans "إضافة طلاب للشعب" %}</p>
             </div>
         </a>
 
@@ -99,8 +100,8 @@
                 📚
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-400">المناهج والمقررات</p>
-                <p class="text-sm font-black text-slate-900 group-hover:text-indigo-700 transition-colors">+ إضافة مادة دراسية</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "المناهج والمقررات" %}</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-indigo-700 transition-colors">+ {% trans "إضافة مادة دراسية" %}</p>
             </div>
         </button>
 
@@ -111,8 +112,8 @@
                 🏛️
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-400">الشعب والمراحل</p>
-                <p class="text-sm font-black text-slate-900 group-hover:text-blue-700 transition-colors">+ إضافة شعبة جديدة</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "الشعب والمراحل" %}</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-blue-700 transition-colors">+ {% trans "إضافة شعبة جديدة" %}</p>
             </div>
         </button>
 
@@ -123,8 +124,8 @@
                 📊
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-400">التقارير وسجلات الغياب</p>
-                <p class="text-sm font-black text-slate-900 group-hover:text-purple-700 transition-colors">تقارير إكسل والنسب</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "التقارير وسجلات الغياب" %}</p>
+                <p class="text-sm font-black text-slate-900 group-hover:text-purple-700 transition-colors">{% trans "تقارير إكسل والنسب" %}</p>
             </div>
         </a>
     </div>
@@ -134,33 +135,33 @@
         <!-- Card 1: My Courses -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">المواد الدراسية</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{% trans "المواد الدراسية" %}</span>
                 <span class="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-base">📚</span>
             </div>
             <div class="mt-4">
                 <div class="flex items-baseline gap-2">
                     <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ my_courses.count }}</span>
-                    <span class="text-xs font-bold text-slate-400">مقرراً</span>
+                    <span class="text-xs font-bold text-slate-400">{% trans "مقرراً" %}</span>
                 </div>
-                <div class="text-[11px] text-indigo-600 font-bold mt-1">خاصة بجامعتك وقسمك</div>
+                <div class="text-[11px] text-indigo-600 font-bold mt-1">{% trans "خاصة بجامعتك وقسمك" %}</div>
             </div>
         </div>
 
         <!-- Card 2: My Sections -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">الشُعب والمراحل</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{% trans "الشُعب والمراحل" %}</span>
                 <span class="p-2 bg-blue-50 text-blue-600 rounded-xl text-base">🏛️</span>
             </div>
             <div class="mt-4">
                 <div class="flex items-baseline gap-2">
                     <span class="text-2xl sm:text-3xl font-black text-slate-900">{{ my_sections.count }}</span>
-                    <span class="text-xs font-bold text-slate-400">شعبة</span>
+                    <span class="text-xs font-bold text-slate-400">{% trans "شعبة" %}</span>
                 </div>
                 <div class="flex items-center gap-2 mt-1 text-[11px] font-bold">
-                    <span class="text-amber-700">☀️ صباحي</span>
+                    <span class="text-amber-700">☀️ {% trans "صباحي" %}</span>
                     <span class="text-slate-300">|</span>
-                    <span class="text-indigo-700">🌙 مسائي</span>
+                    <span class="text-indigo-700">🌙 {% trans "مسائي" %}</span>
                 </div>
             </div>
         </div>
@@ -169,19 +170,19 @@
         <a href="{% url 'accounts:teacher_students' %}" 
            class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700 transition-colors">إجمالي الطلاب المسجلين</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700 transition-colors">{% trans "إجمالي الطلاب المسجلين" %}</span>
                 <span class="p-2 bg-emerald-50 text-emerald-600 rounded-xl text-base group-hover:scale-110 transition-transform">🎓</span>
             </div>
             <div class="mt-4">
                 <div class="flex items-baseline gap-2">
                     <span class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-emerald-700 transition-colors">{{ total_students_count }}</span>
-                    <span class="text-xs font-bold text-emerald-600">طالباً</span>
+                    <span class="text-xs font-bold text-emerald-600">{% trans "طالباً" %}</span>
                 </div>
                 <div class="flex items-center gap-2 mt-1 text-[11px] font-bold text-slate-500">
                     <span class="text-amber-700">☀️ {{ morning_students_count }}</span>
                     <span class="text-slate-300">|</span>
                     <span class="text-indigo-700">🌙 {{ evening_students_count }}</span>
-                    <span class="text-emerald-600 underline mr-auto">إدارة ➔</span>
+                    <span class="text-emerald-600 underline mr-auto">{% trans "إدارة" %} ➔</span>
                 </div>
             </div>
         </a>
@@ -189,13 +190,13 @@
         <!-- Card 4: Overall Attendance Rate -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">معدل الحضور العام</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{% trans "معدل الحضور العام" %}</span>
                 <span class="p-2 bg-purple-50 text-purple-600 rounded-xl text-base">📈</span>
             </div>
             <div class="mt-4">
                 <div class="flex items-baseline justify-between">
                     <div class="text-2xl sm:text-3xl font-black text-brand-700">{{ overall_attendance_rate }}%</div>
-                    <span class="text-xs font-bold text-slate-400">{{ total_lectures_held }} محاضرة سابقة</span>
+                    <span class="text-xs font-bold text-slate-400">{{ total_lectures_held }} {% trans "محاضرة سابقة" %}</span>
                 </div>
                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
                     <div class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full rounded-full transition-all duration-700"
@@ -210,7 +211,7 @@
         <div class="space-y-3">
             <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
-                <h2 class="text-lg font-black text-slate-900">جلسات التحضير المباشرة النشطة الآن</h2>
+                <h2 class="text-lg font-black text-slate-900">{% trans "جلسات التحضير المباشرة النشطة الآن" %}</h2>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,12 +223,12 @@
                             <div class="flex items-center justify-between mb-2">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    جلسة نشطة قيد التحضير
+                                    {% trans "جلسة نشطة قيد التحضير" %}
                                 </span>
                                 {% if att_session.shift == 'MORNING' %}
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                 {% elif att_session.shift == 'EVENING' %}
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                 {% endif %}
                             </div>
                             
@@ -237,10 +238,10 @@
                             </p>
                             
                             <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600 font-semibold bg-white/80 p-3 rounded-xl border border-emerald-100">
-                                <span>🏛️ {{ att_session.session.room|default:"القاعة الذكية" }}</span>
-                                <span>⏰ البدء: {{ att_session.start_time|date:"H:i" }}</span>
+                                <span>🏛️ {{ att_session.session.room|default:_("القاعة الذكية") }}</span>
+                                <span>⏰ {% trans "البدء:" %} {{ att_session.start_time|date:"H:i" }}</span>
                                 {% if att_session.quick_otp %}
-                                    <span>🔢 OTP: <strong class="font-mono text-indigo-600 font-black text-sm">{{ att_session.quick_otp }}</strong></span>
+                                    <span>🔢 {% trans "OTP:" %} <strong class="font-mono text-indigo-600 font-black text-sm">{{ att_session.quick_otp }}</strong></span>
                                 {% endif %}
                             </div>
                         </div>
@@ -249,12 +250,12 @@
                             <a href="/attendance/session/{{ att_session.id }}/" 
                                class="flex-1 w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-black rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200">
                                 <span>📱</span>
-                                <span>فتح شاشة الـ QR المباشرة ومتابعة الطلاب</span>
+                                <span>{% trans "فتح شاشة الـ QR المباشرة ومتابعة الطلاب" %}</span>
                             </a>
                             <a href="/attendance/session/{{ att_session.id }}/edit/" 
-                               class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-3 border border-slate-300 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs" title="تعديل وقت أو مادة أو تفاصيل المحاضرة">
+                               class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-3 border border-slate-300 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs" title="{% trans 'تعديل وقت أو مادة أو تفاصيل المحاضرة' %}">
                                 <span>✏️</span>
-                                <span>تعديل المحاضرة</span>
+                                <span>{% trans "تعديل المحاضرة" %}</span>
                             </a>
                         </div>
                     </div>
@@ -269,10 +270,10 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="text-xl">⚡</span>
-                    <h2 class="text-lg font-black text-slate-900">محاضرات اليوم المقررة (تشغيل فوري بلمسة واحدة)</h2>
+                    <h2 class="text-lg font-black text-slate-900">{% trans "محاضرات اليوم المقررة (تشغيل فوري بلمسة واحدة)" %}</h2>
                 </div>
                 <span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                    اليوم: {{ today_timetable_sessions.count }} محاضرة
+                    {% blocktrans count count=today_timetable_sessions.count %}{{ count }} محاضرة{% plural %}{{ count }} محاضرات{% endblocktrans %}
                 </span>
             </div>
 
@@ -285,9 +286,9 @@
                                     {{ sess.course.code }}
                                 </span>
                                 {% if sess.shift == 'MORNING' %}
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                 {% else %}
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                 {% endif %}
                             </div>
 
@@ -301,7 +302,7 @@
                             <div class="mt-3 flex items-center gap-3 text-xs text-slate-600 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                                 <span>⏰ {{ sess.start_time|time:"H:i" }} - {{ sess.end_time|time:"H:i" }}</span>
                                 <span>•</span>
-                                <span>🏛️ {{ sess.room|default:"القاعة الرئيسية" }}</span>
+                                <span>🏛️ {{ sess.room|default:_("القاعة الرئيسية") }}</span>
                             </div>
                         </div>
 
@@ -310,7 +311,7 @@
                                 {% csrf_token %}
                                 <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-95">
                                     <span>⚡</span>
-                                    <span>بدء التحضير فوراً (بلمسة واحدة)</span>
+                                    <span>{% trans "بدء التحضير فوراً (بلمسة واحدة)" %}</span>
                                 </button>
                             </form>
                         </div>
@@ -337,14 +338,14 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h2 class="text-xl font-black text-white">رادار الخطر الأكاديمي والإنذار المبكر</h2>
+                        <h2 class="text-xl font-black text-white">{% trans "رادار الخطر الأكاديمي والإنذار المبكر" %}</h2>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
-                            استشعار فوري
+                            {% trans "استشعار فوري" %}
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 font-medium mt-0.5">
-                        رصد استباقي للطلبة المهددين بالحرمان الأكاديمي مع دعم الإنذار المباشر عبر WhatsApp ومقارنة الالتزام بين الدراستين
+                        {% trans "رصد استباقي للطلبة المهددين بالحرمان الأكاديمي مع دعم الإنذار المباشر عبر WhatsApp ومقارنة الالتزام بين الدراستين" %}
                     </p>
                 </div>
             </div>
@@ -352,15 +353,15 @@
             <!-- Header Quick Stats Pills -->
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 <div class="px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center gap-2">
-                    <span class="text-slate-400">حرمان وشيك:</span>
+                    <span class="text-slate-400">{% trans "حرمان وشيك:" %}</span>
                     <span class="font-black text-rose-400 font-mono text-sm">{{ critical_count }}</span>
                 </div>
                 <div class="px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center gap-2">
-                    <span class="text-slate-400">إنذار أولي:</span>
+                    <span class="text-slate-400">{% trans "إنذار أولي:" %}</span>
                     <span class="font-black text-amber-400 font-mono text-sm">{{ warning_count }}</span>
                 </div>
                 <div class="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-800/80 flex items-center gap-2 text-emerald-300">
-                    <span>نسبة الأمان:</span>
+                    <span>{% trans "نسبة الأمان:" %}</span>
                     <span class="font-black font-mono text-sm">{{ safe_rate }}%</span>
                 </div>
             </div>
@@ -374,7 +375,7 @@
                 <div class="flex items-center justify-between text-xs font-bold text-amber-300">
                     <span class="flex items-center gap-1.5">
                         <span>☀️</span>
-                        <span>الدراسة الصباحية</span>
+                        <span>{% trans "الدراسة الصباحية" %}</span>
                     </span>
                     <span class="font-mono text-base font-black text-white">{{ morning_rate }}%</span>
                 </div>
@@ -383,8 +384,8 @@
                          style="width: {{ morning_rate }}%;"></div>
                 </div>
                 <div class="text-[11px] text-slate-400 flex justify-between">
-                    <span>الطلاب المسجلون: <strong class="text-white">{{ morning_students_count }}</strong></span>
-                    <span class="text-amber-300/80 font-medium">حضور تراكمي</span>
+                    <span>{% trans "الطلاب المسجلون:" %} <strong class="text-white">{{ morning_students_count }}</strong></span>
+                    <span class="text-amber-300/80 font-medium">{% trans "حضور تراكمي" %}</span>
                 </div>
             </div>
 
@@ -393,7 +394,7 @@
                 <div class="flex items-center justify-between text-xs font-bold text-indigo-300">
                     <span class="flex items-center gap-1.5">
                         <span>🌙</span>
-                        <span>الدراسة المسائية</span>
+                        <span>{% trans "الدراسة المسائية" %}</span>
                     </span>
                     <span class="font-mono text-base font-black text-white">{{ evening_rate }}%</span>
                 </div>
@@ -402,8 +403,8 @@
                          style="width: {{ evening_rate }}%;"></div>
                 </div>
                 <div class="text-[11px] text-slate-400 flex justify-between">
-                    <span>الطلاب المسجلون: <strong class="text-white">{{ evening_students_count }}</strong></span>
-                    <span class="text-indigo-300/80 font-medium">حضور تراكمي</span>
+                    <span>{% trans "الطلاب المسجلون:" %} <strong class="text-white">{{ evening_students_count }}</strong></span>
+                    <span class="text-indigo-300/80 font-medium">{% trans "حضور تراكمي" %}</span>
                 </div>
             </div>
 
@@ -412,7 +413,7 @@
                 <div class="flex items-center justify-between text-xs font-bold text-indigo-300">
                     <span class="flex items-center gap-1.5">
                         <span>🏆</span>
-                        <span>الشعبة الأكثر التزاماً</span>
+                        <span>{% trans "الشعبة الأكثر التزاماً" %}</span>
                     </span>
                     {% if best_section_rate > 0 %}
                         <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono font-bold">{{ best_section_rate }}%</span>
@@ -420,9 +421,9 @@
                 </div>
                 <div>
                     <p class="text-base font-black text-white truncate">
-                        {{ best_section_name|default:"لا توجد بيانات كافية" }}
+                        {{ best_section_name|default:_("لا توجد بيانات كافية") }}
                     </p>
-                    <p class="text-[11px] text-indigo-200/70 mt-0.5">أعلى نسبة حضور وانتظام في قاعات المحاضرات</p>
+                    <p class="text-[11px] text-indigo-200/70 mt-0.5">{% trans "أعلى نسبة حضور وانتظام في قاعات المحاضرات" %}</p>
                 </div>
             </div>
 
@@ -433,9 +434,9 @@
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                     <span>⚠️</span>
-                    <span>الطلاب الأكثر غياباً المهددون بالحرمان (أعلى أولويات المتابعة)</span>
+                    <span>{% trans "الطلاب الأكثر غياباً المهددون بالحرمان (أعلى أولويات المتابعة)" %}</span>
                 </h3>
-                <span class="text-[11px] text-slate-400">إجمالي الحالات المرصودة: <strong class="text-amber-400 font-mono">{{ at_risk_total_count }}</strong></span>
+                <span class="text-[11px] text-slate-400">{% trans "إجمالي الحالات المرصودة:" %} <strong class="text-amber-400 font-mono">{{ at_risk_total_count }}</strong></span>
             </div>
 
             {% if at_risk_students %}
@@ -443,13 +444,13 @@
                     <table class="w-full text-right text-xs">
                         <thead>
                             <tr class="border-b border-slate-800 bg-slate-900/80 text-slate-400 font-bold">
-                                <th class="p-3.5">اسم الطالب</th>
-                                <th class="p-3.5 text-center">الرقم الجامعي</th>
-                                <th class="p-3.5 text-center">الدراسة</th>
-                                <th class="p-3.5 text-center">مرات الغياب</th>
-                                <th class="p-3.5 text-center">نسبة الغياب</th>
-                                <th class="p-3.5 text-center">مستوى الخطورة</th>
-                                <th class="p-3.5 text-center">إجراء فوري</th>
+                                <th class="p-3.5">{% trans "اسم الطالب" %}</th>
+                                <th class="p-3.5 text-center">{% trans "الرقم الجامعي" %}</th>
+                                <th class="p-3.5 text-center">{% trans "الدراسة" %}</th>
+                                <th class="p-3.5 text-center">{% trans "مرات الغياب" %}</th>
+                                <th class="p-3.5 text-center">{% trans "نسبة الغياب" %}</th>
+                                <th class="p-3.5 text-center">{% trans "مستوى الخطورة" %}</th>
+                                <th class="p-3.5 text-center">{% trans "إجراء فوري" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/80 font-medium">
@@ -463,15 +464,15 @@
                                     </td>
                                     <td class="p-3.5 text-center whitespace-nowrap">
                                         {% if std.shift == 'MORNING' %}
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">☀️ صباحي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">☀️ {% trans "صباحي" %}</span>
                                         {% elif std.shift == 'EVENING' %}
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">🌙 مسائي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">🌙 {% trans "مسائي" %}</span>
                                         {% else %}
                                             <span class="text-slate-500">-</span>
                                         {% endif %}
                                     </td>
                                     <td class="p-3.5 text-center font-black font-mono text-sm whitespace-nowrap text-rose-400">
-                                        {{ std.absent_count }} غيابات
+                                        {{ std.absent_count }} {% trans "غيابات" %}
                                     </td>
                                     <td class="p-3.5 text-center whitespace-nowrap">
                                         <div class="inline-flex items-center gap-1.5 font-mono font-bold text-amber-300">
@@ -482,11 +483,11 @@
                                         {% if std.risk_level == 'CRITICAL' %}
                                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                                حرمان وشيك
+                                                {% trans "حرمان وشيك" %}
                                             </span>
                                         {% else %}
                                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                إنذار أولي
+                                                {% trans "إنذار أولي" %}
                                             </span>
                                         {% endif %}
                                     </td>
@@ -494,12 +495,12 @@
                                         {% if std.wa_url %}
                                             <a href="{{ std.wa_url }}" target="_blank"
                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-xs shadow-emerald-900/50 hover:scale-105 active:scale-95"
-                                               title="إرسال إنذار رسمي فوري عبر WhatsApp لرقم الطالب: {{ std.phone }}">
+                                               title="{% trans 'إرسال إنذار رسمي فوري عبر WhatsApp لرقم الطالب:' %} {{ std.phone }}">
                                                 <span>💬</span>
-                                                <span>إنذار واتساب</span>
+                                                <span>{% trans "إنذار واتساب" %}</span>
                                             </a>
                                         {% else %}
-                                            <span class="text-slate-500 text-[11px]">بدون رقم هاتف</span>
+                                            <span class="text-slate-500 text-[11px]">{% trans "بدون رقم هاتف" %}</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -510,8 +511,8 @@
             {% else %}
                 <div class="p-6 rounded-2xl bg-emerald-950/20 border border-emerald-800/40 text-center space-y-1 text-xs">
                     <span class="text-2xl">🎉</span>
-                    <p class="font-black text-emerald-400">رادار الأمان: جميع الطلاب ملتزمون ونسب الغياب ضمن الحدود الطبيعية!</p>
-                    <p class="text-slate-400 text-[11px]">لا يوجد أي طالب تجاوز حد الإنذار الأكاديمي حتى الآن.</p>
+                    <p class="font-black text-emerald-400">{% trans "رادار الأمان: جميع الطلاب ملتزمون ونسب الغياب ضمن الحدود الطبيعية!" %}</p>
+                    <p class="text-slate-400 text-[11px]">{% trans "لا يوجد أي طالب تجاوز حد الإنذار الأكاديمي حتى الآن." %}</p>
                 </div>
             {% endif %}
         </div>
@@ -527,12 +528,12 @@
                 <button @click="activeTab = 'sessions'" 
                         :class="activeTab === 'sessions' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
-                    🗓️ جدول المحاضرات الأسبوعي
+                    🗓️ {% trans "جدول المحاضرات الأسبوعي" %}
                 </button>
                 <button @click="activeTab = 'scheduled'" 
                         :class="activeTab === 'scheduled' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
-                    <span>📅 المحاضرات المجدولة</span>
+                    <span>📅 {% trans "المحاضرات المجدولة" %}</span>
                     {% if upcoming_scheduled_sessions %}
                         <span class="px-2 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-900 font-mono font-black">{{ upcoming_scheduled_sessions.count }}</span>
                     {% endif %}
@@ -540,17 +541,17 @@
                 <button @click="activeTab = 'courses'" 
                         :class="activeTab === 'courses' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
-                    📚 موادي الدراسية ({{ my_courses.count }})
+                    📚 {% trans "موادي الدراسية" %} ({{ my_courses.count }})
                 </button>
                 <button @click="activeTab = 'sections'" 
                         :class="activeTab === 'sections' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
-                    🏛️ الشُعب والمراحل ({{ my_sections.count }})
+                    🏛️ {% trans "الشُعب والمراحل" %} ({{ my_sections.count }})
                 </button>
                 <button @click="activeTab = 'recent'" 
                         :class="activeTab === 'recent' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                         class="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">
-                    ⏱️ الجلسات السابقة ({{ recent_sessions.count }})
+                    ⏱️ {% trans "الجلسات السابقة" %} ({{ recent_sessions.count }})
                 </button>
             </div>
         </div>
@@ -559,12 +560,12 @@
         <div x-show="activeTab === 'scheduled'" class="p-5 sm:p-6 space-y-4" style="display: none;">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-black text-slate-900">المحاضرات المجدولة مسبقاً</h3>
-                    <p class="text-xs text-slate-400 font-semibold mt-0.5">محاضرات تم تجهيز إعداداتها مسبقاً لتشغيلها بضغطة زر عند موعدها</p>
+                    <h3 class="text-base font-black text-slate-900">{% trans "المحاضرات المجدولة مسبقاً" %}</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "محاضرات تم تجهيز إعداداتها مسبقاً لتشغيلها بضغطة زر عند موعدها" %}</p>
                 </div>
                 <button @click="showScheduleModal = true" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-xs transition-all">
                     <span>+</span>
-                    <span>جدولة محاضرة جديدة</span>
+                    <span>{% trans "جدولة محاضرة جديدة" %}</span>
                 </button>
             </div>
 
@@ -573,13 +574,13 @@
                     <table class="min-w-full divide-y divide-slate-100 text-right">
                         <thead>
                             <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase tracking-wider">
-                                <th class="px-5 py-3.5">المادة الدراسية</th>
-                                <th class="px-4 py-3.5">الشعبة / المرحلة</th>
-                                <th class="px-4 py-3.5 text-center">التاريخ المقرر</th>
-                                <th class="px-4 py-3.5 text-center">الوقت</th>
-                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
-                                <th class="px-4 py-3.5 text-center">حماية الأمان</th>
-                                <th class="px-4 py-3.5 text-center">الإجراءات والتشغيل</th>
+                                <th class="px-5 py-3.5">{% trans "المادة الدراسية" %}</th>
+                                <th class="px-4 py-3.5">{% trans "الشعبة / المرحلة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "التاريخ المقرر" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الوقت" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "نوع الدراسة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "حماية الأمان" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الإجراءات والتشغيل" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
@@ -604,9 +605,9 @@
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         {% if sch.shift == 'MORNING' %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                         {% else %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
@@ -618,7 +619,7 @@
                                                 <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">GPS</span>
                                             {% endif %}
                                             {% if not sch.requires_wifi and not sch.requires_geofence %}
-                                                <span class="text-slate-400">قياسي</span>
+                                                <span class="text-slate-400">{% trans "قياسي" %}</span>
                                             {% endif %}
                                         </div>
                                     </td>
@@ -628,17 +629,17 @@
                                                 {% csrf_token %}
                                                 <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-1">
                                                     <span>⚡</span>
-                                                    <span>تفعيل وبدء الآن</span>
+                                                    <span>{% trans "تفعيل وبدء الآن" %}</span>
                                                 </button>
                                             </form>
                                             <a href="{% url 'attendance:edit_session' session_id=sch.id %}" 
-                                               class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all" title="تعديل الموعد أو التفاصيل">
+                                               class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all" title="{% trans 'تعديل الموعد أو التفاصيل' %}">
                                                 ✏️
                                             </a>
                                             <form method="post" action="{% url 'attendance:cancel_scheduled_session' session_id=sch.id %}"
-                                                  onsubmit="return confirm('هل أنت متأكد من إلغاء هذه المحاضرة المجدولة؟');">
+                                                  onsubmit="return confirm('{% trans 'هل أنت متأكد من إلغاء هذه المحاضرة المجدولة؟' %}');">
                                                 {% csrf_token %}
-                                                <button type="submit" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all" title="إلغاء الجدولة">
+                                                <button type="submit" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all" title="{% trans 'إلغاء الجدولة' %}">
                                                     🗑️
                                                 </button>
                                             </form>
@@ -652,11 +653,11 @@
             {% else %}
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
                     <span class="text-3xl">📅</span>
-                    <p class="font-bold text-slate-700 text-sm">لا توجد محاضرات مجدولة حالياً.</p>
-                    <p class="text-xs text-slate-400">يمكنك جدولة المحاضرات للأيام القادمة وحفظ إعداداتها مسبقاً لتوفير وقتك في القاعة.</p>
+                    <p class="font-bold text-slate-700 text-sm">{% trans "لا توجد محاضرات مجدولة حالياً." %}</p>
+                    <p class="text-xs text-slate-400">{% trans "يمكنك جدولة المحاضرات للأيام القادمة وحفظ إعداداتها مسبقاً لتوفير وقتك في القاعة." %}</p>
                     <div class="pt-2">
                         <button @click="showScheduleModal = true" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs">
-                            + جدولة محاضرة جديدة الآن
+                            + {% trans "جدولة محاضرة جديدة الآن" %}
                         </button>
                     </div>
                 </div>
@@ -667,11 +668,11 @@
         <div x-show="activeTab === 'sessions'" class="p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-black text-slate-900">جدول المحاضرات والحصص المقررة</h3>
-                    <p class="text-xs text-slate-400 font-semibold mt-0.5">يمكنك إطلاق أي جلسة تحضير ذكية بضغطة زر واحدة</p>
+                    <h3 class="text-base font-black text-slate-900">{% trans "جدول المحاضرات والحصص المقررة" %}</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "يمكنك إطلاق أي جلسة تحضير ذكية بضغطة زر واحدة" %}</p>
                 </div>
                 <a href="{% url 'attendance:create_custom_session' %}" class="text-xs font-bold text-brand-600 hover:underline">
-                    + إنشاء حصة جديدة
+                    + {% trans "إنشاء حصة جديدة" %}
                 </a>
             </div>
 
@@ -680,14 +681,14 @@
                     <table class="min-w-full divide-y divide-slate-100 text-right">
                         <thead>
                             <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase tracking-wider">
-                                <th class="px-5 py-3.5">المادة الدراسية</th>
-                                <th class="px-4 py-3.5">الشعبة / المرحلة</th>
-                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
-                                <th class="px-4 py-3.5 text-center">اليوم</th>
-                                <th class="px-4 py-3.5 text-center">الوقت</th>
-                                <th class="px-4 py-3.5 text-center">القاعة</th>
-                                <th class="px-4 py-3.5 text-center">إطلاق التحضير الذكي</th>
-                                <th class="px-4 py-3.5 text-center">حذف</th>
+                                <th class="px-5 py-3.5">{% trans "المادة الدراسية" %}</th>
+                                <th class="px-4 py-3.5">{% trans "الشعبة / المرحلة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "نوع الدراسة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "اليوم" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الوقت" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "القاعة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "إطلاق التحضير الذكي" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "حذف" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
@@ -702,13 +703,13 @@
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         {% if sess.shift == 'MORNING' or sess.class_section.shift == 'MORNING' %}
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                         {% else %}
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-slate-800">
-                                        {{ sess.get_day_of_week_display }}
+                                        {% trans sess.get_day_of_week_display %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-mono font-bold text-slate-600">
                                         {{ sess.start_time|time:"H:i" }} - {{ sess.end_time|time:"H:i" }}
@@ -721,24 +722,24 @@
                                             {% csrf_token %}
                                             <input type="hidden" name="session_id" value="{{ sess.id }}">
                                             <div class="flex items-center justify-center gap-2">
-                                                <label class="inline-flex items-center text-[11px] text-slate-600 font-bold bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 cursor-pointer" title="حماية GPS">
+                                                <label class="inline-flex items-center text-[11px] text-slate-600 font-bold bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 cursor-pointer" title="{% trans 'حماية GPS' %}">
                                                     <input type="checkbox" name="requires_geofence" checked class="rounded border-slate-300 text-brand-600 ml-1">
                                                     <span>📍 GPS</span>
                                                 </label>
                                                 <button type="submit" 
                                                         class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-xs flex items-center gap-1">
-                                                    <span>بدء التحضير 🚀</span>
+                                                    <span>{% trans "بدء التحضير" %} 🚀</span>
                                                 </button>
                                             </div>
                                         </form>
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         <form method="POST" action="{% url 'attendance:delete_timetable_session' sess.id %}"
-                                              onsubmit="return confirm('هل أنت متأكد من حذف هذه الحصة الأسبوعية؟\n{{ sess.course.name }} - {{ sess.get_day_of_week_display }}\nلا يمكن التراجع عن هذا الإجراء.')">
+                                              onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف هذه الحصة الأسبوعية؟' %}\n{{ sess.course.name }} - {% trans sess.get_day_of_week_display %}\n{% trans 'لا يمكن التراجع عن هذا الإجراء.' %}')">
                                             {% csrf_token %}
                                             <button type="submit"
                                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all">
-                                                🗑️ حذف
+                                                🗑️ {% trans "حذف" %}
                                             </button>
                                         </form>
                                     </td>
@@ -750,14 +751,14 @@
             {% else %}
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80">
                     <span class="text-3xl">🗓️</span>
-                    <p class="font-bold text-slate-700 text-sm mt-2">لا توجد محاضرات مجدولة حالياً.</p>
-                    <p class="text-xs text-slate-400 mt-1">ابدأ بإنشاء مادة دراسية وشعبة ثم حدد أوقاتها الأسبوعية بسهولة.</p>
+                    <p class="font-bold text-slate-700 text-sm mt-2">{% trans "لا توجد محاضرات مجدولة حالياً." %}</p>
+                    <p class="text-xs text-slate-400 mt-1">{% trans "ابدأ بإنشاء مادة دراسية وشعبة ثم حدد أوقاتها الأسبوعية بسهولة." %}</p>
                     <div class="mt-4 flex justify-center gap-3">
                         <button @click="showAddCourseModal = true" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50">
-                            + إضافة مادة
+                            + {% trans "إضافة مادة" %}
                         </button>
                         <a href="{% url 'attendance:create_custom_session' %}" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700">
-                            + جدولة محاضرة
+                            + {% trans "جدولة محاضرة" %}
                         </a>
                     </div>
                 </div>
@@ -768,11 +769,11 @@
         <div x-show="activeTab === 'courses'" class="p-5 sm:p-6 space-y-4" style="display: none;">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-black text-slate-900">المواد والمقررات الدراسية الخاصة بك</h3>
-                    <p class="text-xs text-slate-400 font-semibold mt-0.5">معزولة تماماً في مؤسستك وقسمك الأكاديمي</p>
+                    <h3 class="text-base font-black text-slate-900">{% trans "المواد والمقررات الدراسية الخاصة بك" %}</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "معزولة تماماً في مؤسستك وقسمك الأكاديمي" %}</p>
                 </div>
                 <button @click="showAddCourseModal = true" class="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-xs">
-                    + إضافة مادة جديدة
+                    + {% trans "إضافة مادة جديدة" %}
                 </button>
             </div>
 
@@ -786,22 +787,22 @@
                                         {{ crs.code }}
                                     </span>
                                     <span class="text-xs font-bold text-slate-400">
-                                        {{ crs.department.name|default:"قسمك الأكاديمي" }}
+                                        {{ crs.department.name|default:_("قسمك الأكاديمي") }}
                                     </span>
                                 </div>
                                 <h4 class="text-base font-black text-slate-900 mt-2.5">{{ crs.name }}</h4>
                                 <p class="text-xs text-slate-400 font-medium mt-1">
-                                    {{ crs.sessions.count }} حصص أسبوعية مجدولة
+                                    {{ crs.sessions.count }} {% trans "حصص أسبوعية مجدولة" %}
                                 </p>
                             </div>
                             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                                 <a href="{% url 'attendance:create_custom_session' %}?course_id={{ crs.id }}" class="text-xs font-bold text-indigo-600 hover:underline">
-                                    ⚡ بدء تحضير فوري
+                                    ⚡ {% trans "بدء تحضير فوري" %}
                                 </a>
-                                <form method="post" action="{% url 'accounts:teacher_delete_course' crs.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة الدراسية؟')">
+                                <form method="post" action="{% url 'accounts:teacher_delete_course' crs.id %}" onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف هذه المادة الدراسية؟' %}')">
                                     {% csrf_token %}
-                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف المادة">
-                                        🗑️ حذف
+                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="{% trans 'حذف المادة' %}">
+                                        🗑️ {% trans "حذف" %}
                                     </button>
                                 </form>
                             </div>
@@ -810,9 +811,9 @@
                 </div>
             {% else %}
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                    <p class="font-bold text-slate-600 text-sm">لم تقم بإضافة أي مواد دراسية بعد.</p>
+                    <p class="font-bold text-slate-600 text-sm">{% trans "لم تقم بإضافة أي مواد دراسية بعد." %}</p>
                     <button @click="showAddCourseModal = true" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700">
-                        + إضافة أول مادة دراسية
+                        + {% trans "إضافة أول مادة دراسية" %}
                     </button>
                 </div>
             {% endif %}
@@ -822,11 +823,11 @@
         <div x-show="activeTab === 'sections'" class="p-5 sm:p-6 space-y-4" style="display: none;">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-black text-slate-900">الشُعب والفصول الدراسية</h3>
-                    <p class="text-xs text-slate-400 font-semibold mt-0.5">مفصولة بالكامل بين الدوام الصباحي والمسائي</p>
+                    <h3 class="text-base font-black text-slate-900">{% trans "الشُعب والفصول الدراسية" %}</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "مفصولة بالكامل بين الدوام الصباحي والمسائي" %}</p>
                 </div>
                 <button @click="showAddSectionModal = true" class="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs">
-                    + إضافة شعبة جديدة
+                    + {% trans "إضافة شعبة جديدة" %}
                 </button>
             </div>
 
@@ -840,24 +841,24 @@
                                         {{ sec.level }}
                                     </span>
                                     {% if sec.shift == 'MORNING' %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                     {% else %}
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                     {% endif %}
                                 </div>
                                 <h4 class="text-base font-black text-slate-900 mt-2.5">{{ sec.name }}</h4>
                                 <p class="text-xs text-slate-400 font-medium mt-1">
-                                    👥 {{ sec.students.count }} طلاب مسجلون في الشعبة
+                                    👥 {{ sec.students.count }} {% trans "طلاب مسجلون في الشعبة" %}
                                 </p>
                             </div>
                             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                                 <a href="{% url 'accounts:teacher_students' %}?section_id={{ sec.id }}" class="text-xs font-bold text-blue-600 hover:underline">
-                                    عرض وتعديل الطلاب ➔
+                                    {% trans "عرض وتعديل الطلاب" %} ➔
                                 </a>
-                                <form method="post" action="{% url 'accounts:teacher_delete_section' sec.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه الشعبة الدراسية؟')">
+                                <form method="post" action="{% url 'accounts:teacher_delete_section' sec.id %}" onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف هذه الشعبة الدراسية؟' %}')">
                                     {% csrf_token %}
-                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="حذف الشعبة">
-                                        🗑️ حذف
+                                    <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors" title="{% trans 'حذف الشعبة' %}">
+                                        🗑️ {% trans "حذف" %}
                                     </button>
                                 </form>
                             </div>
@@ -866,9 +867,9 @@
                 </div>
             {% else %}
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                    <p class="font-bold text-slate-600 text-sm">لم يتم تسجيل أي شعب بعد.</p>
+                    <p class="font-bold text-slate-600 text-sm">{% trans "لم يتم تسجيل أي شعب بعد." %}</p>
                     <button @click="showAddSectionModal = true" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700">
-                        + إضافة شعبة دراسية
+                        + {% trans "إضافة شعبة دراسية" %}
                     </button>
                 </div>
             {% endif %}
@@ -878,11 +879,11 @@
         <div x-show="activeTab === 'recent'" class="p-5 sm:p-6 space-y-4" style="display: none;">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-black text-slate-900">سجل آخر الجلسات والمحاضرات المنعقدة</h3>
-                    <p class="text-xs text-slate-400 font-semibold mt-0.5">يمكنك مراجعة تقرير وتفاصيل حضور كل جلسة</p>
+                    <h3 class="text-base font-black text-slate-900">{% trans "سجل آخر الجلسات والمحاضرات المنعقدة" %}</h3>
+                    <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "يمكنك مراجعة تقرير وتفاصيل حضور كل جلسة" %}</p>
                 </div>
                 <a href="{% url 'reports:admin_reports_overview' %}" class="text-xs font-bold text-brand-600 hover:underline">
-                    عرض جميع التقارير الشاملة ➔
+                    {% trans "عرض جميع التقارير الشاملة" %} ➔
                 </a>
             </div>
 
@@ -891,12 +892,12 @@
                     <table class="min-w-full divide-y divide-slate-100 text-right">
                         <thead>
                             <tr class="bg-slate-50/80 text-xs font-black text-slate-500 uppercase">
-                                <th class="px-5 py-3.5">المادة والشعبة</th>
-                                <th class="px-4 py-3.5 text-center">التاريخ والوقت</th>
-                                <th class="px-4 py-3.5 text-center">نوع الدراسة</th>
-                                <th class="px-4 py-3.5 text-center">الحضور</th>
-                                <th class="px-4 py-3.5 text-center">نسبة الحضور</th>
-                                <th class="px-4 py-3.5 text-center">الإجراء</th>
+                                <th class="px-5 py-3.5">{% trans "المادة والشعبة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "التاريخ والوقت" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "نوع الدراسة" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الحضور" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "نسبة الحضور" %}</th>
+                                <th class="px-4 py-3.5 text-center">{% trans "الإجراء" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs sm:text-sm font-medium bg-white">
@@ -911,13 +912,13 @@
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         {% if rec.shift == 'MORNING' %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ صباحي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">☀️ {% trans "صباحي" %}</span>
                                         {% else %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 مسائي</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🌙 {% trans "مسائي" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-emerald-700">
-                                        {{ rec.present_count }} حاضر
+                                        {{ rec.present_count }} {% trans "حاضر" %}
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center font-black text-brand-700">
                                         {{ rec.attendance_rate }}%
@@ -925,11 +926,11 @@
                                     <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                         <div class="inline-flex items-center gap-1.5">
                                             <a href="/attendance/session/{{ rec.id }}/" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
-                                                عرض السجل 👁️
+                                                {% trans "عرض السجل" %} 👁️
                                             </a>
-                                            <form method="post" action="{% url 'attendance:delete_session' rec.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه الجلسة وسجلاتها؟')">
+                                            <form method="post" action="{% url 'attendance:delete_session' rec.id %}" onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف هذه الجلسة وسجلاتها؟' %}')">
                                                 {% csrf_token %}
-                                                <button type="submit" class="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors" title="حذف الجلسة">
+                                                <button type="submit" class="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors" title="{% trans 'حذف الجلسة' %}">
                                                     🗑️
                                                 </button>
                                             </form>
@@ -942,7 +943,7 @@
                 </div>
             {% else %}
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                    <p class="font-bold text-slate-600 text-sm">لا توجد جلسات سابقة مسجلة بعد.</p>
+                    <p class="font-bold text-slate-600 text-sm">{% trans "لا توجد جلسات سابقة مسجلة بعد." %}</p>
                 </div>
             {% endif %}
         </div>
@@ -971,7 +972,7 @@
                         📚
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-slate-900">إضافة مادة دراسية جديدة</h3>
+                        <h3 class="text-lg font-black text-slate-900">{% trans "إضافة مادة دراسية جديدة" %}</h3>
                         <p class="text-xs text-slate-400 font-semibold">{{ teacher.institution.name }}</p>
                     </div>
                 </div>
@@ -984,38 +985,38 @@
                 {% csrf_token %}
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المادة الدراسية *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اسم المادة الدراسية" %} *</label>
                     <input type="text" 
                            name="name" 
                            required 
-                           placeholder="مثال: الذكاء الاصطناعي، تراكيب البيانات..."
+                           placeholder="{% trans 'مثال: الذكاء الاصطناعي، تراكيب البيانات...' %}"
                            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز المادة (Course Code) - اختياري</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "رمز المادة (Course Code) - اختياري" %}</label>
                     <input type="text" 
                            name="code" 
-                           placeholder="مثال: CS301 أو AI202 (يتم التوليد تلقائياً إذا ترك فارغاً)"
+                           placeholder="{% trans 'مثال: CS301 أو AI202 (يتم التوليد تلقائياً إذا ترك فارغاً)' %}"
                            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">ربط المادة بشعبة دراسية (اختياري)</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "ربط المادة بشعبة دراسية (اختياري)" %}</label>
                     <select name="section_id" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <option value="">-- بدون ربط فوري (ربط لاحقاً) --</option>
+                        <option value="">-- {% trans "بدون ربط فوري (ربط لاحقاً)" %} --</option>
                         {% for sec in my_sections %}
-                            <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                            <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({% trans sec.get_shift_display %})</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                     <button type="button" @click="showAddCourseModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                     <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">
-                        ✓ حفظ المادة الدراسية
+                        ✓ {% trans "حفظ المادة الدراسية" %}
                     </button>
                 </div>
             </form>
@@ -1044,7 +1045,7 @@
                         🏛️
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-slate-900">إضافة شعبة دراسية جديدة</h3>
+                        <h3 class="text-lg font-black text-slate-900">{% trans "إضافة شعبة دراسية جديدة" %}</h3>
                         <p class="text-xs text-slate-400 font-semibold">{{ teacher.institution.name }}</p>
                     </div>
                 </div>
@@ -1057,50 +1058,50 @@
                 {% csrf_token %}
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">المرحلة / الصف الدراسي *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "المرحلة / الصف الدراسي" %} *</label>
                     <select name="level" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="المرحلة الأولى">المرحلة الأولى</option>
-                        <option value="المرحلة الثانية">المرحلة الثانية</option>
-                        <option value="المرحلة الثالثة">المرحلة الثالثة</option>
-                        <option value="المرحلة الرابعة">المرحلة الرابعة</option>
-                        <option value="الدراسات العليا">الدراسات العليا (ماجستير/دكتوراه)</option>
+                        <option value="المرحلة الأولى">{% trans "المرحلة الأولى" %}</option>
+                        <option value="المرحلة الثانية">{% trans "المرحلة الثانية" %}</option>
+                        <option value="المرحلة الثالثة">{% trans "المرحلة الثالثة" %}</option>
+                        <option value="المرحلة الرابعة">{% trans "المرحلة الرابعة" %}</option>
+                        <option value="الدراسات العليا">{% trans "الدراسات العليا (ماجستير/دكتوراه)" %}</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الشعبة / المجموعة *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اسم الشعبة / المجموعة" %} *</label>
                     <input type="text" 
                            name="name" 
                            required 
-                           placeholder="مثال: شعبة أ، شعبة B، المجموعة 1..."
+                           placeholder="{% trans 'مثال: شعبة أ، شعبة B، المجموعة 1...' %}"
                            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <!-- Study Shift Choice -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-2">نوع الدراسة (صباحي / مسائي) *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">{% trans "نوع الدراسة (صباحي / مسائي)" %} *</label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="flex items-center gap-2 p-3 border border-amber-200 rounded-xl bg-amber-50/60 cursor-pointer hover:bg-amber-100/50 transition-colors">
                             <input type="radio" name="shift" value="MORNING" checked class="text-amber-600 focus:ring-amber-500">
                             <div>
-                                <span class="text-xs font-black text-amber-900 block">☀️ دراسة صباحية</span>
-                                <span class="text-[10px] text-amber-700">الفترة الصباحية</span>
+                                <span class="text-xs font-black text-amber-900 block">☀️ {% trans "دراسة صباحية" %}</span>
+                                <span class="text-[10px] text-amber-700">{% trans "الفترة الصباحية" %}</span>
                             </div>
                         </label>
                         <label class="flex items-center gap-2 p-3 border border-indigo-200 rounded-xl bg-indigo-50/60 cursor-pointer hover:bg-indigo-100/50 transition-colors">
                             <input type="radio" name="shift" value="EVENING" class="text-indigo-600 focus:ring-indigo-500">
                             <div>
-                                <span class="text-xs font-black text-indigo-900 block">🌙 دراسة مسائية</span>
-                                <span class="text-[10px] text-indigo-700">الفترة المسائية</span>
+                                <span class="text-xs font-black text-indigo-900 block">🌙 {% trans "دراسة مسائية" %}</span>
+                                <span class="text-[10px] text-indigo-700">{% trans "الفترة المسائية" %}</span>
                             </div>
                         </label>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">ربط بمادة دراسية قائمة (اختياري)</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "ربط بمادة دراسية قائمة (اختياري)" %}</label>
                     <select name="course_id" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="">-- بدون ربط مادة الآن --</option>
+                        <option value="">-- {% trans "بدون ربط مادة الآن" %} --</option>
                         {% for crs in my_courses %}
                             <option value="{{ crs.id }}">{{ crs.name }} ({{ crs.code }})</option>
                         {% endfor %}
@@ -1109,10 +1110,10 @@
 
                 <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                     <button type="button" @click="showAddSectionModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                     <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm">
-                        ✓ حفظ الشعبة
+                        ✓ {% trans "حفظ الشعبة" %}
                     </button>
                 </div>
             </form>
@@ -1141,8 +1142,8 @@
                         🏛️
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-slate-900">تخصيص الجامعة والقسم الأكاديمي</h3>
-                        <p class="text-xs text-slate-400 font-semibold">عزل تام لبياناتك وموادك وطلابك عن باقي الجامعات</p>
+                        <h3 class="text-lg font-black text-slate-900">{% trans "تخصيص الجامعة والقسم الأكاديمي" %}</h3>
+                        <p class="text-xs text-slate-400 font-semibold">{% trans "عزل تام لبياناتك وموادك وطلابك عن باقي الجامعات" %}</p>
                     </div>
                 </div>
                 <button @click="showProfileModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
@@ -1154,7 +1155,7 @@
                 {% csrf_token %}
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">اسمك الكامل (الأستاذ / الدكتور) *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اسمك الكامل (الأستاذ / الدكتور)" %} *</label>
                     <input type="text" 
                            name="first_name" 
                            value="{{ user.first_name|default:user.username }}" 
@@ -1163,37 +1164,37 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الجامعة والكلية *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اسم الجامعة والكلية" %} *</label>
                     <input type="text" 
                            name="institution_name" 
                            value="{{ teacher.institution.name }}" 
                            required 
-                           placeholder="مثال: جامعة البصرة - كلية الهندسة، أو جامعة بغداد - كلية العلوم..."
+                           placeholder="{% trans 'مثال: جامعة البصرة - كلية الهندسة، أو جامعة بغداد - كلية العلوم...' %}"
                            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                    <p class="text-[11px] text-slate-400 mt-1">يحدد المؤسسة التي يتبع لها حسابك ويعزل جميع بيانات الطلاب والشعب تحتها.</p>
+                    <p class="text-[11px] text-slate-400 mt-1">{% trans "يحدد المؤسسة التي يتبع لها حسابك ويعزل جميع بيانات الطلاب والشعب تحتها." %}</p>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">القسم الأكاديمي أو التخصص *</label>
-                    <input type="text" 
-                           name="department_name" 
-                           value="{{ teacher.department.name|default:teacher.specialization|default:'قسم علوم الحاسوب' }}" 
-                           required 
-                           placeholder="مثال: قسم هندسة النفط، قسم البرمجيات، قسم القانون..."
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "القسم الأكاديمي أو التخصص" %} *</label>
+                    <input type="text"
+                           name="department_name"
+                           value="{{ teacher.department.name|default:teacher.specialization|default:_('قسم علوم الحاسوب') }}"
+                           required
+                           placeholder="{% trans 'مثال: قسم هندسة النفط، قسم البرمجيات، قسم القانون...' %}"
                            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">اللقب العلمي / التخصص الدقيق</label>
-                        <input type="text" 
-                               name="specialization" 
-                               value="{{ teacher.specialization|default:'أستاذ مساعد' }}" 
-                               placeholder="مثال: أستاذ مساعد دكتور"
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اللقب العلمي / التخصص الدقيق" %}</label>
+                        <input type="text"
+                               name="specialization"
+                               value="{{ teacher.specialization|default:_('أستاذ مساعد') }}"
+                               placeholder="{% trans 'مثال: أستاذ مساعد دكتور' %}"
                                class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف العراقي</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "رقم الهاتف العراقي" %}</label>
                         <input type="text" 
                                name="phone" 
                                value="{{ user.phone|default:'' }}" 
@@ -1204,10 +1205,10 @@
 
                 <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                     <button type="button" @click="showProfileModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                     <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-black text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-sm">
-                        ✓ حفظ التعديلات وتحديث النظام
+                        ✓ {% trans "حفظ التعديلات وتحديث النظام" %}
                     </button>
                 </div>
             </form>
@@ -1236,8 +1237,8 @@
                         📅
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-slate-900">جدولة محاضرة قادمة أو تعويضية</h3>
-                        <p class="text-xs text-slate-400 font-semibold">تجهيز المحاضرة مسبقاً لتشغيلها بلمسة واحدة</p>
+                        <h3 class="text-lg font-black text-slate-900">{% trans "جدولة محاضرة قادمة أو تعويضية" %}</h3>
+                        <p class="text-xs text-slate-400 font-semibold">{% trans "تجهيز المحاضرة مسبقاً لتشغيلها بلمسة واحدة" %}</p>
                     </div>
                 </div>
                 <button @click="showScheduleModal = false" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
@@ -1252,20 +1253,20 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">المادة الدراسية *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "المادة الدراسية" %} *</label>
                         <select name="course_id" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                            <option value="">-- اختر المادة --</option>
+                            <option value="">-- {% trans "اختر المادة" %} --</option>
                             {% for c in my_courses %}
                                 <option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">الشعبة / المرحلة *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "الشعبة / المرحلة" %} *</label>
                         <select name="section_id" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                            <option value="">-- اختر الشعبة --</option>
+                            <option value="">-- {% trans "اختر الشعبة" %} --</option>
                             {% for s in my_sections %}
-                                <option value="{{ s.id }}">{{ s.level }} - {{ s.name }} ({{ s.get_shift_display }})</option>
+                                <option value="{{ s.id }}">{{ s.level }} - {{ s.name }} ({% trans s.get_shift_display %})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -1273,12 +1274,12 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">تاريخ المحاضرة *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "تاريخ المحاضرة" %} *</label>
                         <input type="date" name="session_date" required id="schedule_date_input"
                                class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">وقت البدء *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "وقت البدء" %} *</label>
                         <input type="time" name="start_time" value="10:00" required
                                class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
@@ -1286,57 +1287,57 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">المدة (بالدقائق)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "المدة (بالدقائق)" %}</label>
                         <select name="duration" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                            <option value="30">30 دقيقة</option>
-                            <option value="45" selected>45 دقيقة</option>
-                            <option value="60">60 دقيقة (ساعة)</option>
-                            <option value="90">90 دقيقة</option>
-                            <option value="120">120 دقيقة (ساعتان)</option>
+                            <option value="30">{% trans "30 دقيقة" %}</option>
+                            <option value="45" selected>{% trans "45 دقيقة" %}</option>
+                            <option value="60">{% trans "60 دقيقة (ساعة)" %}</option>
+                            <option value="90">{% trans "90 دقيقة" %}</option>
+                            <option value="120">{% trans "120 دقيقة (ساعتان)" %}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">نوع الدراسة</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "نوع الدراسة" %}</label>
                         <select name="shift" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                            <option value="MORNING">☀️ صباحي</option>
-                            <option value="EVENING">🌙 مسائي</option>
+                            <option value="MORNING">☀️ {% trans "صباحي" %}</option>
+                            <option value="EVENING">🌙 {% trans "مسائي" %}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">القاعة</label>
-                        <input type="text" name="room" placeholder="مثال: قاعة 4"
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "القاعة" %}</label>
+                        <input type="text" name="room" placeholder="{% trans 'مثال: قاعة 4' %}"
                                class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">موضوع أو عنوان المحاضرة (اختياري)</label>
-                    <input type="text" name="topic" placeholder="مثال: الفصل الثالث - الخوارزميات المتقدمة"
+                    <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "موضوع أو عنوان المحاضرة (اختياري)" %}</label>
+                    <input type="text" name="topic" placeholder="{% trans 'مثال: الفصل الثالث - الخوارزميات المتقدمة' %}"
                            class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                 </div>
 
                 <!-- Security Options -->
                 <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                    <p class="text-xs font-bold text-slate-700">🛡️ خيارات التحقق والأمان المسبقة:</p>
+                    <p class="text-xs font-bold text-slate-700">🛡️ {% trans "خيارات التحقق والأمان المسبقة:" %}</p>
                     <div class="flex flex-wrap gap-4 text-xs font-semibold text-slate-700">
                         <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="checkbox" name="requires_geofence" checked class="rounded border-slate-300 text-amber-600">
-                            <span>📍 التحقق من الموقع الجغرافي (GPS)</span>
+                            <span>📍 {% trans "التحقق من الموقع الجغرافي (GPS)" %}</span>
                         </label>
                         <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="checkbox" name="requires_wifi" class="rounded border-slate-300 text-amber-600">
-                            <span>📶 التحقق من شبكة WiFi المؤسسة</span>
+                            <span>📶 {% trans "التحقق من شبكة WiFi المؤسسة" %}</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                     <button type="button" @click="showScheduleModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                     <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-black text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 rounded-xl shadow-md shadow-amber-200 transition-all flex items-center gap-1.5">
                         <span>💾</span>
-                        <span>حفظ وجدولة المحاضرة</span>
+                        <span>{% trans "حفظ وجدولة المحاضرة" %}</span>
                     </button>
                 </div>
             </form>

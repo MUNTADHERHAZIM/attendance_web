@@ -1,30 +1,31 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}التقارير وسجلات الرقابة - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "التقارير وسجلات الرقابة" %} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8" x-data="{ selectedLogs: [], selectAll: false }">
     <!-- Header -->
     <div class="border-b border-slate-100 pb-4">
-        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">التقارير وسجلات الرقابة (Audit Trail)</h1>
-        <p class="text-xs text-slate-400 font-semibold mt-1">المؤسسة: {{ institution.name }}</p>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "التقارير وسجلات الرقابة (Audit Trail)" %}</h1>
+        <p class="text-xs text-slate-400 font-semibold mt-1">{% trans "المؤسسة:" %} {{ institution.name }}</p>
     </div>
 
     <!-- Attendance Sessions Log -->
     <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">سجل جلسات التحضير المفتوحة</h2>
+        <h2 class="text-lg font-bold text-slate-900 mb-4">{% trans "سجل جلسات التحضير المفتوحة" %}</h2>
         
         <div class="overflow-x-auto">
             {% if attendance_sessions %}
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead>
                         <tr class="bg-slate-50 text-right">
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الشعبة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">مُنشئ الجلسة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">إجراءات التقرير</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "المادة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الشعبة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "التاريخ" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "مُنشئ الجلسة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الحالة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "إجراءات التقرير" %}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium">
@@ -46,15 +47,15 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold 
                                           {% if att_sess.is_active %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-650{% endif %}">
-                                        {{ att_sess.is_active|yesno:"نشط,منتهي" }}
+                                        {% if att_sess.is_active %}{% trans "نشط" %}{% else %}{% trans "منتهي" %}{% endif %}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm space-x-reverse space-x-2">
                                     <a href="/attendance/session/{{ att_sess.id }}/" 
-                                       class="text-xs font-bold text-brand-600 hover:text-brand-700">عرض التفاصيل</a>
+                                       class="text-xs font-bold text-brand-600 hover:text-brand-700">{% trans "عرض التفاصيل" %}</a>
                                     <span class="text-slate-200">|</span>
                                     <a href="{% url 'reports:export_excel' att_sess.id %}" 
-                                       class="text-xs font-bold text-emerald-600 hover:text-emerald-700">تنزيل Excel</a>
+                                       class="text-xs font-bold text-emerald-600 hover:text-emerald-700">{% trans "تنزيل Excel" %}</a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -62,7 +63,7 @@
                 </table>
             {% else %}
                 <div class="text-center py-10 text-slate-400 font-semibold text-sm">
-                    لا يوجد أي جلسات حضور مسجلة حالياً.
+                    {% trans "لا يوجد أي جلسات حضور مسجلة حالياً." %}
                 </div>
             {% endif %}
         </div>
@@ -71,28 +72,28 @@
     <!-- System Audit Log Trail -->
     <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h2 class="text-lg font-bold text-slate-900">سجل العمليات وحركات التدقيق (Audit Logs)</h2>
+            <h2 class="text-lg font-bold text-slate-900">{% trans "سجل العمليات وحركات التدقيق (Audit Logs)" %}</h2>
             {% if user.is_super_admin or user.is_institution_admin %}
             <div class="flex flex-wrap items-center gap-2">
                 <!-- Bulk Delete selected -->
                 <form method="POST" action="{% url 'reports:bulk_delete_audit_logs' %}"
                       x-show="selectedLogs.length > 0"
-                      @submit.prevent="if(confirm('هل تريد حذف '+selectedLogs.length+' سجل محدد؟')) { $el.querySelector('[name=selected_logs_str]').value = selectedLogs.join(','); $el.submit(); }">
+                      @submit.prevent="if(confirm('{% trans 'هل تريد حذف السجلات المحددة؟' %}')) { $el.querySelector('[name=selected_logs_str]').value = selectedLogs.join(','); $el.submit(); }">
                     {% csrf_token %}
                     <input type="hidden" name="selected_logs_str" value="">
                     <button type="submit"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all">
-                        🗑️ حذف المحدد (<span x-text="selectedLogs.length"></span>)
+                        🗑️ {% trans "حذف المحدد" %} (<span x-text="selectedLogs.length"></span>)
                     </button>
                 </form>
                 <!-- Clear All (super-admin) -->
                 {% if user.is_super_admin %}
                 <form method="POST" action="{% url 'reports:clear_all_audit_logs' %}"
-                      onsubmit="return confirm('⚠️ سيتم مسح جميع سجلات التدقيق نهائياً. هل أنت متأكد؟')">
+                      onsubmit="return confirm('{% trans '⚠️ سيتم مسح جميع سجلات التدقيق نهائياً. هل أنت متأكد؟' %}')">
                     {% csrf_token %}
                     <button type="submit"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 border border-rose-700 transition-all shadow-xs">
-                        🗑️ مسح الكل
+                        🗑️ {% trans "مسح الكل" %}
                     </button>
                 </form>
                 {% endif %}
@@ -111,13 +112,13 @@
                                        @change="selectAll = $event.target.checked; if(selectAll){ selectedLogs = [{% for log in audit_logs %}{{ log.id }}{% if not forloop.last %},{% endif %}{% endfor %}]; } else { selectedLogs = []; }">
                             </th>
                             {% endif %}
-                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">المستخدم</th>
-                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">العملية</th>
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">{% trans "المستخدم" %}</th>
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">{% trans "العملية" %}</th>
                             <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">عنوان IP</th>
-                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">الوقت والتاريخ</th>
-                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">التفاصيل</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الوقت والتاريخ" %}</th>
+                            <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">{% trans "التفاصيل" %}</th>
                             {% if user.is_super_admin or user.is_institution_admin %}
-                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">حذف</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">{% trans "حذف" %}</th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -133,7 +134,7 @@
                                 {% endif %}
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <div class="font-bold text-slate-800">{{ log.user.get_full_name|default:log.user.username }}</div>
-                                    <div class="text-xs text-slate-400">{{ log.user.get_role_display|default:"النظام" }}</div>
+                                    <div class="text-xs text-slate-400">{% if log.user %}{{ log.user.get_role_display }}{% else %}{% trans "النظام" %}{% endif %}</div>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-slate-700">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-800">
@@ -152,7 +153,7 @@
                                 {% if user.is_super_admin or user.is_institution_admin %}
                                 <td class="px-4 py-3 text-center">
                                     <form method="POST" action="{% url 'reports:delete_audit_log' log.id %}"
-                                          onsubmit="return confirm('هل تريد حذف هذا السجل نهائياً؟')">
+                                          onsubmit="return confirm('{% trans 'هل تريد حذف هذا السجل نهائياً؟' %}')">
                                         {% csrf_token %}
                                         <button type="submit"
                                                 class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all">
@@ -167,11 +168,10 @@
                 </table>
             {% else %}
                 <div class="text-center py-10 text-slate-400 font-semibold text-sm">
-                    سجل العمليات فارغ حالياً.
+                    {% trans "سجل العمليات فارغ حالياً." %}
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
-

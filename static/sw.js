@@ -3,14 +3,17 @@
 // Ultra-resilient Offline Caching, Stale-While-Revalidate & Instant Sync
 // =====================================================================
 
-const SW_VERSION = "v3.8.0";
+const SW_VERSION = "v3.10.0";
 const PRECACHE_NAME = `smart-att-precache-${SW_VERSION}`;
 const RUNTIME_CACHE = `smart-att-runtime-${SW_VERSION}`;
 const STATIC_CACHE = `smart-att-static-${SW_VERSION}`;
+const LANGUAGE_CACHE_NAME = `smart-att-language-${SW_VERSION}`;
+const LANGUAGE_PREFERENCE_KEY = "/__pwa_language_preference__";
 
 // Critical Shell Assets to pre-cache immediately upon install
 const PRECACHE_URLS = [
-    "/offline/",
+    "/offline/?lang=ar",
+    "/offline/?lang=en",
     "/login/",
     "/manifest.json",
     "/favicon.ico",
@@ -22,6 +25,21 @@ const PRECACHE_URLS = [
     "/static/images/logo_192.png",
     "/static/images/logo_512.png",
 ];
+
+async function getPreferredLanguage() {
+    const cache = await caches.open(LANGUAGE_CACHE_NAME);
+    const savedLanguage = await cache.match(LANGUAGE_PREFERENCE_KEY);
+    const language = savedLanguage ? await savedLanguage.text() : "";
+    if (language === "en" || language === "ar") return language;
+    return self.navigator.language.toLowerCase().startsWith("en") ? "en" : "ar";
+}
+
+async function getOfflinePage() {
+    const language = await getPreferredLanguage();
+    return await caches.match(`/offline/?lang=${language}`)
+        || await caches.match("/offline/")
+        || await caches.match("/offline/?lang=ar");
+}
 
 // Patterns that MUST ALWAYS bypass cache (network only, no cache fallback)
 const NEVER_CACHE_URLS = [
@@ -59,7 +77,7 @@ self.addEventListener("install", (event) => {
 // ─── 2. Activate Event (Cache Maintenance & Claiming) ───────────────
 self.addEventListener("activate", (event) => {
     console.log(`[PWA SW] Activating Smart Attendance Service Worker (${SW_VERSION})...`);
-    const expectedCaches = [PRECACHE_NAME, RUNTIME_CACHE, STATIC_CACHE];
+    const expectedCaches = [PRECACHE_NAME, RUNTIME_CACHE, STATIC_CACHE, LANGUAGE_CACHE_NAME];
 
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -156,7 +174,7 @@ self.addEventListener("fetch", (event) => {
                 .catch(async () => {
                     console.log(`[PWA SW] Network failed for ${url.pathname}. Attempting offline cache.`);
                     if (url.pathname === "/attendance/checkin/") {
-                        const offlinePage = await caches.match("/offline/");
+                        const offlinePage = await getOfflinePage();
                         if (offlinePage) return offlinePage;
                     }
                     // Try to find cached version of this exact URL
@@ -166,7 +184,7 @@ self.addEventListener("fetch", (event) => {
                     }
 
                     // Try to return the dedicated offline page
-                    const offlinePage = await caches.match("/offline/");
+                    const offlinePage = await getOfflinePage();
                     if (offlinePage) {
                         return offlinePage;
                     }
@@ -177,8 +195,13 @@ self.addEventListener("fetch", (event) => {
                         return loginPage;
                     }
 
+                    const isEnglish = (await getPreferredLanguage()) === "en";
+                    const fallbackTitle = isEnglish ? "You are offline" : "غير متصل بالإنترنت";
+                    const fallbackMessage = isEnglish
+                        ? "Check your network connection and try again."
+                        : "يرجى التحقق من اتصال الشبكة وإعادة المحاولة.";
                     return new Response(
-                        "<h1>غير متصل بالإنترنت</h1><p>يرجى التحقق من اتصال الشبكة وإعادة المحاولة.</p>",
+                        `<!doctype html><html lang="${isEnglish ? "en" : "ar"}" dir="${isEnglish ? "ltr" : "rtl"}"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${fallbackTitle}</title><h1>${fallbackTitle}</h1><p>${fallbackMessage}</p>`,
                         { headers: { "Content-Type": "text/html; charset=utf-8" } }
                     );
                 })
@@ -206,6 +229,16 @@ self.addEventListener("message", (event) => {
         console.log("[PWA SW] Received SKIP_WAITING signal.");
         self.skipWaiting();
     }
+    if (event.data && event.data.type === "SET_LANGUAGE") {
+        const language = event.data.language;
+        if (language === "en" || language === "ar") {
+            event.waitUntil(
+                caches.open(LANGUAGE_CACHE_NAME).then((cache) =>
+                    cache.put(LANGUAGE_PREFERENCE_KEY, new Response(language))
+                )
+            );
+        }
+    }
 });
 
 // ─── 5. Push Notifications (Native PWA Notifications) ───────────────
@@ -213,12 +246,13 @@ self.addEventListener("push", (event) => {
     if (!event.data) return;
     try {
         const data = event.data.json();
+        const language = (data.lang || "ar").toLowerCase().startsWith("en") ? "en" : "ar";
         const options = {
             body: data.body || "إشعار جديد من نظام الحضور الذكي",
             icon: data.icon || "/static/images/pwa/icon-192x192.png",
             badge: "/static/images/pwa/badge-72x72.png",
-            dir: "rtl",
-            lang: "ar",
+            dir: language === "en" ? "ltr" : "rtl",
+            lang: language,
             vibrate: [100, 50, 100],
             data: {
                 url: data.url || "/"

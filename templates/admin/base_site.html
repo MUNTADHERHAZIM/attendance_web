@@ -1,7 +1,7 @@
 {% extends "admin/base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}{{ title }} | نظام الحضور الذكي{% endblock %}
+{% block title %}{{ title }} | {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block branding %}
 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.75rem; padding: 0.35rem 0;">
@@ -13,13 +13,13 @@
         {% endif %}
         <div>
             <h1 id="site-name" style="margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
-                <a href="{% url 'admin:index' %}" style="color: #ffffff; text-decoration: none;">لوحة إدارة نظام الحضور الذكي</a>
+                <a href="{% url 'admin:index' %}" style="color: #ffffff; text-decoration: none;">{% trans "لوحة إدارة نظام الحضور الذكي" %}</a>
             </h1>
-            <div style="font-size: 0.75rem; color: #c7d2fe; font-weight: 600;">العراق &bull; {{ system_institution_name|default:"جامعة بغداد" }}</div>
+            <div style="font-size: 0.75rem; color: #c7d2fe; font-weight: 600;">{% trans "العراق" %} &bull; {{ system_institution_name|default:"جامعة بغداد" }}</div>
         </div>
     </div>
     <div style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: 9999px; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
-        <span>المطور:</span>
+        <span>{% trans "المطور:" %}</span>
         <strong style="color: #fde047;">MUNTADHER HAZIM</strong>
         <span style="opacity: 0.8; font-family: monospace;" dir="ltr">07724978301</span>
     </div>

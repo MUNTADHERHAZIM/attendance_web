@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}الملف الشخصي — نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "الملف الشخصي" %} — {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-8">
     <!-- Header -->
     <div class="border-b border-slate-200 pb-5">
-        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">الملف الشخصي وإعدادات الحساب</h1>
-        <p class="text-sm text-slate-500 font-medium mt-1">عرض وتحديث بياناتك الشخصية، اسم الجامعة، ومعلومات الاعتماد الأكاديمي</p>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "الملف الشخصي وإعدادات الحساب" %}</h1>
+        <p class="text-sm text-slate-500 font-medium mt-1">{% trans "عرض وتحديث بياناتك الشخصية، اسم الجامعة، ومعلومات الاعتماد الأكاديمي" %}</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -34,16 +35,16 @@
 
                 <div class="border-t border-slate-100 mt-6 pt-4 text-xs text-slate-500 space-y-2 text-right">
                     <div class="flex justify-between items-center py-1">
-                        <span class="text-slate-400">تاريخ الانضمام</span>
+                        <span class="text-slate-400">{% trans "تاريخ الانضمام" %}</span>
                         <span class="font-semibold">{{ user.date_joined|date:"Y-m-d" }}</span>
                     </div>
                     <div class="flex justify-between items-center py-1">
-                        <span class="text-slate-400">آخر تسجيل دخول</span>
-                        <span class="font-semibold">{{ user.last_login|date:"Y-m-d H:i"|default:"اليوم" }}</span>
+                        <span class="text-slate-400">{% trans "آخر تسجيل دخول" %}</span>
+                        <span class="font-semibold">{{ user.last_login|date:"Y-m-d H:i"|default:_("اليوم") }}</span>
                     </div>
                     {% if user.phone %}
                     <div class="flex justify-between items-center py-1">
-                        <span class="text-slate-400">رقم الهاتف</span>
+                        <span class="text-slate-400">{% trans "رقم الهاتف" %}</span>
                         <span class="font-semibold" dir="ltr">{{ user.phone }}</span>
                     </div>
                     {% endif %}
@@ -53,22 +54,22 @@
             <!-- Role details summary card -->
             {% if profile %}
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-right">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">بيانات الاعتماد الأكاديمي الحالية</h3>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{% trans "بيانات الاعتماد الأكاديمي الحالية" %}</h3>
                 {% if user.is_student %}
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span class="text-slate-500">الرقم الجامعي:</span> <span class="font-bold text-slate-900 font-mono">{{ profile.student_id }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">الجامعة / الكلية:</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">نوع الدراسة:</span> <span class="font-bold">{{ profile.get_study_shift_display }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "الرقم الجامعي:" %}</span> <span class="font-bold text-slate-900 font-mono">{{ profile.student_id }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "الجامعة / الكلية:" %}</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "نوع الدراسة:" %}</span> <span class="font-bold">{% if profile.study_shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %}</span></div>
                         {% if profile.birth_date %}
-                        <div class="flex justify-between"><span class="text-slate-500">تاريخ الميلاد:</span> <span class="font-bold font-mono">{{ profile.birth_date|date:"Y-m-d" }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "تاريخ الميلاد:" %}</span> <span class="font-bold font-mono">{{ profile.birth_date|date:"Y-m-d" }}</span></div>
                         {% endif %}
                     </div>
                 {% elif user.is_teacher %}
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span class="text-slate-500">الرقم الوظيفي:</span> <span class="font-bold text-slate-900 font-mono">{{ profile.teacher_id }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">الجامعة / الكلية:</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "الرقم الوظيفي:" %}</span> <span class="font-bold text-slate-900 font-mono">{{ profile.teacher_id }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "الجامعة / الكلية:" %}</span> <span class="font-bold text-brand-700">{{ profile.institution.name }}</span></div>
                         {% if profile.specialization %}
-                        <div class="flex justify-between"><span class="text-slate-500">التخصص:</span> <span class="font-bold">{{ profile.specialization }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">{% trans "التخصص:" %}</span> <span class="font-bold">{{ profile.specialization }}</span></div>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -85,8 +86,8 @@
                         👤
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-900">تحديث البيانات الشخصية والأكاديمية</h2>
-                        <p class="text-xs text-slate-400">تعديل الاسم، البريد، الهاتف، واسم الجامعة/المؤسسة التعليمية</p>
+                        <h2 class="text-lg font-bold text-slate-900">{% trans "تحديث البيانات الشخصية والأكاديمية" %}</h2>
+                        <p class="text-xs text-slate-400">{% trans "تعديل الاسم، البريد، الهاتف، واسم الجامعة/المؤسسة التعليمية" %}</p>
                     </div>
                 </div>
 
@@ -97,12 +98,12 @@
                     <!-- Section: Basic Info -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">الاسم الأول *</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "الاسم الأول *" %}</label>
                             <input type="text" name="first_name" value="{{ user.first_name }}" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم العائلة / اللقب *</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "اسم العائلة / اللقب *" %}</label>
                             <input type="text" name="last_name" value="{{ user.last_name }}" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
@@ -110,12 +111,12 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم المستخدم (للتسجيل)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "اسم المستخدم (للتسجيل)" %}</label>
                             <input type="text" value="{{ user.username }}" disabled
                                    class="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">البريد الإلكتروني</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "البريد الإلكتروني" %}</label>
                             <input type="email" name="email" value="{{ user.email }}"
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
                                    placeholder="name@institution.edu">
@@ -124,13 +125,13 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">رقم الهاتف / الجوال (عراقي)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "رقم الهاتف / الجوال (عراقي)" %}</label>
                             <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
                                    placeholder="07724978301">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">الصورة الشخصية (Avatar)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "الصورة الشخصية (Avatar)" %}</label>
                             <input type="file" name="avatar" accept="image/*"
                                    class="w-full px-3.5 py-2 bg-slate-50 border border-slate-250 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
                         </div>
@@ -140,33 +141,33 @@
                     <div class="pt-4 border-t border-slate-100 space-y-4">
                         <div class="flex items-center gap-2">
                             <span class="text-brand-600">🏛️</span>
-                            <h3 class="text-sm font-bold text-slate-900">البيانات الأكاديمية والجامعية</h3>
+                            <h3 class="text-sm font-bold text-slate-900">{% trans "البيانات الأكاديمية والجامعية" %}</h3>
                         </div>
 
                         <!-- University / Institution Selection & Custom Entry -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">اختر الجامعة / الكلية المسجلة</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "اختر الجامعة / الكلية المسجلة" %}</label>
                                 <select name="institution_id" id="institution_select" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
-                                    <option value="">-- اختر من الجامعات المسجلة --</option>
+                                    <option value="">-- {% trans "اختر من الجامعات المسجلة" %} --</option>
                                     {% for inst in institutions %}
                                         <option value="{{ inst.id }}" {% if profile and profile.institution_id == inst.id %}selected{% endif %}>
                                             {{ inst.name }}
                                         </option>
                                     {% endfor %}
-                                    <option value="other">🏛️ أخرى (كتابة اسم جامعة جديد)...</option>
+                                    <option value="other">🏛️ {% trans "أخرى (كتابة اسم جامعة جديد)" %}...</option>
                                 </select>
                             </div>
                             <div>
                                 <div class="flex items-center justify-between mb-1.5">
-                                    <label class="block text-xs font-bold text-slate-700">أو اكتب اسم الجامعة/المؤسسة (إذا لم تكن بالقائمة)</label>
-                                    <span id="new_inst_badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded">جامعة مخصصة ✨</span>
+                                    <label class="block text-xs font-bold text-slate-700">{% trans "أو اكتب اسم الجامعة/المؤسسة (إذا لم تكن بالقائمة)" %}</label>
+                                    <span id="new_inst_badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded">{% trans "جامعة مخصصة" %} ✨</span>
                                 </div>
                                 <input type="text" name="new_institution_name" id="new_institution_input"
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
-                                       placeholder="مثال: جامعة العراق - كلية الهندسة">
+                                       placeholder="{% trans 'مثال: جامعة العراق - كلية الهندسة' %}">
                                 <p id="new_inst_hint" class="text-[11px] text-brand-600 font-semibold mt-1 hidden">
-                                    ✓ سيتم تسجيل هذه الجامعة وربط حسابك بها مباشرة عند الحفظ.
+                                    ✓ {% trans "سيتم تسجيل هذه الجامعة وربط حسابك بها مباشرة عند الحفظ." %}
                                 </p>
                             </div>
                         </div>
@@ -175,20 +176,20 @@
                         <!-- Student Specific Details -->
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">الرقم الجامعي / الطلابي *</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "الرقم الجامعي / الطلابي *" %}</label>
                                 <input type="text" name="student_id" value="{{ profile.student_id|default:'' }}" required
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-                                       placeholder="مثال: 20261042">
+                                       placeholder="{% trans 'مثال: 20261042' %}">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الدراسة (الدوام)</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "نوع الدراسة (الدوام)" %}</label>
                                 <select name="study_shift" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
-                                    <option value="MORNING" {% if profile and profile.study_shift == 'MORNING' %}selected{% endif %}>☀️ صباحي</option>
-                                    <option value="EVENING" {% if profile and profile.study_shift == 'EVENING' %}selected{% endif %}>🌙 مسائي</option>
+                                    <option value="MORNING" {% if profile and profile.study_shift == 'MORNING' %}selected{% endif %}>☀️ {% trans "صباحي" %}</option>
+                                    <option value="EVENING" {% if profile and profile.study_shift == 'EVENING' %}selected{% endif %}>🌙 {% trans "مسائي" %}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">تاريخ الميلاد</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "تاريخ الميلاد" %}</label>
                                 <input type="date" name="birth_date" value="{{ birth_date_val }}"
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                             </div>
@@ -198,16 +199,16 @@
                         <!-- Teacher Specific Details -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">الرقم الوظيفي / الأكاديمي</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "الرقم الوظيفي / الأكاديمي" %}</label>
                                 <input type="text" name="teacher_id" value="{{ profile.teacher_id|default:'' }}"
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-                                       placeholder="مثال: TCH-102">
+                                       placeholder="{% trans 'مثال: TCH-102' %}">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">التخصص الأكاديمي</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "التخصص الأكاديمي" %}</label>
                                 <input type="text" name="specialization" value="{{ profile.specialization|default:'' }}"
                                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800"
-                                       placeholder="مثال: علوم حاسوب / ذكاء اصطناعي">
+                                       placeholder="{% trans 'مثال: علوم حاسوب / ذكاء اصطناعي' %}">
                             </div>
                         </div>
                         {% endif %}
@@ -217,7 +218,7 @@
                         <button type="submit"
                                 class="px-6 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-100 transition-all flex items-center space-x-reverse space-x-2">
                             <span>💾</span>
-                            <span>حفظ جميع التعديلات</span>
+                            <span>{% trans "حفظ جميع التعديلات" %}</span>
                         </button>
                     </div>
                 </form>
@@ -230,8 +231,8 @@
                         🔒
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-900">تغيير كلمة المرور</h2>
-                        <p class="text-xs text-slate-400">تحديث كلمة المرور لحماية وتأمين حسابك</p>
+                        <h2 class="text-lg font-bold text-slate-900">{% trans "تغيير كلمة المرور" %}</h2>
+                        <p class="text-xs text-slate-400">{% trans "تحديث كلمة المرور لحماية وتأمين حسابك" %}</p>
                     </div>
                 </div>
 
@@ -240,19 +241,19 @@
                     <input type="hidden" name="action" value="change_password">
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">كلمة المرور الحالية</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "كلمة المرور الحالية" %}</label>
                         <input type="password" name="old_password" required
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">كلمة المرور الجديدة</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "كلمة المرور الجديدة" %}</label>
                             <input type="password" name="new_password1" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">تأكيد كلمة المرور الجديدة</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "تأكيد كلمة المرور الجديدة" %}</label>
                             <input type="password" name="new_password2" required
                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-250 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-semibold text-slate-800">
                         </div>
@@ -261,7 +262,7 @@
                     <div class="flex justify-end pt-2">
                         <button type="submit"
                                 class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition-all">
-                            تحديث كلمة المرور
+                            {% trans "تحديث كلمة المرور" %}
                         </button>
                     </div>
                 </form>

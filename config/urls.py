@@ -19,7 +19,8 @@ from apps.core.views import (
     custom_404_view, 
     custom_500_view, 
     custom_403_view,
-    offline_view
+    offline_view,
+    manifest_view,
 )
 from apps.reports.views import admin_import_web_view
 from apps.accounts.views import logout_view, RegisterView, CheckTeacherCodeView
@@ -53,6 +54,7 @@ class SmartLoginView(auth_views.LoginView):
 
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
     # ─── Django Admin Panel ───────────────────────────────────────────
     path("admin/", admin.site.urls),
 
@@ -110,10 +112,7 @@ urlpatterns = [
 
     # ─── PWA endpoints ───────────────────────────────────────────────
     path("offline/", offline_view, name="offline"),
-    path("manifest.json", serve, {
-        "path": "manifest.json",
-        "document_root": os.path.join(settings.BASE_DIR, "static"),
-    }, name="manifest_json"),
+    path("manifest.json", manifest_view, name="manifest_json"),
     path("favicon.ico", serve, {
         "path": "favicon.ico",
         "document_root": os.path.join(settings.BASE_DIR, "static"),

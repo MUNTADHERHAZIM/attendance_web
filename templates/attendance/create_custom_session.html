@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}إعداد وبدء محاضرة ذكية - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "إعداد وبدء جلسة تحضير ذكية" %} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto" 
@@ -44,13 +45,13 @@
         sessionDate: '{{ current_date }}',
         selectedDay: {{ default_day_enum }},
         daysList: [
-            { val: 0, label: 'السبت' },
-            { val: 1, label: 'الأحد' },
-            { val: 2, label: 'الإثنين' },
-            { val: 3, label: 'الثلاثاء' },
-            { val: 4, label: 'الأربعاء' },
-            { val: 5, label: 'الخميس' },
-            { val: 6, label: 'الجمعة' }
+            { val: 0, label: '{% trans "السبت" %}' },
+            { val: 1, label: '{% trans "الأحد" %}' },
+            { val: 2, label: '{% trans "الإثنين" %}' },
+            { val: 3, label: '{% trans "الثلاثاء" %}' },
+            { val: 4, label: '{% trans "الأربعاء" %}' },
+            { val: 5, label: '{% trans "الخميس" %}' },
+            { val: 6, label: '{% trans "الجمعة" %}' }
         ],
         startTime: '{{ current_time }}',
         durationMinutes: 60,
@@ -58,13 +59,13 @@
         // Lecture Details
         lectureType: 'نظري',
         lectureTypes: [
-            { id: 'نظري', label: '📘 نظري', desc: 'محاضرة قاعة نظرية' },
-            { id: 'عملي / مختبر', label: '🔬 عملي / مختبر', desc: 'تطبيق عملي بالمختبر' },
-            { id: 'إضافية تعويضية', label: '⚡ إضافية / تعويضية', desc: 'تعويض محاضرة فائتة' },
-            { id: 'امتحان / كويز', label: '📝 امتحان / كويز', desc: 'اختبار فصلي أو يومي' }
+            { id: 'نظري', label: '📘 {% trans "نظري" %}', desc: '{% trans "محاضرة قاعة نظرية" %}' },
+            { id: 'عملي / مختبر', label: '🔬 {% trans "عملي / مختبر" %}', desc: '{% trans "تطبيق عملي بالمختبر" %}' },
+            { id: 'إضافية تعويضية', label: '⚡ {% trans "إضافية / تعويضية" %}', desc: '{% trans "تعويض محاضرة فائتة" %}' },
+            { id: 'امتحان / كويز', label: '📝 {% trans "امتحان / كويز" %}', desc: '{% trans "اختبار فصلي أو يومي" %}' }
         ],
         topic: '',
-        room: 'القاعة الذكية - مختبر الحاسوب',
+        room: '{% trans "القاعة الذكية - مختبر الحاسوب" %}',
 
         // Security & Constraints
         requiresWifi: false,
@@ -93,7 +94,7 @@
                 h += Math.floor(m / 60);
                 m = m % 60;
                 h = h % 24;
-                const period = h >= 12 ? 'م' : 'ص';
+                const period = h >= 12 ? '{% trans "م" %}' : '{% trans "ص" %}';
                 const displayH = h % 12 || 12;
                 const displayM = m < 10 ? '0' + m : m;
                 return `${displayH}:${displayM} ${period}`;
@@ -197,7 +198,7 @@
 
         detectCurrentLocation() {
             if (!navigator.geolocation) {
-                alert('المتصفح الحالي لا يدعم ميزة تحديد الموقع الجغرافي.');
+                alert('{% trans "المتصفح الحالي لا يدعم ميزة تحديد الموقع الجغرافي." %}');
                 return;
             }
             this.isLocating = true;
@@ -207,11 +208,11 @@
                     this.longitude = pos.coords.longitude.toFixed(6);
                     this.requiresGeofence = true;
                     this.isLocating = false;
-                    this.successMessage = 'تم تثبيت إحداثيات موقعك الحالي للقاعة بنجاح!';
+                    this.successMessage = '{% trans "تم تثبيت إحداثيات موقعك الحالي للقاعة بنجاح!" %}';
                     setTimeout(() => this.successMessage = '', 4000);
                 },
                 (err) => {
-                    alert('تعذر تحديد الموقع الجغرافي: ' + err.message);
+                    alert('{% trans "تعذر تحديد الموقع الجغرافي:" %} ' + err.message);
                     this.isLocating = false;
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
@@ -238,13 +239,13 @@
                     const newObj = { id: String(data.id), name: data.name, code: data.code };
                     this.courses.unshift(newObj);
                     this.selectCourse(newObj);
-                    this.successMessage = `تمت إضافة المادة (${data.name}) واختيارها بنجاح!`;
+                    this.successMessage = `{% trans "تمت إضافة المادة" %} (${data.name}) {% trans "واختيارها بنجاح!" %}`;
                     setTimeout(() => this.successMessage = '', 4000);
                 } else {
                     this.selectedCourseId = 'new';
                     this.selectedCourseName = nameToCreate;
                     this.newCourseName = nameToCreate;
-                    this.selectedCourseCode = 'CS-جديد';
+                    this.selectedCourseCode = '{% if LANGUAGE_CODE == "en" %}CS-NEW{% else %}CS-جديد{% endif %}';
                     this.openCourseDropdown = false;
                 }
             } catch (err) {
@@ -252,7 +253,7 @@
                 this.selectedCourseId = 'new';
                 this.selectedCourseName = nameToCreate;
                 this.newCourseName = nameToCreate;
-                this.selectedCourseCode = 'CS-جديد';
+                this.selectedCourseCode = '{% if LANGUAGE_CODE == "en" %}CS-NEW{% else %}CS-جديد{% endif %}';
                 this.openCourseDropdown = false;
             } finally {
                 this.isCreatingCourse = false;
@@ -263,7 +264,7 @@
         quickCreateSection() {
             const nameToCreate = this.searchSection.trim();
             if (!nameToCreate) return;
-            const newObj = { id: 'new', name: nameToCreate, level: 'المستوى العام', shift: this.shift, shiftDisplay: this.shift === 'MORNING' ? 'صباحي' : 'مسائي' };
+            const newObj = { id: 'new', name: nameToCreate, level: '{% trans "المستوى العام" %}', shift: this.shift, shiftDisplay: this.shift === 'MORNING' ? '{% trans "صباحي" %}' : '{% trans "مسائي" %}' };
             this.sections.unshift(newObj);
             this.selectSection(newObj);
             this.newSectionName = nameToCreate;
@@ -276,23 +277,23 @@
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-xs">
-                        🚀 إنشاء وبدء محاضرة فورية
+                        🚀 {% trans "إنشاء وبدء محاضرة فورية" %}
                     </span>
                     <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
-                        لوحة تحكم الأستاذ المستقلة
+                        {% trans "لوحة تحكم الأستاذ المستقلة" %}
                     </span>
                     <span class="text-xs font-black px-2.5 py-0.5 rounded-full"
                           :class="shift === 'MORNING' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-indigo-100 text-indigo-900 border border-indigo-200'"
-                          x-text="shift === 'MORNING' ? '☀️ دراسة صباحية' : '🌙 دراسة مسائية'"></span>
+                          x-text="shift === 'MORNING' ? '☀️ {% trans "دراسة صباحية" %}' : '🌙 {% trans "دراسة مسائية" %}'"></span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">إعداد وبدء جلسة تحضير ذكية</h1>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{% trans "إعداد وبدء جلسة تحضير ذكية" %}</h1>
                 <p class="text-xs text-slate-500 font-semibold mt-1">
-                    حدد المادة والشعبة، وحدد موعد ووقت المحاضرة بدقة مع تفعيل حواجز الأمان وفحص منع التضارب بين الأساتذة والطلاب
+                    {% trans "حدد المادة والشعبة، وحدد موعد ووقت المحاضرة بدقة مع تفعيل حواجز الأمان وفحص منع التضارب بين الأساتذة والطلاب" %}
                 </p>
             </div>
             <a href="/" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 text-xs font-black transition-all">
                 <span>✕</span>
-                <span>العودة للرئيسية</span>
+                <span>{% trans "العودة للرئيسية" %}</span>
             </a>
         </div>
     </div>
@@ -324,15 +325,15 @@
             <div class="flex items-center justify-between mb-3">
                 <div class="text-right">
                     <label class="block text-sm font-black text-slate-800">
-                        نوع الدراسة (الدوام) <span class="text-rose-500">*</span>
+                        {% trans "نوع الدراسة (الدوام)" %} <span class="text-rose-500">*</span>
                     </label>
                     <p class="text-xs text-slate-500 font-medium mt-0.5">
-                        فصل صارم بين طلاب الدراسة الصباحية والمسائية لمنع تضارب الجداول والقاعات وسجلات الحضور
+                        {% trans "فصل صارم بين طلاب الدراسة الصباحية والمسائية لمنع تضارب الجداول والقاعات وسجلات الحضور" %}
                     </p>
                 </div>
                 <span class="text-xs font-bold px-3 py-1 rounded-full shadow-xs"
                       :class="shift === 'MORNING' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-indigo-100 text-indigo-900 border border-indigo-300'"
-                      x-text="shift === 'MORNING' ? '☀️ دوام نهاري' : '🌙 دوام مسائي'"></span>
+                      x-text="shift === 'MORNING' ? '☀️ {% trans "دوام نهاري" %}' : '🌙 {% trans "دوام مسائي" %}'"></span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -343,9 +344,9 @@
                         :class="shift === 'MORNING' ? 'border-amber-500 bg-white ring-4 ring-amber-100 shadow-sm' : 'border-slate-200 bg-white/70 hover:border-slate-300 opacity-75'">
                     <span class="text-2xl p-2.5 rounded-xl bg-amber-50 text-amber-600">☀️</span>
                     <div>
-                        <p class="text-sm font-black text-slate-900">الدراسة الصباحية</p>
-                        <p class="text-xs text-slate-500 mt-0.5">الدوام الجامعي الاعتيادي (صباحاً حتى 02:00 م)</p>
-                        <span class="inline-block mt-2 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">موصى به للشعب الصباحية</span>
+                        <p class="text-sm font-black text-slate-900">{% trans "الدراسة الصباحية" %}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{% trans "الدوام الجامعي الاعتيادي (صباحاً حتى 02:00 م)" %}</p>
+                        <span class="inline-block mt-2 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">{% trans "موصى به للشعب الصباحية" %}</span>
                     </div>
                 </button>
 
@@ -356,9 +357,9 @@
                         :class="shift === 'EVENING' ? 'border-indigo-600 bg-white ring-4 ring-indigo-100 shadow-sm' : 'border-slate-200 bg-white/70 hover:border-slate-300 opacity-75'">
                     <span class="text-2xl p-2.5 rounded-xl bg-indigo-50 text-indigo-600">🌙</span>
                     <div>
-                        <p class="text-sm font-black text-slate-900">الدراسة المسائية</p>
-                        <p class="text-xs text-slate-500 mt-0.5">الدوام المسائي (من 02:00 م حتى 08:00 م)</p>
-                        <span class="inline-block mt-2 text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded">مخصص لطلاب الشعب المسائية</span>
+                        <p class="text-sm font-black text-slate-900">{% trans "الدراسة المسائية" %}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{% trans "الدوام المسائي (من 02:00 م حتى 08:00 م)" %}</p>
+                        <span class="inline-block mt-2 text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded">{% trans "مخصص لطلاب الشعب المسائية" %}</span>
                     </div>
                 </button>
             </div>
@@ -373,10 +374,10 @@
              :class="conflictState.severity === 'error' ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-amber-50 border-amber-300 text-amber-900'">
             <span class="text-xl" x-text="conflictState.severity === 'error' ? '🚫' : '⚠️'"></span>
             <div class="flex-1 text-right">
-                <p class="font-black text-sm" x-text="conflictState.severity === 'error' ? 'تم رصد تضارب زمني / أكاديمي مانع' : 'تنبيه جدول المحاضرة'"></p>
+                <p class="font-black text-sm" x-text="conflictState.severity === 'error' ? '{% trans "تم رصد تضارب زمني / أكاديمي مانع" %}' : '{% trans "تنبيه جدول المحاضرة" %}'"></p>
                 <p class="mt-1 font-semibold leading-relaxed" x-text="conflictState.message"></p>
                 <p x-show="conflictState.severity === 'error'" class="mt-2 text-[11px] font-bold text-rose-700 bg-rose-100/70 p-2 rounded-lg">
-                    🛡️ نظام منع التضارب نشط: تم إيقاف زر البدء مؤقتاً لحماية جدول الأستاذ والشعبة. يرجى تغيير الوقت أو الشعبة للمتابعة.
+                    🛡️ {% trans "نظام منع التضارب نشط: تم إيقاف زر البدء مؤقتاً لحماية جدول الأستاذ والشعبة. يرجى تغيير الوقت أو الشعبة للمتابعة." %}
                 </p>
             </div>
         </div>
@@ -386,9 +387,9 @@
              class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
             <span class="flex items-center gap-2">
                 <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">✓</span>
-                <span>لا يوجد أي تضارب: جدول الأستاذ، شعبة الطلاب، والقاعة متوفرة ومؤكدة بالكامل لهذا الموعد.</span>
+                <span>{% trans "لا يوجد أي تضارب: جدول الأستاذ، شعبة الطلاب، والقاعة متوفرة ومؤكدة بالكامل لهذا الموعد." %}</span>
             </span>
-            <span class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-mono">جاهز للإطلاق</span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-mono">{% trans "جاهز للإطلاق" %}</span>
         </div>
 
         <form method="POST" action="{% url 'attendance:create_custom_session' %}" class="space-y-8 text-right">
@@ -413,7 +414,7 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
                     <span class="w-7 h-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-black text-sm">1</span>
-                    <h2 class="text-base font-black text-slate-800">بيانات المادة والشعبة الأكاديمية</h2>
+                    <h2 class="text-base font-black text-slate-800">{% trans "بيانات المادة والشعبة الأكاديمية" %}</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -422,10 +423,10 @@
                     <div class="space-y-2 relative" @click.away="openCourseDropdown = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-xs font-black text-slate-700">
-                                المادة الدراسية <span class="text-rose-500">*</span>
+                                {% trans "المادة الدراسية" %} <span class="text-rose-500">*</span>
                             </label>
                             <span class="text-[11px] text-brand-600 font-bold" x-show="selectedCourseId">
-                                ✓ تم التحديد
+                                ✓ {% trans "تم التحديد" %}
                             </span>
                         </div>
 
@@ -443,14 +444,14 @@
                                     </div>
                                 </template>
                                 <template x-if="!selectedCourseName">
-                                    <span class="text-slate-400 font-normal">اختر أو ابحث عن المادة الدراسية...</span>
+                                    <span class="text-slate-400 font-normal">{% trans "اختر أو ابحث عن المادة الدراسية..." %}</span>
                                 </template>
                             </div>
 
                             <div class="flex items-center gap-2">
                                 <span x-show="selectedCourseId" 
                                       @click.stop="selectedCourseId = ''; selectedCourseName = ''; newCourseName = ''; checkConflict();" 
-                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="إلغاء التحديد">✕</span>
+                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="{% trans 'إلغاء التحديد' %}">✕</span>
                                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
                                      :class="openCourseDropdown ? 'rotate-180 text-brand-600' : ''" 
                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -475,7 +476,7 @@
                                 <input type="text" 
                                        x-ref="courseSearchRef"
                                        x-model="searchCourse"
-                                       placeholder="اكتب اسم المادة أو رمزها للبحث..." 
+                                       placeholder="{% trans 'اكتب اسم المادة أو رمزها للبحث...' %}"
                                        class="w-full pr-8 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-slate-800">
                             </div>
 
@@ -497,15 +498,15 @@
 
                                 <div x-show="filteredCourses.length === 0" class="p-3 text-center space-y-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                     <p class="text-xs text-slate-500 font-semibold">
-                                        لا توجد مادة مسجلة باسم "<span class="font-bold text-slate-800" x-text="searchCourse"></span>"
+                                        {% trans "لا توجد مادة مسجلة باسم" %} "<span class="font-bold text-slate-800" x-text="searchCourse"></span>"
                                     </p>
                                     <template x-if="searchCourse.trim().length > 0">
                                         <button type="button" 
                                                 @click="quickCreateCourse()" 
                                                 :disabled="isCreatingCourse"
                                                 class="w-full py-2 px-3 rounded-lg text-xs font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 transition-all shadow-sm flex items-center justify-center gap-1.5">
-                                            <span x-show="!isCreatingCourse">➕ إضافة "<span x-text="searchCourse.trim()"></span>" فوراً للنظام</span>
-                                            <span x-show="isCreatingCourse" class="animate-pulse">جاري إنشاء المادة...</span>
+                                            <span x-show="!isCreatingCourse">➕ {% trans "إضافة" %} "<span x-text="searchCourse.trim()"></span>" {% trans "فوراً للنظام" %}</span>
+                                            <span x-show="isCreatingCourse" class="animate-pulse">{% trans "جاري إنشاء المادة..." %}</span>
                                         </button>
                                     </template>
                                 </div>
@@ -517,10 +518,10 @@
                     <div class="space-y-2 relative" @click.away="openSectionDropdown = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-xs font-black text-slate-700">
-                                الشعبة / المرحلة <span class="text-rose-500">*</span>
+                                {% trans "الشعبة / المرحلة" %} <span class="text-rose-500">*</span>
                             </label>
                             <span class="text-[11px] text-brand-600 font-bold" x-show="selectedSectionId">
-                                ✓ تم التحديد
+                                ✓ {% trans "تم التحديد" %}
                             </span>
                         </div>
 
@@ -535,14 +536,14 @@
                                     <span class="font-bold text-slate-900" x-text="selectedSectionName"></span>
                                 </template>
                                 <template x-if="!selectedSectionName">
-                                    <span class="text-slate-400 font-normal">اختر أو ابحث عن الشعبة...</span>
+                                    <span class="text-slate-400 font-normal">{% trans "اختر أو ابحث عن الشعبة..." %}</span>
                                 </template>
                             </div>
 
                             <div class="flex items-center gap-2">
                                 <span x-show="selectedSectionId" 
                                       @click.stop="selectedSectionId = ''; selectedSectionName = ''; newSectionName = ''; checkConflict();" 
-                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="إلغاء التحديد">✕</span>
+                                      class="text-xs text-slate-400 hover:text-rose-500 p-1 rounded-md" title="{% trans 'إلغاء التحديد' %}">✕</span>
                                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
                                      :class="openSectionDropdown ? 'rotate-180 text-brand-600' : ''" 
                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -567,7 +568,7 @@
                                 <input type="text" 
                                        x-ref="sectionSearchRef"
                                        x-model="searchSection"
-                                       placeholder="ابحث عن اسم الشعبة أو المرحلة..." 
+                                       placeholder="{% trans 'ابحث عن اسم الشعبة أو المرحلة...' %}"
                                        class="w-full pr-8 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-slate-800">
                             </div>
 
@@ -583,8 +584,8 @@
                                         <div class="flex items-center gap-2">
                                             <span class="px-2 py-0.5 rounded text-[10px] font-bold"
                                                   :class="s.shift === 'EVENING' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'"
-                                                  x-text="s.shift === 'EVENING' ? 'مسائي' : 'صباحي'"></span>
-                                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600" x-text="s.level || 'عام'"></span>
+                                                  x-text="s.shift === 'EVENING' ? '{% trans "مسائي" %}' : '{% trans "صباحي" %}'"></span>
+                                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600" x-text="s.level || '{% trans "عام" %}'"></span>
                                             <span x-show="selectedSectionId === s.id" class="text-brand-600 font-black">✓</span>
                                         </div>
                                     </div>
@@ -592,13 +593,13 @@
 
                                 <div x-show="filteredSections.length === 0" class="p-3 text-center space-y-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                     <p class="text-xs text-slate-500 font-semibold">
-                                        لم يتم العثور على شعبة باسم "<span class="font-bold text-slate-800" x-text="searchSection"></span>"
+                                        {% trans "لم يتم العثور على شعبة باسم" %} "<span class="font-bold text-slate-800" x-text="searchSection"></span>"
                                     </p>
                                     <template x-if="searchSection.trim().length > 0">
                                         <button type="button" 
                                                 @click="quickCreateSection()" 
                                                 class="w-full py-2 px-3 rounded-lg text-xs font-black text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-sm">
-                                            ➕ إضافة شعبة "<span x-text="searchSection.trim()"></span>"
+                                            ➕ {% trans "إضافة شعبة" %} "<span x-text="searchSection.trim()"></span>"
                                         </button>
                                     </template>
                                 </div>
@@ -615,12 +616,12 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
                     <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm">2</span>
-                    <h2 class="text-base font-black text-slate-800">موعد ووقت المحاضرة بدقة</h2>
+                    <h2 class="text-base font-black text-slate-800">{% trans "موعد ووقت المحاضرة بدقة" %}</h2>
                 </div>
 
                 <!-- 2.1 Day Selector Tabs -->
                 <div class="space-y-2">
-                    <label class="block text-xs font-black text-slate-700">اليوم الأسبوعي للمحاضرة</label>
+                    <label class="block text-xs font-black text-slate-700">{% trans "اليوم الأسبوعي للمحاضرة" %}</label>
                     <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
                         <template x-for="day in daysList" :key="day.val">
                             <button type="button" 
@@ -628,7 +629,7 @@
                                     :class="selectedDay === day.val ? 'bg-indigo-600 text-white font-black shadow-sm ring-2 ring-indigo-300' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'"
                                     class="py-2.5 px-2 rounded-xl text-xs transition-all text-center flex flex-col items-center gap-1">
                                 <span x-text="day.label"></span>
-                                <span class="text-[9px] opacity-75 font-mono" x-show="selectedDay === day.val">● نشط</span>
+                                <span class="text-[9px] opacity-75 font-mono" x-show="selectedDay === day.val">● {% trans "نشط" %}</span>
                             </button>
                         </template>
                     </div>
@@ -639,7 +640,7 @@
                     
                     <!-- Date Input -->
                     <div class="space-y-1.5">
-                        <label for="session_date" class="block text-xs font-black text-slate-700">تاريخ المحاضرة</label>
+                        <label for="session_date" class="block text-xs font-black text-slate-700">{% trans "تاريخ المحاضرة" %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">📅</span>
                             <input type="date" name="session_date" id="session_date" 
@@ -651,7 +652,7 @@
 
                     <!-- Start Time Input -->
                     <div class="space-y-1.5">
-                        <label for="start_time" class="block text-xs font-black text-slate-700">وقت البدء الفعلي</label>
+                        <label for="start_time" class="block text-xs font-black text-slate-700">{% trans "وقت البدء الفعلي" %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">⏰</span>
                             <input type="time" name="start_time" id="start_time" 
@@ -663,14 +664,14 @@
 
                     <!-- Duration Chips Selector -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-black text-slate-700">مدة صلاحية التحضير</label>
+                        <label class="block text-xs font-black text-slate-700">{% trans "مدة صلاحية التحضير" %}</label>
                         <select x-model="durationMinutes" @change="checkConflict()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 text-xs">
-                            <option value="15">15 دقيقة (كويز / تفقد سريع)</option>
-                            <option value="30">30 دقيقة</option>
-                            <option value="45">45 دقيقة</option>
-                            <option value="60">ساعة كاملة (60 دقيقة)</option>
-                            <option value="90">ساعة ونصف (90 دقيقة)</option>
-                            <option value="120">ساعتان (120 دقيقة - مختبر)</option>
+                            <option value="15">{% trans "15 دقيقة (كويز / تفقد سريع)" %}</option>
+                            <option value="30">{% trans "30 دقيقة" %}</option>
+                            <option value="45">{% trans "45 دقيقة" %}</option>
+                            <option value="60">{% trans "ساعة كاملة (60 دقيقة)" %}</option>
+                            <option value="90">{% trans "ساعة ونصف (90 دقيقة)" %}</option>
+                            <option value="120">{% trans "ساعتان (120 دقيقة - مختبر)" %}</option>
                         </select>
                     </div>
 
@@ -684,16 +685,16 @@
                         </div>
                         <div>
                             <p class="font-black text-indigo-950">
-                                توقيت الجلسة: من <span class="font-mono text-indigo-700" x-text="startTime"></span> حتى <span class="font-mono text-indigo-700 font-black" x-text="calculatedEndTime"></span>
+                                {% trans "توقيت الجلسة: من" %} <span class="font-mono text-indigo-700" x-text="startTime"></span> {% trans "حتى" %} <span class="font-mono text-indigo-700 font-black" x-text="calculatedEndTime"></span>
                             </p>
                             <p class="text-slate-500 text-[11px] mt-0.5">
-                                سينتهي كود الـ QR وإمكانية التحضير تلقائياً فور بلوغ وقت الانتهاء المحدد
+                                {% trans "سينتهي كود الـ QR وإمكانية التحضير تلقائياً فور بلوغ وقت الانتهاء المحدد" %}
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-indigo-200 text-indigo-800 font-bold text-[11px]">
-                        <span>⏳ المدة:</span>
-                        <span class="font-black" x-text="durationMinutes + ' دقيقة'"></span>
+                        <span>⏳ {% trans "المدة:" %}</span>
+                        <span class="font-black" x-text="durationMinutes + ' {% trans "دقيقة" %}'"></span>
                     </div>
                 </div>
 
@@ -705,12 +706,12 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
                     <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm">3</span>
-                    <h2 class="text-base font-black text-slate-800">تفاصيل المحاضرة وتصنيفها</h2>
+                    <h2 class="text-base font-black text-slate-800">{% trans "تفاصيل المحاضرة وتصنيفها" %}</h2>
                 </div>
 
                 <!-- 3.1 Lecture Type Chips -->
                 <div class="space-y-2">
-                    <label class="block text-xs font-black text-slate-700">نوع المحاضرة</label>
+                    <label class="block text-xs font-black text-slate-700">{% trans "نوع المحاضرة" %}</label>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                         <template x-for="t in lectureTypes" :key="t.id">
                             <button type="button" 
@@ -730,12 +731,12 @@
                     <!-- Topic Input -->
                     <div class="space-y-1.5">
                         <label for="topic" class="block text-xs font-black text-slate-700">
-                            موضوع أو عنوان المحاضرة <span class="text-slate-400 font-normal">(اختياري)</span>
+                            {% trans "موضوع أو عنوان المحاضرة" %} <span class="text-slate-400 font-normal">({% trans "اختياري" %})</span>
                         </label>
                         <div class="relative">
                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">📝</span>
                             <input type="text" name="topic" id="topic" x-model="topic"
-                                   placeholder="مثال: هياكل البيانات المتقدمة والأشجار الثنائية"
+                                   placeholder="{% trans 'مثال: هياكل البيانات المتقدمة والأشجار الثنائية' %}"
                                    class="w-full pr-9 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800 text-xs">
                         </div>
                     </div>
@@ -743,7 +744,7 @@
                     <!-- Room Input -->
                     <div class="space-y-1.5">
                         <label for="room" class="block text-xs font-black text-slate-700">
-                            القاعة الدراسية / المختبر <span class="text-rose-500">*</span>
+                            {% trans "القاعة الدراسية / المختبر" %} <span class="text-rose-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-sm">🚪</span>
@@ -763,7 +764,7 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
                     <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-black text-sm">4</span>
-                    <h2 class="text-base font-black text-slate-800">ضوابط الأمان ومنع الحضور بالنيابة (Anti-Proxy)</h2>
+                    <h2 class="text-base font-black text-slate-800">{% trans "ضوابط الأمان ومنع الحضور بالنيابة (Anti-Proxy)" %}</h2>
                 </div>
 
                 <!-- 4.1 GPS Geofencing Switch Card -->
@@ -773,10 +774,10 @@
                     <div class="flex items-center justify-between">
                         <div class="text-right">
                             <p class="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-2">
-                                <span>📍</span> إلزام التحقق من التواجد الجغرافي داخل الحرم (GPS Geofence)
+                                <span>📍</span> {% trans "إلزام التحقق من التواجد الجغرافي داخل الحرم (GPS Geofence)" %}
                             </p>
                             <p class="text-xs text-slate-500 font-medium mt-0.5">
-                                يشترط وجود الطالب فعلياً داخل القاعة أو الحرم الجامعي بمسافة محددة
+                                {% trans "يشترط وجود الطالب فعلياً داخل القاعة أو الحرم الجامعي بمسافة محددة" %}
                             </p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -789,11 +790,11 @@
                     <div class="mt-4 pt-4 border-t border-amber-200/60 space-y-3" x-show="requiresGeofence" x-transition>
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <span class="text-xs font-bold text-slate-700">نطاق السماح الجغرافي:</span>
+                                <span class="text-xs font-bold text-slate-700">{% trans "نطاق السماح الجغرافي:" %}</span>
                                 <div class="inline-flex gap-1.5 mt-1 sm:mt-0 sm:mr-2">
-                                    <button type="button" @click="radiusMeters = 30" :class="radiusMeters === 30 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">30 متر</button>
-                                    <button type="button" @click="radiusMeters = 50" :class="radiusMeters === 50 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">50 متر (موصى به)</button>
-                                    <button type="button" @click="radiusMeters = 100" :class="radiusMeters === 100 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">100 متر</button>
+                                    <button type="button" @click="radiusMeters = 30" :class="radiusMeters === 30 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">{% trans "30 متر" %}</button>
+                                    <button type="button" @click="radiusMeters = 50" :class="radiusMeters === 50 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">{% trans "50 متر (موصى به)" %}</button>
+                                    <button type="button" @click="radiusMeters = 100" :class="radiusMeters === 100 ? 'bg-amber-600 text-white font-black' : 'bg-white text-slate-600 border border-slate-200'" class="px-2.5 py-1 rounded-lg text-xs font-bold">{% trans "100 متر" %}</button>
                                 </div>
                             </div>
 
@@ -801,18 +802,18 @@
                                     @click="detectCurrentLocation()" 
                                     :disabled="isLocating"
                                     class="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-800 text-xs font-black hover:bg-amber-50 flex items-center gap-1.5 transition-all shadow-xs">
-                                <span x-show="!isLocating">📍 تثبيت إحداثيات موقعي الحالي</span>
-                                <span x-show="isLocating" class="animate-pulse">جاري جلب إحداثيات الـ GPS...</span>
+                                <span x-show="!isLocating">📍 {% trans "تثبيت إحداثيات موقعي الحالي" %}</span>
+                                <span x-show="isLocating" class="animate-pulse">{% trans "جاري جلب إحداثيات الـ GPS..." %}</span>
                             </button>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 pt-1">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-600">خط العرض (Latitude)</label>
+                                <label class="block text-[11px] font-bold text-slate-600">{% trans "خط العرض (Latitude)" %}</label>
                                 <input type="text" x-model="latitude" placeholder="33.279... (بغداد)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-700">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-600">خط الطول (Longitude)</label>
+                                <label class="block text-[11px] font-bold text-slate-600">{% trans "خط الطول (Longitude)" %}</label>
                                 <input type="text" x-model="longitude" placeholder="44.376... (بغداد)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-700">
                             </div>
                         </div>
@@ -826,10 +827,10 @@
                     <div class="flex items-center justify-between">
                         <div class="text-right">
                             <p class="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-2">
-                                <span>📶</span> إلزام الاتصال بشبكة WiFi القاعة أو الـ Hotspot
+                                <span>📶</span> {% trans "إلزام الاتصال بشبكة WiFi القاعة أو الـ Hotspot" %}
                             </p>
                             <p class="text-xs text-slate-500 font-medium mt-0.5">
-                                يشترط اتصال هاتف الطالب بالـ WiFi المعين داخل القاعة لتأكيد التواجد
+                                {% trans "يشترط اتصال هاتف الطالب بالـ WiFi المعين داخل القاعة لتأكيد التواجد" %}
                             </p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -841,13 +842,13 @@
                     <div class="mt-4 pt-4 border-t border-brand-200/60 space-y-3" x-show="requiresWifi" x-transition>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label for="allowed_wifi_ssid" class="block text-xs font-bold text-slate-700">اسم شبكة الـ WiFi المسموحة (SSID)</label>
-                                <input type="text" name="allowed_wifi_ssid" id="allowed_wifi_ssid" placeholder="مثال: Baghdad_Uni_CS"
+                                <label for="allowed_wifi_ssid" class="block text-xs font-bold text-slate-700">{% trans "اسم شبكة الـ WiFi المسموحة (SSID)" %}</label>
+                                <input type="text" name="allowed_wifi_ssid" id="allowed_wifi_ssid" placeholder="{% trans 'مثال: Baghdad_Uni_CS' %}"
                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 text-xs font-semibold text-slate-700">
                             </div>
                             <div>
-                                <label for="allowed_ip_subnet" class="block text-xs font-bold text-slate-700">نطاق الـ IP المسموح (Subnet)</label>
-                                <input type="text" name="allowed_ip_subnet" id="allowed_ip_subnet" placeholder="مثال: 192.168.1.0/24"
+                                <label for="allowed_ip_subnet" class="block text-xs font-bold text-slate-700">{% trans "نطاق الـ IP المسموح (Subnet)" %}</label>
+                                <input type="text" name="allowed_ip_subnet" id="allowed_ip_subnet" placeholder="{% trans 'مثال: 192.168.1.0/24' %}"
                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 text-xs font-semibold text-slate-700">
                             </div>
                         </div>
@@ -860,12 +861,12 @@
             <!-- 5. ACTIVE ATTENDANCE METHODS SUMMARY -->
             <!-- ════════════════════════════════════════════════════════════════ -->
             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <span class="font-bold text-slate-700">طرق التحضير المتاحة في هذه الجلسة تلقائياً:</span>
+                <span class="font-bold text-slate-700">{% trans "طرق التحضير المتاحة في هذه الجلسة تلقائياً:" %}</span>
                 <div class="flex flex-wrap gap-2">
-                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black">✓ QR ديناميكي متجدد (15 ثانية)</span>
-                    <span class="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-800 font-bold">✓ كود OTP للطوارئ</span>
-                    <span class="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 font-bold">✓ تحضير يدوي للأستاذ</span>
-                    <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold">✓ بطاقات RFID / NFC</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black">✓ {% trans "QR ديناميكي متجدد (15 ثانية)" %}</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-800 font-bold">✓ {% trans "كود OTP للطوارئ" %}</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 font-bold">✓ {% trans "تحضير يدوي للأستاذ" %}</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold">✓ {% trans "بطاقات RFID / NFC" %}</span>
                 </div>
             </div>
 
@@ -878,11 +879,11 @@
                         class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 border border-transparent text-sm sm:text-base font-black rounded-2xl text-white transition-all shadow-lg"
                         :class="conflictState.has_conflict && conflictState.severity === 'error' ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-gradient-to-r from-brand-600 via-indigo-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 hover:scale-[1.01] active:scale-95 shadow-brand-500/25'">
                     <span>🚀</span>
-                    <span x-text="conflictState.has_conflict && conflictState.severity === 'error' ? 'تعذر البدء لوجود تضارب (عدّل الوقت أو القاعة)' : 'بدء المحاضرة وتوليد شاشة الـ QR الذكية فوراً'"></span>
+                    <span x-text="conflictState.has_conflict && conflictState.severity === 'error' ? '{% trans "تعذر البدء لوجود تضارب (عدّل الوقت أو القاعة)" %}' : '{% trans "بدء المحاضرة وتوليد شاشة الـ QR الذكية فوراً" %}'"></span>
                 </button>
                 <a href="/" 
                    class="inline-flex items-center justify-center px-6 py-4 border border-slate-200 text-xs sm:text-sm font-bold rounded-2xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
-                    إلغاء
+                    {% trans "إلغاء" %}
                 </a>
             </div>
 
@@ -891,8 +892,8 @@
 
     <!-- Institutional & Developer Branding Footer -->
     <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
-        <p class="font-bold text-slate-600">جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</p>
-        <p class="font-bold text-slate-500 font-mono">المطور: MUNTADHER HAZIM | هاتف: 07724978301</p>
+        <p class="font-bold text-slate-600">{{ institution.name }}</p>
+        <p class="font-bold text-slate-500 font-mono">{% trans "المطور:" %} MUNTADHER HAZIM | {% trans "هاتف:" %} 07724978301</p>
     </div>
 </div>
 {% endblock %}

@@ -17,6 +17,7 @@ from apps.attendance.models import AttendanceSession, AttendanceRecord
 from apps.core.models import AuditLog
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.translation import gettext
 from datetime import timedelta, datetime, date
 from apps.accounts.models import StudentProfile, TeacherProfile
 from apps.academics.models import Institution, Session, Course, ClassSection
@@ -345,30 +346,30 @@ def admin_reports_overview_view(request):
 
                 rec = daily_recs.get(std.id)
                 status = rec.status if rec else "ABSENT"
-                status_display = rec.get_status_display() if rec else "غائب"
+                status_display = gettext(rec.get_status_display()) if rec else gettext("غائب")
                 checkin_time = rec.timestamp.strftime("%H:%M:%S") if rec and rec.timestamp else "-"
                 
                 method_display = "-"
                 if rec:
                     if rec.method == AttendanceRecord.Methods.OFFLINE_MANUAL:
-                        method_display = "📶 بدون إنترنت (فوري)"
+                        method_display = gettext("📶 بدون إنترنت (فوري)")
                     elif rec.method == AttendanceRecord.Methods.QR:
-                        method_display = "📱 كود QR"
+                        method_display = gettext("📱 كود QR")
                     elif rec.method == AttendanceRecord.Methods.STATIC_QR:
-                        method_display = "💳 بطاقة QR"
+                        method_display = gettext("💳 بطاقة QR")
                     elif rec.method == AttendanceRecord.Methods.OTP:
-                        method_display = "🔢 رمز OTP"
+                        method_display = gettext("🔢 رمز OTP")
                     elif rec.method == AttendanceRecord.Methods.RFID:
-                        method_display = "💳 بطاقة RFID"
+                        method_display = gettext("💳 بطاقة RFID")
                     else:
-                        method_display = "✍️ يدوي"
+                        method_display = gettext("✍️ يدوي")
 
                 daily_roll_call.append({
                     "profile": std,
                     "name": std_name,
                     "student_id": std.student_id,
                     "phone": std.user.phone or "-",
-                    "shift_display": "صباحي" if std.study_shift == "MORNING" else "مسائي",
+                    "shift_display": gettext("صباحي") if std.study_shift == "MORNING" else gettext("مسائي"),
                     "section_name": matched_session.session.class_section.name,
                     "course_name": matched_session.session.course.name,
                     "status": status,

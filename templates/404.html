@@ -1,9 +1,12 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ LANGUAGE_CODE }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - الصفحة غير موجودة | نظام الحضور الذكي</title>
+    <title>404 - {% trans "الصفحة غير موجودة" %} | {% trans "نظام الحضور الذكي" %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -121,24 +124,24 @@
 <body>
     <div class="error-card">
         <div class="code-badge">404</div>
-        <h1 class="title">الصفحة غير موجودة</h1>
+        <h1 class="title">{% trans "الصفحة غير موجودة" %}</h1>
         <p class="desc">
-            عذراً، الرابط الذي تحاول الوصول إليه غير موجود أو تم نقله. يرجى التحقق من صحة الرابط أو العودة إلى لوحة التحكم.
+            {% trans "عذراً، الرابط الذي تحاول الوصول إليه غير موجود أو تم نقله. يرجى التحقق من صحة الرابط أو العودة إلى لوحة التحكم." %}
         </p>
 
         <div class="btn-group">
             <a href="/" class="btn btn-primary">
                 <span>🏠</span>
-                <span>العودة للوحة التحكم</span>
+                <span>{% trans "العودة للوحة التحكم" %}</span>
             </a>
             <a href="/login/" class="btn btn-secondary">
                 <span>🔑</span>
-                <span>تسجيل الدخول</span>
+                <span>{% trans "تسجيل الدخول" %}</span>
             </a>
         </div>
 
         <div class="footer-credit">
-            نظام الحضور والغياب الذكي &bull; المطور: <strong>MUNTADHER HAZIM</strong> (07724978301)
+            {% trans "نظام الحضور والغياب الذكي" %} &bull; {% trans "المطور:" %} <strong>MUNTADHER HAZIM</strong> (07724978301)
         </div>
     </div>
 </body>

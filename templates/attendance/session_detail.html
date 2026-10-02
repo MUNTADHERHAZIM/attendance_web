@@ -1,8 +1,271 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}جلسة تحضير: {{ attendance_session.session.course.name }} - نظام الحضور الذكي{% endblock %}
-
+{% block title %}{% trans "جلسة تحضير:" %} {{ attendance_session.session.course.name }} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 {% block content %}
+
+{% trans "مثبت (بدون تدوير)" as qr_frozen_label %}
+{% trans "15 ثانية (سريع)" as qr_fast_label %}
+{% trans "30 ثانية (معتدل)" as qr_moderate_label %}
+{% trans "60 ثانية (دقيقة)" as qr_minute_label %}
+{% trans "دقيقتان (بطيء جداً)" as qr_slow_label %}
+{% trans "ثانية" as seconds_label %}
+{% trans "15 ثانية" as qr_15_seconds_label %}
+{% trans "30 ثانية" as qr_30_seconds_label %}
+{% trans "60 ثانية" as qr_60_seconds_label %}
+{% trans "دقيقتان" as qr_120_seconds_label %}
+{% trans "استقبال الحضور مغلق" as attendance_closed_label %}
+{% trans "انتهت فترة الحضور" as attendance_expired_label %}
+{% trans " س " as hour_short_label %}
+{% trans " د " as minute_short_label %}
+{% trans " ث" as second_short_label %}
+{% trans "جارٍ تحديث حالة الحضور..." as updating_attendance_label %}
+{% trans "تعذر تحديث فترة الحضور." as update_window_error_label %}
+{% trans " ينتهي الاستقبال: " as reception_ends_label %}
+{% trans "لا يمكن تغيير حالة الجلسة دون اتصال بالخادم. سيبقى الوضع المحلي للحفظ المؤقت فقط." as offline_session_control_label %}
+{% trans "فشل تسجيل الطالب" as student_checkin_error_label %}
+{% trans "حدث خطأ أثناء التسجيل السريع للطالب" as quick_checkin_error_label %}
+{% trans "محدد" as selected_label %}
+{% trans "حدد طالباً واحداً على الأقل أولاً." as select_student_error_label %}
+{% trans "سيتم إزالة الطلاب الجدد المحددين من الشعبة فقط، مع الاحتفاظ بسجلات حضورهم. هل تريد المتابعة؟" as bulk_remove_confirm_label %}
+{% trans "تعذر تنفيذ الإجراء الجماعي." as bulk_action_error_label %}
+{% trans " تم تجاوز " as skipped_students_label %}
+{% trans " طالباً غير جديد." as skipped_students_suffix %}
+{% trans "هل تريد رفض طلب الحضور هذا؟" as reject_request_confirm_label %}
+{% trans "تعذرت مراجعة الطلب." as review_request_error_label %}
+{% trans "حدد طلباً واحداً على الأقل أولاً." as select_request_error_label %}
+{% trans "سيتم رفض جميع طلبات الحضور المحددة. هل تريد المتابعة؟" as bulk_reject_confirm_label %}
+{% trans "تعذرت المراجعة" as review_error_label %}
+{% trans "تم تنفيذ الإجراء على " as bulk_done_label %}
+{% trans " طلب." as bulk_request_suffix %}
+{% trans " تعذر تنفيذ " as bulk_failed_label %}
+{% trans " طلب؛ بقيت محددة للمحاولة." as bulk_failed_suffix %}
+{% trans "ستتم إزالة الطالب من هذه الشعبة دون حذف سجل الحضور. هل تريد المتابعة؟" as remove_enrollment_confirm_label %}
+{% trans "تعذر تحديث عضوية الطالب." as enrollment_error_label %}
+{% trans "تعذر تحديث كشف الحضور قبل الطباعة. تحقق من الاتصال ثم أعد المحاولة." as print_refresh_error_label %}
+{% trans "صغير" as qr_small_label %}
+{% trans "عادي" as qr_normal_label %}
+{% trans "كبير" as qr_large_label %}
+{% trans "عملاق" as qr_huge_label %}
+{% trans "عرض باركود الحضور فقط دون أي مشتتات" as projector_qr_only_label %}
+{% trans "عرض الباركود وكود الطوارئ معاً" as projector_dual_label %}
+{% trans "عرض كود الطوارئ والـ OTP فقط" as projector_otp_only_label %}
+{% trans "تصغير الباركود" as zoom_out_label %}
+{% trans "تكبير الباركود" as zoom_in_label %}
+{% trans "الحاضرون:" as projector_present_label %}
+{% trans "الرمز مثبت حالياً" as frozen_tooltip_label %}
+{% trans "تثبيت الرمز لمنع الاهتزاز والتغير" as freeze_tooltip_label %}
+{% trans "صوت التنبيه مفعل" as sound_on_label %}
+{% trans "صوت التنبيه صامت" as sound_off_label %}
+{% trans "ملء شاشة البروجكتر بالكامل" as fullscreen_label %}
+{% trans "🏛️ جلسة تحضير ذكية بالقاعة" as projector_session_label %}
+{% trans "جامعة بغداد" as university_label %}
+{% trans "🎯 باركود الحضور فقط" as projector_qr_only_button %}
+{% trans "🔲 عرض مزدوج" as projector_dual_button %}
+{% trans "📶 كود OTP والرابط" as projector_otp_button %}
+{% trans "🔒 تثبيت" as freeze_button_label %}
+{% trans "🔓 مثبت" as frozen_button_label %}
+{% trans "خروج (Esc)" as exit_projector_label %}
+{% trans "مسح الحضور المباشر" as scan_attendance_label %}
+{% trans "امسح الكود عبر كاميرا هاتفك" as scan_with_phone_label %}
+{% trans "جاري تجهيز الرمز فائق الدقة..." as generating_qr_label %}
+{% trans "رمز ديناميكي مشفر يتغير تلقائياً" as dynamic_qr_label %}
+{% trans "رمز الـ QR مثبت ومستقر طوال المحاضرة" as stable_qr_label %}
+{% trans "متبقي: " as remaining_label %}
+{% trans "شاشة مستقرة" as stable_screen_label %}
+{% trans "طريقة بديلة" as alternative_method_label %}
+{% trans "كود الطوارئ السريع" as emergency_code_label %}
+{% trans "للطلاب بدون كاميرا أو في حال ضعف شبكة الهاتف." as emergency_code_help %}
+{% trans "كود الطوارئ السريع (OTP)" as emergency_otp_label %}
+{% trans "بديل فوري" as instant_alternative_label %}
+{% trans "غير متاح - أعد تحميل الصفحة" as otp_unavailable_label %}
+{% trans "فتح صفحة التحضير بالهاتف:" as phone_checkin_label %}
+{% trans "✕ إخفاء الباركود" as hide_checkin_qr_label %}
+{% trans "📱 إظهار باركود (QR) الرابط" as show_checkin_qr_label %}
+{% trans "امسح الباركود لفتح صفحة التحضير فوراً" as scan_to_open_checkin_label %}
+{% trans "وجّه كاميرا الهاتف نحو الباركود لفتح الصفحة مباشرة ثم اكتب الكود أعلاه." as scan_checkin_instructions_label %}
+{% trans "أو كتابة الرابط في المتصفح:" as enter_url_label %}
+{% trans "نظام الحضور المباشر مشفر ومحمي ضد التزوير" as attendance_security_label %}
+{% trans "جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات" as university_footer_label %}
+{% trans "المطور: MUNTADHER HAZIM | هاتف: 07724978301" as developer_footer_label %}
+{% trans "المحاضرة منتهية ومؤرشفة" as archived_session_label %}
+{% trans "تم إغلاق استقبال الحضور لهذه الجلسة. تم إخفاء رمز الـ QR وكود التحضير (OTP) لضمان عدم تسجيل أي حضور إضافي بعد انتهاء المحاضرة." as archived_session_help %}
+{% trans "⛔ استقبال الحضور متوقف" as attendance_stopped_label %}
+{% trans "إعادة فتح استقبال الحضور الآن" as reopen_attendance_label %}
+{% trans "هل أنت متأكد من رغبتك في حذف هذه الجلسة وجميع سجلاتها؟" as delete_session_confirm_label %}
+{% trans "حذف هذه الجلسة" as delete_session_label %}
+{% trans "تكبير بشاشة كاملة للقاعة (F)" as projector_fullscreen_label %}
+{% trans "جاري تشفير وتوليد الرمز الذكي..." as encrypting_qr_label %}
+{% trans "سرعة تجديد الرمز:" as qr_refresh_speed_label %}
+{% trans "ثبات الرمز" as pin_qr_label %}
+{% trans "صلاحية الرمز وتجديده:" as qr_validity_label %}
+{% trans "الرمز مثبت (بدون تدوير):" as pinned_qr_label %}
+{% trans "صالح طوال المحاضرة" as valid_for_lecture_label %}
+{% trans "⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً." as qr_pinned_notice %}
+{% trans "🚀 الرمز مبرمج للعمل عبر شبكة القاعة المحلية" as local_qr_notice %}
+{% trans "كود التحضير السريع (OTP للطوارئ)" as quick_otp_label %}
+{% trans "بدون كاميرا" as no_camera_label %}
+{% trans "نسخ الكود" as copy_code_label %}
+{% trans "📋 نسخ" as copy_label %}
+{% trans "✓ تم!" as copied_label %}
+{% trans "رقم الجلسة للمزامنة دون اتصال:" as session_id_offline_label %}
+{% trans "أدخله في صفحة التحضير أو احفظه في طابور عدم الاتصال. يجب أن تبقى الجلسة مفتوحة حتى تصل الطلبات إلى الخادم؛ استخدم QR المثبت إذا تعذر الاتصال طويلاً." as offline_session_help %}
+{% trans "نظام الحماية متعدد العوامل:" as multifactor_security_label %}
+{% trans "📍 GPS مفعل" as gps_enabled_label %}
+{% trans "حماية سحابية" as cloud_protection_label %}
+{% trans "يتجدد رمز الـ QR كل 15 ثانية مشفراً بتوقيع رقمي فريد لمنع تسجيل الحضور بالنيابة والتحقق من حساب الطالب." as qr_security_help %}
+{% trans "مفعّل ويعمل (الرمز موجّه إلى الشبكة المحلية)" as hotspot_active_label %}
+{% trans "غير مفعّل (الوضع الافتراضي)" as hotspot_inactive_label %}
+{% trans "سيتم تعيين حالة جميع طلاب هذه الشعبة (%s طالب) كـ حاضر دفعة واحدة وحفظها في قاعدة البيانات." as mark_all_present_help %}
+{% trans "تحضير جميع الطلاب كحاضرين؟" as mark_all_present_title %}
+{% trans "تأكيد تحضير الجميع" as mark_all_present_button %}
+{% trans "شبكة القاعة المحلية المصغرة" as hotspot_title %}
+{% trans "تسجيل حضور الطلاب عبر شبكة Wi-Fi / Hotspot المحلية دون الحاجة لإنترنت خارجي" as hotspot_description %}
+{% trans "حالة وضع عدم الاتصال:" as hotspot_status_label %}
+{% trans "عنوان IP لحاسوب الأستاذ / خادم القاعة:" as hotspot_ip_label %}
+{% trans "مثال: 192.168.43.1 أو 172.21.67.11" as hotspot_ip_placeholder %}
+{% trans "تم رصد العناوين المحلية النشطة تلقائياً. اختر عنوان نقطة الاتصال (Hotspot) أو عنوان الـ Wi-Fi." as hotspot_ip_help %}
+{% trans "🔗 الرابط المحلي الذي سيفتحه الطلاب:" as hotspot_url_label %}
+{% trans "نسخ الرابط" as copy_link_label %}
+{% trans "✓ تم النسخ!" as copied_link_label %}
+{% trans "كيف تشغّل النظام في القاعة خلال دقيقة واحدة وبدون إنترنت؟" as hotspot_steps_title %}
+{% trans "نقطة اتصال الهواتف (Hotspot)" as phone_hotspot_label %}
+{% trans "من هاتفك أو اللابتوب (دون الحاجة لتفعيل باقة أو رصيد بيانات)." as hotspot_no_data_help %}
+{% trans "اطلب من طلاب القاعة الاتصال بشبكة الـ Hotspot الخاصة بك." as hotspot_connect_students %}
+{% trans "تفعيل وتحديث الـ QR" as hotspot_activate_qr %}
+{% trans "بالأسفل؛ سيمسح الطلاب الرمز من الشاشة أو البروجكتر ويسجلون حضورهم فورياً." as hotspot_scan_help %}
+{% trans "تفعيل وتحديث رمز الـ QR محلياً" as hotspot_enable_button %}
+{% trans "إلغاء الوضع المحلي" as hotspot_disable_button %}
+{% trans "إغلاق" as close_label %}
+{% trans "تقرير حضور الحصة الدراسية" as printable_report_title %}
+{% trans "مادة:" as course_label %}
+{% trans "التاريخ:" as date_label %}
+{% trans "المعلم:" as instructor_label %}
+{% trans "القاعة:" as room_label %}
+{% trans "الرقم الجامعي" as university_id_label %}
+{% trans "اسم الطالب" as student_name_label %}
+{% trans "الحالة" as status_label %}
+{% trans "طريقة التحضير" as attendance_method_label %}
+{% trans "الطابع الزمني" as timestamp_label %}
+
+<script>
+const sessionDetailI18n = {
+    qrFrozen: "{{ qr_frozen_label|escapejs }}",
+    qrFast: "{{ qr_fast_label|escapejs }}",
+    qrModerate: "{{ qr_moderate_label|escapejs }}",
+    qrMinute: "{{ qr_minute_label|escapejs }}",
+    qrSlow: "{{ qr_slow_label|escapejs }}",
+    seconds: "{{ seconds_label|escapejs }}",
+    attendanceClosed: "{{ attendance_closed_label|escapejs }}",
+    attendanceExpired: "{{ attendance_expired_label|escapejs }}",
+    hourShort: "{{ hour_short_label|escapejs }}",
+    minuteShort: "{{ minute_short_label|escapejs }}",
+    secondShort: "{{ second_short_label|escapejs }}",
+    updatingAttendance: "{{ updating_attendance_label|escapejs }}",
+    updateWindowError: "{{ update_window_error_label|escapejs }}",
+    receptionEnds: "{{ reception_ends_label|escapejs }}",
+    offlineSessionControl: "{{ offline_session_control_label|escapejs }}",
+    studentCheckinError: "{{ student_checkin_error_label|escapejs }}",
+    quickCheckinError: "{{ quick_checkin_error_label|escapejs }}",
+    selected: "{{ selected_label|escapejs }}",
+    selectStudentError: "{{ select_student_error_label|escapejs }}",
+    bulkRemoveConfirm: "{{ bulk_remove_confirm_label|escapejs }}",
+    bulkActionError: "{{ bulk_action_error_label|escapejs }}",
+    skippedStudents: "{{ skipped_students_label|escapejs }}",
+    skippedStudentsSuffix: "{{ skipped_students_suffix|escapejs }}",
+    rejectRequestConfirm: "{{ reject_request_confirm_label|escapejs }}",
+    reviewRequestError: "{{ review_request_error_label|escapejs }}",
+    selectRequestError: "{{ select_request_error_label|escapejs }}",
+    bulkRejectConfirm: "{{ bulk_reject_confirm_label|escapejs }}",
+    reviewError: "{{ review_error_label|escapejs }}",
+    bulkDone: "{{ bulk_done_label|escapejs }}",
+    bulkRequestSuffix: "{{ bulk_request_suffix|escapejs }}",
+    bulkFailed: "{{ bulk_failed_label|escapejs }}",
+    bulkFailedSuffix: "{{ bulk_failed_suffix|escapejs }}",
+    removeEnrollmentConfirm: "{{ remove_enrollment_confirm_label|escapejs }}",
+    enrollmentError: "{{ enrollment_error_label|escapejs }}",
+    printRefreshError: "{{ print_refresh_error_label|escapejs }}",
+    qrSizes: [
+        "{{ qr_small_label|escapejs }}",
+        "{{ qr_normal_label|escapejs }}",
+        "{{ qr_large_label|escapejs }}",
+        "{{ qr_huge_label|escapejs }}"
+    ],
+    projectorQrOnlyTitle: "{{ projector_qr_only_label|escapejs }}",
+    projectorDualTitle: "{{ projector_dual_label|escapejs }}",
+    projectorOtpTitle: "{{ projector_otp_only_label|escapejs }}",
+    zoomOut: "{{ zoom_out_label|escapejs }}",
+    zoomIn: "{{ zoom_in_label|escapejs }}",
+    projectorPresent: "{{ projector_present_label|escapejs }}",
+    frozenTooltip: "{{ frozen_tooltip_label|escapejs }}",
+    freezeTooltip: "{{ freeze_tooltip_label|escapejs }}",
+    soundOn: "{{ sound_on_label|escapejs }}",
+    soundOff: "{{ sound_off_label|escapejs }}",
+    fullscreen: "{{ fullscreen_label|escapejs }}",
+    projectorSession: "{{ projector_session_label|escapejs }}",
+    university: "{{ university_label|escapejs }}",
+    projectorQrOnlyButton: "{{ projector_qr_only_button|escapejs }}",
+    projectorDualButton: "{{ projector_dual_button|escapejs }}",
+    projectorOtpButton: "{{ projector_otp_button|escapejs }}",
+    freezeButton: "{{ freeze_button_label|escapejs }}",
+    frozenButton: "{{ frozen_button_label|escapejs }}",
+    exitProjector: "{{ exit_projector_label|escapejs }}",
+    scanAttendance: "{{ scan_attendance_label|escapejs }}",
+    scanWithPhone: "{{ scan_with_phone_label|escapejs }}",
+    generatingQr: "{{ generating_qr_label|escapejs }}",
+    dynamicQr: "{{ dynamic_qr_label|escapejs }}",
+    stableQr: "{{ stable_qr_label|escapejs }}",
+    remaining: "{{ remaining_label|escapejs }}",
+    stableScreen: "{{ stable_screen_label|escapejs }}",
+    alternativeMethod: "{{ alternative_method_label|escapejs }}",
+    emergencyCode: "{{ emergency_code_label|escapejs }}",
+    emergencyCodeHelp: "{{ emergency_code_help|escapejs }}",
+    emergencyOtp: "{{ emergency_otp_label|escapejs }}",
+    instantAlternative: "{{ instant_alternative_label|escapejs }}",
+    otpUnavailable: "{{ otp_unavailable_label|escapejs }}",
+    phoneCheckin: "{{ phone_checkin_label|escapejs }}",
+    hideCheckinQr: "{{ hide_checkin_qr_label|escapejs }}",
+    showCheckinQr: "{{ show_checkin_qr_label|escapejs }}",
+    scanToOpenCheckin: "{{ scan_to_open_checkin_label|escapejs }}",
+    scanCheckinInstructions: "{{ scan_checkin_instructions_label|escapejs }}",
+    enterUrl: "{{ enter_url_label|escapejs }}",
+    attendanceSecurity: "{{ attendance_security_label|escapejs }}",
+    universityFooter: "{{ university_footer_label|escapejs }}",
+    developerFooter: "{{ developer_footer_label|escapejs }}",
+    hotspotActive: "{{ hotspot_active_label|escapejs }}",
+    hotspotInactive: "{{ hotspot_inactive_label|escapejs }}",
+    pinQr: "{{ pin_qr_label|escapejs }}",
+    validForLecture: "{{ valid_for_lecture_label|escapejs }}",
+    qrRefreshSpeed: "{{ qr_refresh_speed_label|escapejs }}",
+    qr15Seconds: "{{ qr_15_seconds_label|escapejs }}",
+    qr30Seconds: "{{ qr_30_seconds_label|escapejs }}",
+    qr60Seconds: "{{ qr_60_seconds_label|escapejs }}",
+    qr120Seconds: "{{ qr_120_seconds_label|escapejs }}",
+    qrValidity: "{{ qr_validity_label|escapejs }}",
+    pinnedQr: "{{ pinned_qr_label|escapejs }}",
+    qrPinnedNotice: "{{ qr_pinned_notice|escapejs }}",
+    localQrNotice: "{{ local_qr_notice|escapejs }}",
+    quickOtp: "{{ quick_otp_label|escapejs }}",
+    noCamera: "{{ no_camera_label|escapejs }}",
+    copyCode: "{{ copy_code_label|escapejs }}",
+    copy: "{{ copy_label|escapejs }}",
+    copied: "{{ copied_label|escapejs }}",
+    sessionIdOffline: "{{ session_id_offline_label|escapejs }}",
+    offlineSessionHelp: "{{ offline_session_help|escapejs }}",
+    multifactorSecurity: "{{ multifactor_security_label|escapejs }}",
+    gpsEnabled: "{{ gps_enabled_label|escapejs }}",
+    cloudProtection: "{{ cloud_protection_label|escapejs }}",
+    hotspotStatus: "{{ hotspot_status_label|escapejs }}",
+    hotspotActiveText: "{{ hotspot_active_label|escapejs }}",
+    hotspotInactiveText: "{{ hotspot_inactive_label|escapejs }}",
+    markAllPresentHelp: "{{ mark_all_present_help|escapejs }}",
+    hotspotUrl: "{{ hotspot_url_label|escapejs }}",
+    copyLink: "{{ copy_link_label|escapejs }}",
+    copiedLink: "{{ copied_link_label|escapejs }}",
+    hotspotActivateQr: "{{ hotspot_activate_qr|escapejs }}",
+    hotspotScanHelp: "{{ hotspot_scan_help|escapejs }}"
+};
+</script>
 <div id="session-manager-root"
      x-data="sessionDetailManager()"
      data-token="{{ initial_qr_token|default:''|escapejs }}"
@@ -54,12 +317,12 @@ function sessionDetailManager() {
         },
 
         qrSpeedLabel: function() {
-            if (this.isFrozen) return 'مثبت (بدون تدوير)';
-            if (this.qrSpeed === 15) return '15 ثانية (سريع)';
-            if (this.qrSpeed === 30) return '30 ثانية (معتدل)';
-            if (this.qrSpeed === 60) return '60 ثانية (دقيقة)';
-            if (this.qrSpeed === 120) return 'دقيقتان (بطيء جداً)';
-            return this.qrSpeed + ' ثانية';
+            if (this.isFrozen) return sessionDetailI18n.qrFrozen;
+            if (this.qrSpeed === 15) return sessionDetailI18n.qrFast;
+            if (this.qrSpeed === 30) return sessionDetailI18n.qrModerate;
+            if (this.qrSpeed === 60) return sessionDetailI18n.qrMinute;
+            if (this.qrSpeed === 120) return sessionDetailI18n.qrSlow;
+            return this.qrSpeed + ' ' + sessionDetailI18n.seconds;
         },
         projectorMode: false,
         soundEnabled: true,
@@ -239,26 +502,28 @@ function sessionDetailManager() {
 
         updateSessionClock: function() {
             if (!this.sessionActive) {
-                this.sessionTimeLabel = 'استقبال الحضور مغلق';
+                this.sessionTimeLabel = sessionDetailI18n.attendanceClosed;
                 return;
             }
             var remaining = Math.max(0, this.sessionEndTime - (Date.now() + this.serverTimeOffset));
             if (!remaining) {
                 this.sessionActive = false;
-                this.sessionTimeLabel = 'انتهت فترة الحضور';
+                this.sessionTimeLabel = sessionDetailI18n.attendanceExpired;
                 return;
             }
             var totalSeconds = Math.floor(remaining / 1000);
             var hours = Math.floor(totalSeconds / 3600);
             var minutes = Math.floor((totalSeconds % 3600) / 60);
             var seconds = totalSeconds % 60;
-            this.sessionTimeLabel = (hours ? hours + ' س ' : '') + minutes + ' د ' + seconds + ' ث';
+            this.sessionTimeLabel = (hours ? hours + sessionDetailI18n.hourShort : '')
+                + minutes + sessionDetailI18n.minuteShort
+                + seconds + sessionDetailI18n.secondShort;
         },
 
         controlSession: async function(action, minutes) {
             if (this.controlBusy) return;
             this.controlBusy = true;
-            this.controlMessage = 'جارٍ تحديث حالة الحضور...';
+            this.controlMessage = sessionDetailI18n.updatingAttendance;
             try {
                 var response = await fetch('/attendance/api/session/' + this.sessionId + '/control/', {
                     method: 'POST',
@@ -271,18 +536,21 @@ function sessionDetailManager() {
                 });
                 var data = await response.json();
                 if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'تعذر تحديث فترة الحضور.');
+                    throw new Error(data.error || sessionDetailI18n.updateWindowError);
                 }
                 this.sessionActive = data.is_active;
                 this.sessionEndTime = new Date(data.end_time).getTime();
                 this.serverTimeOffset = new Date(data.server_now).getTime() - Date.now();
-                this.controlMessage = data.message + ' ينتهي الاستقبال: ' +
-                    new Date(data.end_time).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
+                this.controlMessage = data.message + sessionDetailI18n.receptionEnds +
+                    new Date(data.end_time).toLocaleTimeString(
+                        document.documentElement.lang === 'en' ? 'en-US' : 'ar',
+                        { hour: '2-digit', minute: '2-digit' }
+                    );
                 if (action !== 'close') this.refreshToken();
             } catch (error) {
                 this.controlMessage = navigator.onLine
-                    ? (error.message || 'تعذر تحديث حالة الحضور.')
-                    : 'لا يمكن تغيير حالة الجلسة دون اتصال بالخادم. سيبقى الوضع المحلي للحفظ المؤقت فقط.';
+                    ? (error.message || sessionDetailI18n.updateWindowError)
+                    : sessionDetailI18n.offlineSessionControl;
             } finally {
                 this.controlBusy = false;
                 this.updateSessionClock();
@@ -313,11 +581,11 @@ function sessionDetailManager() {
                     }
                     setTimeout(function() { self.offlineMessage = ''; }, 5000);
                 } else {
-                    alert(data.error || 'فشل تسجيل الطالب');
+                    alert(data.error || sessionDetailI18n.studentCheckinError);
                 }
             })
             .catch(function(err) {
-                alert('حدث خطأ أثناء التسجيل السريع للطالب');
+                alert(sessionDetailI18n.quickCheckinError);
             });
         },
 
@@ -485,8 +753,8 @@ function sessionDetailManager() {
         updateBulkSelectionUI: function() {
             const studentsCount = document.getElementById('student-selection-count');
             const reviewCount = document.getElementById('review-selection-count');
-            if (studentsCount) studentsCount.textContent = this.selectedStudentIds.size + ' محدد';
-            if (reviewCount) reviewCount.textContent = this.selectedSubmissionIds.size + ' محدد';
+            if (studentsCount) studentsCount.textContent = this.selectedStudentIds.size + ' ' + sessionDetailI18n.selected;
+            if (reviewCount) reviewCount.textContent = this.selectedSubmissionIds.size + ' ' + sessionDetailI18n.selected;
             document.querySelectorAll('.student-select').forEach((checkbox) => {
                 checkbox.checked = this.selectedStudentIds.has(Number(checkbox.dataset.studentId));
             });
@@ -498,10 +766,10 @@ function sessionDetailManager() {
         bulkManageStudents: async function(action) {
             const ids = Array.from(this.selectedStudentIds);
             if (!ids.length) {
-                alert('حدد طالباً واحداً على الأقل أولاً.');
+                alert(sessionDetailI18n.selectStudentError);
                 return;
             }
-            if (action === 'remove' && !window.confirm('سيتم إزالة الطلاب الجدد المحددين من الشعبة فقط، مع الاحتفاظ بسجلات حضورهم. هل تريد المتابعة؟')) return;
+            if (action === 'remove' && !window.confirm(sessionDetailI18n.bulkRemoveConfirm)) return;
             const button = document.getElementById('bulk-student-action-' + action);
             if (button) button.disabled = true;
             try {
@@ -515,12 +783,14 @@ function sessionDetailManager() {
                     body: JSON.stringify({ student_ids: ids, action: action })
                 });
                 const data = await response.json();
-                if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تنفيذ الإجراء الجماعي.');
+                if (!response.ok || !data.success) throw new Error(data.error || sessionDetailI18n.bulkActionError);
                 this.selectedStudentIds.clear();
-                alert(data.message + (data.skipped_count ? ' تم تجاوز ' + data.skipped_count + ' طالباً غير جديد.' : ''));
+                alert(data.message + (data.skipped_count
+                    ? sessionDetailI18n.skippedStudents + data.skipped_count + sessionDetailI18n.skippedStudentsSuffix
+                    : ''));
                 this.refreshStudents();
             } catch (error) {
-                alert(error.message || 'تعذر تنفيذ الإجراء الجماعي.');
+                alert(error.message || sessionDetailI18n.bulkActionError);
             } finally {
                 if (button) button.disabled = false;
             }
@@ -528,7 +798,7 @@ function sessionDetailManager() {
 
         reviewSubmission: async function(row, action, enroll) {
             if (!row) return;
-            if (action === 'reject' && !window.confirm('هل تريد رفض طلب الحضور هذا؟')) return;
+            if (action === 'reject' && !window.confirm(sessionDetailI18n.rejectRequestConfirm)) return;
             try {
                 const body = new URLSearchParams({ action: action, enroll: enroll ? 'true' : 'false' });
                 const response = await fetch(row.dataset.reviewUrl, {
@@ -541,21 +811,21 @@ function sessionDetailManager() {
                     body: body.toString()
                 });
                 const data = await response.json();
-                if (!response.ok || !data.success) throw new Error(data.error || 'تعذرت مراجعة الطلب.');
+                if (!response.ok || !data.success) throw new Error(data.error || sessionDetailI18n.reviewRequestError);
                 this.selectedSubmissionIds.delete(Number(row.dataset.submissionId));
                 this.refreshStudents();
             } catch (error) {
-                alert(error.message || 'تعذرت مراجعة الطلب.');
+                alert(error.message || sessionDetailI18n.reviewRequestError);
             }
         },
 
         bulkReviewSubmissions: async function(action, enroll) {
             const ids = Array.from(this.selectedSubmissionIds);
             if (!ids.length) {
-                alert('حدد طلباً واحداً على الأقل أولاً.');
+                alert(sessionDetailI18n.selectRequestError);
                 return;
             }
-            if (action === 'reject' && !window.confirm('سيتم رفض جميع طلبات الحضور المحددة. هل تريد المتابعة؟')) return;
+            if (action === 'reject' && !window.confirm(sessionDetailI18n.bulkRejectConfirm)) return;
             let completed = 0;
             const failed = [];
             const selectedRows = ids
@@ -575,7 +845,7 @@ function sessionDetailManager() {
                         body: body.toString()
                     });
                     const data = await response.json();
-                    if (!response.ok || !data.success) throw new Error(data.error || 'تعذرت المراجعة');
+                    if (!response.ok || !data.success) throw new Error(data.error || sessionDetailI18n.reviewError);
                     completed += 1;
                 } catch (error) {
                     failed.push(id);
@@ -583,13 +853,16 @@ function sessionDetailManager() {
                 }
             }
             this.selectedSubmissionIds = new Set(failed);
-            alert('تم تنفيذ الإجراء على ' + completed + ' طلب.' + (failed.length ? ' تعذر تنفيذ ' + failed.length + ' طلب؛ بقيت محددة للمحاولة.' : ''));
+            alert(sessionDetailI18n.bulkDone + completed + sessionDetailI18n.bulkRequestSuffix
+                + (failed.length
+                    ? sessionDetailI18n.bulkFailed + failed.length + sessionDetailI18n.bulkFailedSuffix
+                    : ''));
             this.refreshStudents();
         },
 
         manageStudentEnrollment: async function(button, url) {
-            const removing = button.textContent.includes('إزالة');
-            if (removing && !window.confirm('ستتم إزالة الطالب من هذه الشعبة دون حذف سجل الحضور. هل تريد المتابعة؟')) return;
+            const removing = button.dataset.action === 'remove';
+            if (removing && !window.confirm(sessionDetailI18n.removeEnrollmentConfirm)) return;
             button.disabled = true;
             try {
                 const response = await fetch(url, {
@@ -598,10 +871,10 @@ function sessionDetailManager() {
                     headers: { 'X-CSRFToken': this.csrfToken }
                 });
                 const data = await response.json();
-                if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تحديث عضوية الطالب.');
+                if (!response.ok || !data.success) throw new Error(data.error || sessionDetailI18n.enrollmentError);
                 this.refreshStudents();
             } catch (error) {
-                alert(error.message || 'تعذر تحديث عضوية الطالب.');
+                alert(error.message || sessionDetailI18n.enrollmentError);
             } finally {
                 button.disabled = false;
             }
@@ -621,7 +894,7 @@ function sessionDetailManager() {
                 window.print();
             }).catch(function(error) {
                 console.error('Could not refresh attendance list before printing:', error);
-                alert('تعذر تحديث كشف الحضور قبل الطباعة. تحقق من الاتصال ثم أعد المحاولة.');
+                alert(sessionDetailI18n.printRefreshError);
             });
         },
 
@@ -688,7 +961,7 @@ window.addEventListener('keydown', function(e) {
             
             <!-- Left Info -->
             <div class="flex items-center space-x-reverse space-x-4">
-                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all shadow-xs" title="العودة للرئيسية">
+                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all shadow-xs" title="{% trans 'العودة للرئيسية' %}">
                     <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                     </svg>
@@ -697,7 +970,7 @@ window.addEventListener('keydown', function(e) {
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                            جلسة تحضير ذكية نشطة
+                            {% trans "جلسة تحضير ذكية نشطة" %}
                         </span>
                         <span class="text-xs font-mono font-bold text-slate-400">#{{ attendance_session.id }}</span>
                     </div>
@@ -706,7 +979,7 @@ window.addEventListener('keydown', function(e) {
                         <span class="text-sm font-semibold text-slate-500 font-mono">({{ attendance_session.session.course.code }})</span>
                     </h1>
                     <p class="text-xs text-slate-500 font-medium flex items-center gap-3 mt-0.5">
-                        <span>🏛️ {{ attendance_session.session.room|default:"القاعة الذكية - مختبر الحاسوب" }}</span>
+                        <span>🏛️ {{ attendance_session.session.room|default:_("القاعة الذكية - مختبر الحاسوب") }}</span>
                         <span>•</span>
                         <span>👨‍🏫 {{ attendance_session.session.teacher.user.get_full_name|default:request.user.get_full_name }}</span>
                         <span>•</span>
@@ -721,14 +994,14 @@ window.addEventListener('keydown', function(e) {
                 <button @click="projectorMode = true" 
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 shadow-md shadow-brand-200 transition-all hover:scale-[1.02] active:scale-95">
                     <span>🖥️</span>
-                    <span>نمط العرض بالقاعة (F)</span>
+                    <span>{% trans "نمط العرض بالقاعة (F)" %}</span>
                 </button>
 
                 <!-- 2. Fast Bulk Check-in -->
                 <button @click="showBulkModal = true"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-all shadow-xs">
                     <span>⚡</span>
-                    <span>تحضير سريع للكل</span>
+                    <span>{% trans "تحضير سريع للكل" %}</span>
                 </button>
 
                 <!-- 3. Offline & Hotspot Dropdown -->
@@ -737,8 +1010,8 @@ window.addEventListener('keydown', function(e) {
                             :class="isHotspotActive ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-600 shadow-emerald-200 ring-2 ring-emerald-300' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'"
                             class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all shadow-xs">
                         <span>📶</span>
-                        <span x-show="!isHotspotActive">بدون إنترنت & بث</span>
-                        <span x-show="isHotspotActive">شبكة محلية نشطة</span>
+                        <span x-show="!isHotspotActive">{% trans "بدون إنترنت & بث" %}</span>
+                        <span x-show="isHotspotActive">{% trans "شبكة محلية نشطة" %}</span>
                         <span class="text-[10px] text-slate-400">▼</span>
                     </button>
 
@@ -751,15 +1024,15 @@ window.addEventListener('keydown', function(e) {
                         <button @click="open = false; openHotspotModal()" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-800">
                             <span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">🚀</span>
                             <div>
-                                <p>بث شبكة القاعة (Hotspot)</p>
-                                <p class="text-[10px] text-slate-400 font-normal">توزيع الحضور محلياً بدون نت</p>
+                                <p>{% trans "بث شبكة القاعة (Hotspot)" %}</p>
+                                <p class="text-[10px] text-slate-400 font-normal">{% trans "توزيع الحضور محلياً بدون نت" %}</p>
                             </div>
                         </button>
                         <a href="{% url 'attendance:offline_emergency' attendance_session.id %}" class="w-full text-right p-2.5 rounded-xl hover:bg-amber-50 flex items-center gap-2.5 text-xs font-bold text-amber-900">
                             <span class="p-1.5 bg-amber-100 text-amber-700 rounded-lg">📶</span>
                             <div>
-                                <p>شاشة الطوارئ اليدوية</p>
-                                <p class="text-[10px] text-amber-600/80 font-normal">تسجيل مباشر بدون شبكة إطلاقاً</p>
+                                <p>{% trans "شاشة الطوارئ اليدوية" %}</p>
+                                <p class="text-[10px] text-amber-600/80 font-normal">{% trans "تسجيل مباشر بدون شبكة إطلاقاً" %}</p>
                             </div>
                         </a>
                     </div>
@@ -770,7 +1043,7 @@ window.addEventListener('keydown', function(e) {
                     <button @click="open = !open" 
                             class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
                         <span>📥</span>
-                        <span>تصدير وطباعة</span>
+                        <span>{% trans "تصدير وطباعة" %}</span>
                         <span class="text-[10px] text-slate-400">▼</span>
                     </button>
 
@@ -782,15 +1055,15 @@ window.addEventListener('keydown', function(e) {
                          style="display: none;">
                         <a href="{% url 'reports:export_excel' attendance_session.id %}" class="w-full text-right p-2.5 rounded-xl hover:bg-emerald-50 flex items-center gap-2.5 text-xs font-bold text-emerald-800">
                             <span>📊</span>
-                            <span>تصدير كشف إكسل (Excel)</span>
+                            <span>{% trans "تصدير كشف إكسل (Excel)" %}</span>
                         </a>
                         <button onclick="window.__sessionManager.refreshAndPrint()" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-700">
                             <span>🖨️</span>
-                            <span>طباعة كشف الحضور الآن</span>
+                            <span>{% trans "طباعة كشف الحضور الآن" %}</span>
                         </button>
                         <a href="{% url 'attendance:printable_qr_sheet' attendance_session.id %}" target="_blank" class="w-full text-right p-2.5 rounded-xl hover:bg-indigo-50 flex items-center gap-2.5 text-xs font-bold text-indigo-700">
                             <span>📄</span>
-                            <span>طباعة بوستر الـ QR (حجم A4)</span>
+                            <span>{% trans "طباعة بوستر الـ QR (حجم A4)" %}</span>
                         </a>
                     </div>
                 </div>
@@ -800,7 +1073,7 @@ window.addEventListener('keydown', function(e) {
                     <button @click="open = !open" 
                             class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
                         <span>⚙️</span>
-                        <span>خيارات الجلسة</span>
+                        <span>{% trans "خيارات الجلسة" %}</span>
                         <span class="text-[10px] text-slate-400">▼</span>
                     </button>
 
@@ -812,19 +1085,19 @@ window.addEventListener('keydown', function(e) {
                          style="display: none;">
                         <button @click="toggleFreeze(); open = false;" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-800">
                             <span>🔒</span>
-                            <span x-text="isFrozen ? 'إلغاء تثبيت الـ QR (تفعيل التدوير)' : 'تثبيت رمز الـ QR (رمز ثابت)'"></span>
+                            <span x-text="isFrozen ? '{% trans 'إلغاء تثبيت الـ QR (تفعيل التدوير)' %}' : '{% trans 'تثبيت رمز الـ QR (رمز ثابت)' %}'"></span>
                         </button>
                         <a href="{% url 'attendance:edit_session' attendance_session.id %}" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-800">
                             <span>✏️</span>
-                            <span>تعديل تفاصيل المحاضرة والـ OTP</span>
+                            <span>{% trans "تعديل تفاصيل المحاضرة والـ OTP" %}</span>
                         </a>
                         <button @click="copyCheckinLink(); open = false;" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-800">
                             <span>🔗</span>
-                            <span x-show="!copiedLink">نسخ الرابط المباشر للطلاب</span>
-                            <span x-show="copiedLink" class="text-emerald-600 font-black">✓ تم نسخ الرابط!</span>
+                            <span x-show="!copiedLink">{% trans "نسخ الرابط المباشر للطلاب" %}</span>
+                            <span x-show="copiedLink" class="text-emerald-600 font-black">✓ {% trans "تم نسخ الرابط!" %}</span>
                         </button>
                         <button @click="soundEnabled = !soundEnabled; if(soundEnabled) playChime();" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-800">
-                            <span x-text="soundEnabled ? '🔔 صوت التنبيه: مفعّل' : '🔕 صوت التنبيه: صامت'"></span>
+                            <span x-text="soundEnabled ? '{% trans '🔔 صوت التنبيه: مفعّل' %}' : '{% trans '🔕 صوت التنبيه: صامت' %}'"></span>
                         </button>
                     </div>
                 </div>
@@ -837,9 +1110,9 @@ window.addEventListener('keydown', function(e) {
         <!-- Card 1: Total -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400">إجمالي طلاب الشعبة</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "إجمالي طلاب الشعبة" %}</p>
                 <p class="text-2xl font-black text-slate-900 mt-1" id="live-total-counter">{{ total_count }}</p>
-                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">مسجلون في القائمة</p>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">{% trans "مسجلون في القائمة" %}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl font-bold">
                 👥
@@ -849,14 +1122,14 @@ window.addEventListener('keydown', function(e) {
         <!-- Card 2: Present -->
         <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-emerald-800">الحاضرون الآن</p>
+                <p class="text-xs font-bold text-emerald-800">{% trans "الحاضرون الآن" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-2xl font-black text-emerald-700" id="live-present-counter">{{ present_count }}</span>
-                    <span class="text-xs font-bold text-emerald-600">طالب</span>
+                    <span class="text-xs font-bold text-emerald-600">{% trans "طالب" %}</span>
                 </div>
                 <p class="text-[11px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    تحديث فوري تلقائي
+                    {% trans "تحديث فوري تلقائي" %}
                 </p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl font-bold shadow-sm shadow-emerald-200">
@@ -867,12 +1140,12 @@ window.addEventListener('keydown', function(e) {
         <!-- Card 3: Absent -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400">الغائبون حتى الآن</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "الغائبون حتى الآن" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-2xl font-black text-rose-600" id="live-absent-counter">{{ absent_count }}</span>
-                    <span class="text-xs font-bold text-rose-500">طالب</span>
+                    <span class="text-xs font-bold text-rose-500">{% trans "طالب" %}</span>
                 </div>
-                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">لم يسجلوا بعد</p>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">{% trans "لم يسجلوا بعد" %}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold">
                 ✕
@@ -883,7 +1156,7 @@ window.addEventListener('keydown', function(e) {
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-400">نسبة حضور المحاضرة</p>
+                    <p class="text-xs font-bold text-slate-400">{% trans "نسبة حضور المحاضرة" %}</p>
                     <p class="text-2xl font-black text-brand-700 mt-1" id="live-rate-counter">{{ attendance_rate }}%</p>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-bold">
@@ -897,32 +1170,32 @@ window.addEventListener('keydown', function(e) {
         </div>
     </div>
 
-    <section class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-label="إدارة وقت الحضور">
+    <section class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-label="{% trans 'إدارة وقت الحضور' %}">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <p class="text-sm font-black text-slate-900">فترة استقبال الحضور</p>
+                <p class="text-sm font-black text-slate-900">{% trans "فترة استقبال الحضور" %}</p>
                 <p class="mt-1 text-xs font-bold text-indigo-700">
-                    <span x-text="sessionActive ? 'ينتهي خلال ' + sessionTimeLabel : sessionTimeLabel"></span>
+                    <span x-text="sessionActive ? '{% trans 'ينتهي خلال ' %}' + sessionTimeLabel : sessionTimeLabel"></span>
                 </p>
-                <p class="mt-1 text-xs text-slate-500">وقت الخادم هو المعتمد؛ الطلبات غير المتصلة لا تُؤكد إلا بعد مزامنتها والتحقق منها.</p>
+                <p class="mt-1 text-xs text-slate-500">{% trans "وقت الخادم هو المعتمد؛ الطلبات غير المتصلة لا تُؤكد إلا بعد مزامنتها والتحقق منها." %}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <select x-model.number="controlMinutes" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-bold">
-                    <option :value="5">5 دقائق</option>
-                    <option :value="15">15 دقيقة</option>
-                    <option :value="30">30 دقيقة</option>
-                    <option :value="60">ساعة</option>
-                    <option :value="120">ساعتان</option>
-                    <option :value="240">4 ساعات</option>
+                    <option :value="5">{% trans "5 دقائق" %}</option>
+                    <option :value="15">{% trans "15 دقيقة" %}</option>
+                    <option :value="30">{% trans "30 دقيقة" %}</option>
+                    <option :value="60">{% trans "ساعة" %}</option>
+                    <option :value="120">{% trans "ساعتان" %}</option>
+                    <option :value="240">{% trans "4 ساعات" %}</option>
                 </select>
                 <button type="button" @click="controlSession(sessionActive ? 'extend' : 'reopen', controlMinutes)"
                         :disabled="controlBusy"
                         class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50"
-                        x-text="sessionActive ? 'تمديد الفترة' : 'فتح استقبال الحضور'"></button>
+                        x-text="sessionActive ? '{% trans 'تمديد الفترة' %}' : '{% trans 'فتح استقبال الحضور' %}'"></button>
                 <button type="button" x-show="sessionActive" @click="controlSession('close', 0)"
                         :disabled="controlBusy"
                         class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">
-                    إغلاق الحضور الآن
+                    {% trans "إغلاق الحضور الآن" %}
                 </button>
             </div>
         </div>
@@ -944,28 +1217,28 @@ window.addEventListener('keydown', function(e) {
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="text-right">
                         <h3 class="text-base font-black text-slate-900 flex items-center gap-1.5 flex-wrap">
-                            <span>📱 رمز التحضير الذكي (Dynamic QR)</span>
+                            <span>📱 {% trans "رمز التحضير الذكي (Dynamic QR)" %}</span>
                             <span x-show="isFrozen" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
-                                🔒 الرمز مثبت
+                                🔒 {% trans "الرمز مثبت" %}
                             </span>
                             <span x-show="isHotspotActive" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                🚀 شبكة محلية
+                                🚀 {% trans "شبكة محلية" %}
                             </span>
                         </h3>
-                        <p class="text-xs text-slate-400 font-semibold mt-0.5">امسح الكود عبر كاميرا الهاتف للتسجيل</p>
+                        <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "امسح الكود عبر كاميرا الهاتف للتسجيل" %}</p>
                     </div>
 
                     <!-- Size Switcher Buttons -->
                     <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
                         <button @click="qrSize = 'md'" 
                                 :class="qrSize === 'md' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
-                                class="px-2 py-1 rounded-md transition-all">عادي</button>
+                                class="px-2 py-1 rounded-md transition-all">{% trans "عادي" %}</button>
                         <button @click="qrSize = 'lg'" 
                                 :class="qrSize === 'lg' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
-                                class="px-2 py-1 rounded-md transition-all">كبير</button>
+                                class="px-2 py-1 rounded-md transition-all">{% trans "كبير" %}</button>
                         <button @click="qrSize = 'xl'" 
                                 :class="qrSize === 'xl' ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
-                                class="px-2 py-1 rounded-md transition-all">مكبّر</button>
+                                class="px-2 py-1 rounded-md transition-all">{% trans "مكبّر" %}</button>
                     </div>
                 </div>
 
@@ -976,13 +1249,13 @@ window.addEventListener('keydown', function(e) {
                         🔒
                     </div>
                     <div>
-                        <h3 class="text-base font-black text-white">المحاضرة منتهية ومؤرشفة</h3>
+                        <h3 class="text-base font-black text-white">{{ archived_session_label }}</h3>
                         <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-                            تم إغلاق استقبال الحضور لهذه الجلسة. تم إخفاء رمز الـ QR وكود التحضير (OTP) لضمان عدم تسجيل أي حضور إضافي بعد انتهاء المحاضرة.
+                            {{ archived_session_help }}
                         </p>
                     </div>
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        <span>⛔ استقبال الحضور متوقف</span>
+                        <span>{{ attendance_stopped_label }}</span>
                     </div>
                     <div class="pt-2 flex flex-col gap-2">
                         <form action="{% url 'attendance:edit_session' attendance_session.id %}" method="POST">
@@ -990,14 +1263,14 @@ window.addEventListener('keydown', function(e) {
                             <input type="hidden" name="action" value="reopen">
                             <button type="submit" class="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all flex items-center justify-center gap-1.5">
                                 <span>🔓</span>
-                                <span>إعادة فتح استقبال الحضور الآن</span>
+                                <span>{{ reopen_attendance_label }}</span>
                             </button>
                         </form>
-                        <form action="{% url 'attendance:delete_session' attendance_session.id %}" method="POST" onsubmit="return confirm('هل أنت متأكد من رغبتك في حذف هذه الجلسة وجميع سجلاتها؟')">
+                        <form action="{% url 'attendance:delete_session' attendance_session.id %}" method="POST" onsubmit="return confirm('{{ delete_session_confirm_label|escapejs }}')">
                             {% csrf_token %}
                             <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-all flex items-center justify-center gap-1.5">
                                 <span>🗑️</span>
-                                <span>حذف هذه الجلسة</span>
+                                <span>{{ delete_session_label }}</span>
                             </button>
                         </form>
                     </div>
@@ -1022,14 +1295,14 @@ window.addEventListener('keydown', function(e) {
                             <button @click="projectorMode = true" 
                                     class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity gap-2 cursor-pointer font-bold">
                                 <span class="p-3 bg-white/20 rounded-full text-2xl">⛶</span>
-                                <span class="text-sm">تكبير بشاشة كاملة للقاعة (F)</span>
+                                <span class="text-sm">{{ projector_fullscreen_label }}</span>
                             </button>
                         </div>
                     </template>
                     <template x-if="!token">
                         <div class="w-64 h-64 flex flex-col items-center justify-center text-slate-400 gap-2">
                             <span class="animate-spin text-3xl">⚙️</span>
-                            <span class="text-xs font-bold animate-pulse">جاري تشفير وتوليد الرمز الذكي...</span>
+                            <span class="text-xs font-bold animate-pulse">{{ encrypting_qr_label }}</span>
                         </div>
                     </template>
                 </div>
@@ -1039,16 +1312,16 @@ window.addEventListener('keydown', function(e) {
                     <div class="flex items-center justify-between text-xs font-bold text-slate-600 mb-1">
                         <span class="flex items-center gap-1">
                             <span>⏱️</span>
-                            <span>سرعة تجديد الرمز:</span>
+                            <span>{{ qr_refresh_speed_label }}</span>
                         </span>
                         <span class="text-[11px] font-mono font-bold text-brand-600" x-text="qrSpeedLabel()"></span>
                     </div>
                     <div class="grid grid-cols-5 gap-1 text-[11px] font-bold">
-                        <button @click="setQrSpeed(15)" :class="qrSpeed === 15 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">15ث ⚡</button>
-                        <button @click="setQrSpeed(30)" :class="qrSpeed === 30 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">30ث ⏱️</button>
-                        <button @click="setQrSpeed(60)" :class="qrSpeed === 60 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">60ث 🐢</button>
-                        <button @click="setQrSpeed(120)" :class="qrSpeed === 120 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">دقيقتان ⏳</button>
-                        <button @click="toggleFreeze()" :class="isFrozen ? 'bg-amber-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center">تثبيت 🔒</button>
+                        <button @click="setQrSpeed(15)" :class="qrSpeed === 15 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center"><span x-text="sessionDetailI18n.qr15Seconds"></span> ⚡</button>
+                        <button @click="setQrSpeed(30)" :class="qrSpeed === 30 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center"><span x-text="sessionDetailI18n.qr30Seconds"></span> ⏱️</button>
+                        <button @click="setQrSpeed(60)" :class="qrSpeed === 60 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center"><span x-text="sessionDetailI18n.qr60Seconds"></span> 🐢</button>
+                        <button @click="setQrSpeed(120)" :class="qrSpeed === 120 && !isFrozen ? 'bg-brand-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center"><span x-text="sessionDetailI18n.qr120Seconds"></span> ⏳</button>
+                        <button @click="toggleFreeze()" :class="isFrozen ? 'bg-amber-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'" class="py-1 px-1 rounded-lg transition-all text-center" x-text="sessionDetailI18n.pinQr + ' 🔒'"></button>
                     </div>
                 </div>
 
@@ -1057,24 +1330,24 @@ window.addEventListener('keydown', function(e) {
                     <div class="flex justify-between items-center text-xs font-bold text-slate-600 px-1">
                         <span class="flex items-center gap-1.5" x-show="!isFrozen">
                             <span class="w-2 h-2 rounded-full bg-brand-500 animate-ping"></span>
-                            صلاحية الرمز وتجديده:
+                            {{ qr_validity_label }}
                         </span>
                         <span class="flex items-center gap-1.5 text-amber-800" x-show="isFrozen">
                             <span>🔒</span>
-                            الرمز مثبت (بدون تدوير):
+                            {{ pinned_qr_label }}
                         </span>
-                        <span class="font-mono text-brand-700 font-black text-sm" x-show="!isFrozen" x-text="expiresIn + ' ثانية'">30 ثانية</span>
-                        <span class="text-amber-800 font-black text-xs" x-show="isFrozen">صالح طوال المحاضرة</span>
+                        <span class="font-mono text-brand-700 font-black text-sm" x-show="!isFrozen" x-text="expiresIn + ' ' + sessionDetailI18n.seconds"></span>
+                        <span class="text-amber-800 font-black text-xs" x-show="isFrozen">{{ valid_for_lecture_label }}</span>
                     </div>
                     <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden" x-show="!isFrozen">
                         <div class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full transition-all duration-1000 ease-linear rounded-full"
                              :style="'width: ' + Math.min(100, Math.max(0, (expiresIn / maxExpiresIn * 100))) + '%'"></div>
                     </div>
                     <div class="p-1.5 bg-amber-50 rounded text-[11px] text-amber-800 font-medium text-center border border-amber-200" x-show="isFrozen">
-                        ⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً.
+                        {{ qr_pinned_notice }}
                     </div>
                     <div class="p-1.5 bg-emerald-50 rounded text-[11px] text-emerald-800 font-medium text-center border border-emerald-200" x-show="isHotspotActive">
-                        🚀 الرمز مبرمج للعمل عبر شبكة القاعة المحلية (<span class="font-mono font-bold" x-text="selectedIp + ':' + serverPort"></span>) بدون أي إنترنت خارجي.
+                        {{ local_qr_notice }} (<span class="font-mono font-bold" x-text="selectedIp + ':' + serverPort"></span>) {% trans "بدون أي إنترنت خارجي." %}
                     </div>
                 </div>
 
@@ -1082,9 +1355,9 @@ window.addEventListener('keydown', function(e) {
                 <div x-show="sessionActive" class="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/60 rounded-xl border border-indigo-200 text-right w-full text-indigo-900 space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-black text-indigo-800 flex items-center gap-1">
-                            <span>🔢</span> كود التحضير السريع (OTP للطوارئ)
+                            <span>🔢</span> {{ quick_otp_label }}
                         </span>
-                        <span class="text-[10px] bg-indigo-200/90 text-indigo-900 px-2 py-0.5 rounded-md font-bold">بدون كاميرا</span>
+                        <span class="text-[10px] bg-indigo-200/90 text-indigo-900 px-2 py-0.5 rounded-md font-bold">{{ no_camera_label }}</span>
                     </div>
 
                     <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200/80 shadow-xs">
@@ -1093,17 +1366,17 @@ window.addEventListener('keydown', function(e) {
                         </div>
                         <button @click="copyOtp()" 
                                 class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
-                                title="نسخ الكود">
-                            <span x-show="!copiedOtp">📋 نسخ</span>
-                            <span x-show="copiedOtp" class="text-emerald-600 font-black">✓ تم!</span>
+                                :title="sessionDetailI18n.copyCode">
+                            <span x-show="!copiedOtp" x-text="sessionDetailI18n.copy"></span>
+                            <span x-show="copiedOtp" class="text-emerald-600 font-black" x-text="sessionDetailI18n.copied"></span>
                         </button>
                     </div>
                     <p class="text-center text-[11px] font-bold text-indigo-800">
-                        رقم الجلسة للمزامنة دون اتصال: <span class="font-mono text-lg" dir="ltr">{{ attendance_session.id }}</span>
+                        {{ session_id_offline_label }} <span class="font-mono text-lg" dir="ltr">{{ attendance_session.id }}</span>
                     </p>
 
                     <p class="text-[11px] text-indigo-700/90 font-medium leading-relaxed">
-                        أدخله في صفحة التحضير أو احفظه في طابور عدم الاتصال. يجب أن تبقى الجلسة مفتوحة حتى تصل الطلبات إلى الخادم؛ استخدم QR المثبت إذا تعذر الاتصال طويلاً.
+                        {{ offline_session_help }}
                     </p>
                 </div>
                 {% endif %}
@@ -1112,15 +1385,15 @@ window.addEventListener('keydown', function(e) {
                 <!-- Security & Geofence Status -->
                 <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-right w-full text-xs space-y-1.5">
                     <div class="flex items-center justify-between font-bold text-slate-700">
-                        <span class="flex items-center gap-1">🔒 نظام الحماية متعدد العوامل:</span>
+                        <span class="flex items-center gap-1">🔒 {{ multifactor_security_label }}</span>
                         {% if attendance_session.requires_geofence %}
-                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">📍 GPS مفعل ({{ attendance_session.radius_meters|default:50 }}م)</span>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">📍 {{ gps_enabled_label }} ({{ attendance_session.radius_meters|default:50 }} m)</span>
                         {% else %}
-                            <span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-bold">حماية سحابية</span>
+                            <span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-bold">{{ cloud_protection_label }}</span>
                         {% endif %}
                     </div>
                     <p class="text-[11px] text-slate-500 font-medium leading-relaxed">
-                        يتجدد رمز الـ QR كل 15 ثانية مشفراً بتوقيع رقمي فريد لمنع تسجيل الحضور بالنيابة والتحقق من حساب الطالب.
+                        {{ qr_security_help }}
                     </p>
                 </div>
 
@@ -1140,10 +1413,10 @@ window.addEventListener('keydown', function(e) {
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-lg font-black text-slate-900">سجل حضور الطلاب المباشر</h2>
+                            <h2 class="text-lg font-black text-slate-900">{% trans "سجل حضور الطلاب المباشر" %}</h2>
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
                         </div>
-                        <p class="text-xs text-slate-400 font-semibold mt-0.5">تحديث لحظي كل 3 ثوانٍ تلقائياً عبر السحابة</p>
+                        <p class="text-xs text-slate-400 font-semibold mt-0.5">{% trans "تحديث لحظي كل 3 ثوانٍ تلقائياً عبر السحابة" %}</p>
                     </div>
                 </div>
 
@@ -1153,22 +1426,22 @@ window.addEventListener('keydown', function(e) {
                     <button @click="toggleLayout()" 
                             :class="layoutMode === 'full' ? 'bg-brand-600 text-white shadow-sm shadow-brand-200 border-brand-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
                             class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all"
-                            title="توسيع السجل لملء الشاشة بالكامل لرؤية جميع البيانات بدون تداخل">
-                        <span x-show="layoutMode !== 'full'">⛶ توسيع السجل بالكامل (Full Width)</span>
-                        <span x-show="layoutMode === 'full'">⊟ عرض متوازن (مع رمز QR)</span>
+                            title="{% trans 'توسيع السجل لملء الشاشة بالكامل لرؤية جميع البيانات بدون تداخل' %}">
+                        <span x-show="layoutMode !== 'full'">⛶ {% trans "توسيع السجل بالكامل (Full Width)" %}</span>
+                        <span x-show="layoutMode === 'full'">⊟ {% trans "عرض متوازن (مع رمز QR)" %}</span>
                     </button>
 
                     <!-- Quick Filter Tabs -->
                     <div class="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
                         <button @click="filterStatus = 'ALL'; filterRows()" 
                                 :class="filterStatus === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
-                                class="px-3 py-1.5 rounded-lg transition-all">الكل</button>
+                                class="px-3 py-1.5 rounded-lg transition-all">{% trans "الكل" %}</button>
                         <button @click="filterStatus = 'PRESENT'; filterRows()" 
                                 :class="filterStatus === 'PRESENT' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:text-emerald-900'"
-                                class="px-3 py-1.5 rounded-lg transition-all">الحاضرون</button>
+                                class="px-3 py-1.5 rounded-lg transition-all">{% trans "الحاضرون" %}</button>
                         <button @click="filterStatus = 'ABSENT'; filterRows()" 
                                 :class="filterStatus === 'ABSENT' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-700 hover:text-rose-900'"
-                                class="px-3 py-1.5 rounded-lg transition-all">الغائبون</button>
+                                class="px-3 py-1.5 rounded-lg transition-all">{% trans "الغائبون" %}</button>
                     </div>
                 </div>
             </div>
@@ -1179,17 +1452,17 @@ window.addEventListener('keydown', function(e) {
                  class="p-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs border border-slate-800">
                 <div class="flex items-center gap-3">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span class="text-xs font-bold">بث رمز التحضير الذكي (Dynamic QR) متزامن بالخلفية</span>
-                    <span class="text-xs font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">OTP السريع: {{ attendance_session.quick_otp }}</span>
-                    <span class="text-xs text-slate-300">| يتجدد كل: <span class="font-mono text-emerald-400 font-bold" x-text="expiresIn + 'ث'"></span></span>
+                    <span class="text-xs font-bold">{% trans "بث رمز التحضير الذكي (Dynamic QR) متزامن بالخلفية" %}</span>
+                    <span class="text-xs font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">{% trans "OTP السريع:" %} {{ attendance_session.quick_otp }}</span>
+                    <span class="text-xs text-slate-300">| {% trans "يتجدد كل:" %} <span class="font-mono text-emerald-400 font-bold" x-text="expiresIn + '{% trans 'ث' %}'"></span></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <button @click="projectorMode = true" class="px-3 py-1 rounded-lg text-xs font-black bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-xs flex items-center gap-1.5">
                         <span>🖥️</span>
-                        <span>عرض الرمز بالقاعة (F)</span>
+                        <span>{% trans "عرض الرمز بالقاعة (F)" %}</span>
                     </button>
                     <button @click="toggleLayout()" class="px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-slate-200 transition-colors">
-                        إظهار رمز QR الجانبي
+                        {% trans "إظهار رمز QR الجانبي" %}
                     </button>
                 </div>
             </div>
@@ -1202,22 +1475,22 @@ window.addEventListener('keydown', function(e) {
                     </div>
                     <div>
                         <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-                            <span>تسجيل فوري مباشر (طالب لا يملك إنترنت)</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200/80 text-amber-900">حل استثنائي</span>
+                            <span>{% trans "تسجيل فوري مباشر (طالب لا يملك إنترنت)" %}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200/80 text-amber-900">{% trans "حل استثنائي" %}</span>
                         </div>
-                        <div class="text-[11px] text-amber-800 font-medium mt-0.5">أدخل الرقم الجامعي أو اسم الطالب لتحضيره بضغطة واحدة دون الحاجة لهاتفه</div>
+                        <div class="text-[11px] text-amber-800 font-medium mt-0.5">{% trans "أدخل الرقم الجامعي أو اسم الطالب لتحضيره بضغطة واحدة دون الحاجة لهاتفه" %}</div>
                     </div>
                 </div>
                 
                 <form @submit.prevent="submitQuickOfflineCheckin()" class="flex items-center gap-2 w-full sm:w-auto shrink-0">
                     <input type="text" 
                            x-model="quickOfflineQuery"
-                           placeholder="الرقم الجامعي أو اسم الطالب..." 
+                           placeholder="{% trans 'الرقم الجامعي أو اسم الطالب...' %}"
                            class="px-3 py-2 text-xs font-bold border border-amber-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-60 text-slate-800 shadow-2xs">
                     <button type="submit" 
                             :disabled="!quickOfflineQuery.trim()"
                             class="px-4 py-2 rounded-xl text-xs font-black text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-40 transition-all shadow-xs shrink-0 active:scale-95">
-                        ⚡ تحضير فوري
+                        ⚡ {% trans "تحضير فوري" %}
                     </button>
                 </form>
             </div>
@@ -1242,26 +1515,26 @@ window.addEventListener('keydown', function(e) {
                     <input type="text" 
                            x-model="searchQuery" 
                            @input="filterRows()"
-                           placeholder="بحث بالاسم أو الرقم الجامعي في الجدول..." 
+                           placeholder="{% trans 'بحث بالاسم أو الرقم الجامعي في الجدول...' %}"
                            class="w-full pr-9 pl-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all bg-slate-50/50">
                 </div>
                 <button @click="searchQuery = ''; filterStatus = 'ALL'; filterRows()" 
                         class="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors">
-                    إعادة ضبط
+                    {% trans "إعادة ضبط" %}
                 </button>
                 <button @click="refreshStudents()"
                         class="px-3 py-2 text-xs font-bold text-indigo-700 hover:text-indigo-900 border border-indigo-200 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
-                    تحديث للطباعة
+                    {% trans "تحديث للطباعة" %}
                 </button>
             </div>
             <div class="flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
-                <span class="text-xs font-black text-indigo-950">الإجراء على المحدد:</span>
-                <button id="bulk-student-action-present" type="button" @click="bulkManageStudents('present')" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">تحضير حاضر</button>
-                <button id="bulk-student-action-late" type="button" @click="bulkManageStudents('late')" class="rounded-lg bg-amber-500 px-3 py-2 text-xs font-black text-white hover:bg-amber-600">تحضير متأخر</button>
-                <button id="bulk-student-action-absent" type="button" @click="bulkManageStudents('absent')" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">تسجيل غائب</button>
-                <button id="bulk-student-action-enroll" type="button" @click="bulkManageStudents('enroll')" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100">إضافة الجدد للشعبة</button>
-                <button id="bulk-student-action-remove" type="button" @click="bulkManageStudents('remove')" class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-800 hover:bg-rose-100">إزالة الجدد من الشعبة</button>
-                <span id="student-selection-count" class="mr-auto text-xs font-black text-indigo-950">0 محدد</span>
+                <span class="text-xs font-black text-indigo-950">{% trans "الإجراء على المحدد:" %}</span>
+                <button id="bulk-student-action-present" type="button" @click="bulkManageStudents('present')" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">{% trans "تحضير حاضر" %}</button>
+                <button id="bulk-student-action-late" type="button" @click="bulkManageStudents('late')" class="rounded-lg bg-amber-500 px-3 py-2 text-xs font-black text-white hover:bg-amber-600">{% trans "تحضير متأخر" %}</button>
+                <button id="bulk-student-action-absent" type="button" @click="bulkManageStudents('absent')" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">{% trans "تسجيل غائب" %}</button>
+                <button id="bulk-student-action-enroll" type="button" @click="bulkManageStudents('enroll')" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100">{% trans "إضافة الجدد للشعبة" %}</button>
+                <button id="bulk-student-action-remove" type="button" @click="bulkManageStudents('remove')" class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-800 hover:bg-rose-100">{% trans "إزالة الجدد من الشعبة" %}</button>
+                <span id="student-selection-count" class="mr-auto text-xs font-black text-indigo-950">0 {% trans "محدد" %}</span>
             </div>
 
             <!-- HTMX polling container for Student Table -->
@@ -1275,8 +1548,8 @@ window.addEventListener('keydown', function(e) {
 
             <!-- Bottom Note / Iraq University branding -->
             <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
-                <span>جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
-                <span class="font-bold text-slate-500">المطور: MUNTADHER HAZIM | 07724978301</span>
+                <span>{% trans "جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات" %}</span>
+                <span class="font-bold text-slate-500">{% trans "المطور:" %} MUNTADHER HAZIM | 07724978301</span>
             </div>
         </div>
 
@@ -1305,9 +1578,9 @@ window.addEventListener('keydown', function(e) {
                     <div class="flex items-center gap-2">
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                            جلسة تحضير ذكية بالقاعة
+                            {{ projector_session_label }}
                         </span>
-                        <span class="text-xs text-slate-400 font-mono">جامعة بغداد</span>
+                        <span class="text-xs text-slate-400 font-mono">{{ university_label }}</span>
                     </div>
                     <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">
                         {{ attendance_session.session.course.name }}
@@ -1325,39 +1598,39 @@ window.addEventListener('keydown', function(e) {
                             @click="projectorViewMode = 'qr_only'" 
                             :class="projectorViewMode === 'qr_only' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                             class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
-                            title="عرض باركود الحضور فقط دون أي مشتتات">
-                        <span>🎯 باركود الحضور فقط</span>
+                            :title="sessionDetailI18n.projectorQrOnlyTitle">
+                        <span x-text="sessionDetailI18n.projectorQrOnlyButton"></span>
                     </button>
                     <button type="button" 
                             @click="projectorViewMode = 'dual'" 
                             :class="projectorViewMode === 'dual' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                             class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
-                            title="عرض الباركود وكود الطوارئ معاً">
-                        <span>🔲 عرض مزدوج</span>
+                            :title="sessionDetailI18n.projectorDualTitle">
+                        <span x-text="sessionDetailI18n.projectorDualButton"></span>
                     </button>
                     <button type="button" 
                             @click="projectorViewMode = 'otp_only'" 
                             :class="projectorViewMode === 'otp_only' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                             class="px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1.5"
-                            title="عرض كود الطوارئ والـ OTP فقط">
-                        <span>📶 كود OTP والرابط</span>
+                            :title="sessionDetailI18n.projectorOtpTitle">
+                        <span x-text="sessionDetailI18n.projectorOtpButton"></span>
                     </button>
                 </div>
 
                 <!-- QR Zoom Controller -->
                 <div class="inline-flex items-center rounded-2xl bg-slate-900 border border-slate-800 p-1 text-xs" x-show="projectorViewMode !== 'otp_only'">
-                    <button type="button" @click="zoomQrOut()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" title="تصغير الباركود">
+                    <button type="button" @click="zoomQrOut()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" :title="sessionDetailI18n.zoomOut">
                         🔍-
                     </button>
-                    <span class="px-2 font-mono text-[11px] text-brand-300 font-bold" x-text="['صغير', 'عادي', 'كبير', 'عملاق'][qrZoomLevel - 1]"></span>
-                    <button type="button" @click="zoomQrIn()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" title="تكبير الباركود">
+                    <span class="px-2 font-mono text-[11px] text-brand-300 font-bold" x-text="sessionDetailI18n.qrSizes[qrZoomLevel - 1]"></span>
+                    <button type="button" @click="zoomQrIn()" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all font-black" :title="sessionDetailI18n.zoomIn">
                         🔍+
                     </button>
                 </div>
 
                 <!-- Live Counter Badge -->
                 <div class="hidden sm:flex items-center gap-3 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-2xl">
-                    <span class="text-xs text-slate-400 font-bold">الحاضرون:</span>
+                    <span class="text-xs text-slate-400 font-bold" x-text="sessionDetailI18n.projectorPresent"></span>
                     <div class="flex items-baseline gap-1">
                         <span class="text-xl font-black text-emerald-400 font-mono" id="projector-present-counter">{{ present_count }}</span>
                         <span class="text-xs text-slate-500 font-bold">/</span>
@@ -1372,22 +1645,22 @@ window.addEventListener('keydown', function(e) {
                 <button type="button" @click="toggleFreeze()" 
                         :class="isFrozen ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30' : 'bg-slate-900 hover:bg-slate-800 text-slate-300'"
                         class="px-3 py-2 rounded-2xl border border-slate-700 text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
-                        :title="isFrozen ? 'الرمز مثبت حالياً' : 'تثبيت الرمز لمنع الاهتزاز والتغير'">
-                    <span x-show="!isFrozen">🔒 تثبيت</span>
-                    <span x-show="isFrozen">🔓 مثبت</span>
+                        :title="isFrozen ? sessionDetailI18n.frozenTooltip : sessionDetailI18n.freezeTooltip">
+                    <span x-show="!isFrozen" x-text="sessionDetailI18n.freezeButton"></span>
+                    <span x-show="isFrozen" x-text="sessionDetailI18n.frozenButton"></span>
                 </button>
 
                 <!-- Fullscreen Toggle -->
                 <button type="button" @click="toggleFullscreen()" 
                         class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 hover:text-white transition-all shadow-md" 
-                        title="ملء شاشة البروجكتر بالكامل">
+                        :title="sessionDetailI18n.fullscreen">
                     ⛶
                 </button>
 
                 <!-- Sound Chime Toggle -->
                 <button type="button" @click="soundEnabled = !soundEnabled; if(soundEnabled) playChime();" 
                         class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 hover:text-white transition-all shadow-md"
-                        :title="soundEnabled ? 'صوت التنبيه مفعل' : 'صوت التنبيه صامت'">
+                        :title="soundEnabled ? sessionDetailI18n.soundOn : sessionDetailI18n.soundOff">
                     <span x-text="soundEnabled ? '🔔' : '🔕'"></span>
                 </button>
 
@@ -1395,7 +1668,7 @@ window.addEventListener('keydown', function(e) {
                 <button type="button" @click="projectorMode = false" 
                         class="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-black rounded-2xl transition-all shadow-md flex items-center gap-1.5">
                     <span>✕</span>
-                    <span>خروج (Esc)</span>
+                    <span x-text="sessionDetailI18n.exitProjector"></span>
                 </button>
             </div>
         </div>
@@ -1410,9 +1683,9 @@ window.addEventListener('keydown', function(e) {
                 
                 <div class="space-y-1" x-show="projectorViewMode === 'qr_only'">
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30">
-                        مسح الحضور المباشر
+                        {{ scan_attendance_label }}
                     </span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-white">امسح الكود عبر كاميرا هاتفك</h3>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white">{{ scan_with_phone_label }}</h3>
                 </div>
 
                 <div class="relative p-5 sm:p-7 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-brand-500/40 shadow-2xl shadow-brand-500/20 transition-all duration-300">
@@ -1430,7 +1703,7 @@ window.addEventListener('keydown', function(e) {
                     <template x-if="!token">
                         <div class="w-80 h-80 sm:w-96 sm:h-96 md:w-[440px] md:h-[440px] flex flex-col items-center justify-center text-slate-400 gap-3">
                             <span class="animate-spin text-5xl">⚙️</span>
-                            <span class="text-sm font-bold animate-pulse text-white">جاري تجهيز الرمز فائق الدقة...</span>
+                            <span class="text-sm font-bold animate-pulse text-white">{{ generating_qr_label }}</span>
                         </div>
                     </template>
                 </div>
@@ -1440,14 +1713,14 @@ window.addEventListener('keydown', function(e) {
                     <div class="flex justify-between items-center text-xs font-bold text-slate-400 px-2">
                         <span class="flex items-center gap-2" x-show="!isFrozen">
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                            رمز ديناميكي مشفر يتغير تلقائياً
+                            {{ dynamic_qr_label }}
                         </span>
                         <span class="flex items-center gap-2 text-amber-400 font-bold" x-show="isFrozen">
                             <span>🔒</span>
-                            رمز الـ QR مثبت ومستقر طوال المحاضرة
+                            {{ stable_qr_label }}
                         </span>
-                        <span class="font-mono text-brand-400 font-black text-sm" x-show="!isFrozen" x-text="'متبقي: ' + expiresIn + ' ثانية'">15 ثانية</span>
-                        <span class="text-amber-300 font-black text-xs" x-show="isFrozen">شاشة مستقرة</span>
+                        <span class="font-mono text-brand-400 font-black text-sm" x-show="!isFrozen" x-text="sessionDetailI18n.remaining + expiresIn + ' ' + sessionDetailI18n.seconds"></span>
+                        <span class="text-amber-300 font-black text-xs" x-show="isFrozen">{{ stable_screen_label }}</span>
                     </div>
                     <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700" x-show="!isFrozen">
                         <div class="bg-gradient-to-r from-brand-500 via-indigo-500 to-purple-500 h-full transition-all duration-1000 ease-linear rounded-full"
@@ -1463,11 +1736,11 @@ window.addEventListener('keydown', function(e) {
                 
                 <div class="space-y-1.5" x-show="projectorViewMode === 'dual'">
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        طريقة بديلة
+                        {{ alternative_method_label }}
                     </span>
-                    <h3 class="text-2xl font-black text-white">كود الطوارئ السريع</h3>
+                    <h3 class="text-2xl font-black text-white">{{ emergency_code_label }}</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        للطلاب بدون كاميرا أو في حال ضعف شبكة الهاتف.
+                        {{ emergency_code_help }}
                     </p>
                 </div>
 
@@ -1475,25 +1748,25 @@ window.addEventListener('keydown', function(e) {
                 <div class="w-full bg-slate-900/90 border border-indigo-500/40 rounded-3xl p-6 shadow-xl space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
-                            <span>📶</span> كود الطوارئ السريع (OTP)
+                            <span>📶</span> {{ emergency_otp_label }}
                         </span>
-                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md font-bold">بديل فوري</span>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md font-bold">{{ instant_alternative_label }}</span>
                     </div>
 
                     <div class="py-4 px-6 bg-slate-950 rounded-2xl border border-indigo-500/30 text-center">
                         <span class="text-4xl sm:text-5xl font-black text-indigo-400 font-mono tracking-widest select-all"
-                              x-text="quickOtp || 'غير متاح - أعد تحميل الصفحة'">
-                            {{ attendance_session.quick_otp|default:"غير متاح - أعد تحميل الصفحة" }}
+                              x-text="quickOtp || sessionDetailI18n.otpUnavailable">
+                            {{ attendance_session.quick_otp|default:otp_unavailable_label }}
                         </span>
                     </div>
 
                     <!-- Action button to show/hide Check-in QR code -->
                     <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-800/80">
-                        <span class="text-xs text-slate-300 font-bold">فتح صفحة التحضير بالهاتف:</span>
+                        <span class="text-xs text-slate-300 font-bold">{{ phone_checkin_label }}</span>
                         <button type="button" 
                                 @click="showCheckinQr = !showCheckinQr"
                                 class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
-                            <span x-text="showCheckinQr ? '✕ إخفاء الباركود' : '📱 إظهار باركود (QR) الرابط'"></span>
+                            <span x-text="showCheckinQr ? sessionDetailI18n.hideCheckinQr : sessionDetailI18n.showCheckinQr"></span>
                         </button>
                     </div>
 
@@ -1503,13 +1776,13 @@ window.addEventListener('keydown', function(e) {
                             <img :src="getCheckinQrUrl()" alt="Check-in QR Code" class="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl">
                         </div>
                         <div class="space-y-1">
-                            <p class="font-black text-indigo-300 text-sm">امسح الباركود لفتح صفحة التحضير فوراً</p>
-                            <p class="text-[11px] text-slate-400 leading-relaxed max-w-xs">وجّه كاميرا الهاتف نحو الباركود لفتح الصفحة مباشرة ثم اكتب الكود أعلاه.</p>
+                            <p class="font-black text-indigo-300 text-sm">{{ scan_to_open_checkin_label }}</p>
+                            <p class="text-[11px] text-slate-400 leading-relaxed max-w-xs">{{ scan_checkin_instructions_label }}</p>
                         </div>
                     </div>
 
                     <div class="text-xs text-slate-400 space-y-1">
-                        <p class="font-medium text-[11px]">أو كتابة الرابط في المتصفح:</p>
+                        <p class="font-medium text-[11px]">{{ enter_url_label }}</p>
                         <p class="font-mono text-indigo-300 font-bold break-all text-[11px] text-left select-all bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800" dir="ltr" x-text="getCheckinUrl()"></p>
                     </div>
                 </div>
@@ -1517,7 +1790,7 @@ window.addEventListener('keydown', function(e) {
                 <!-- Security guarantee pill -->
                 <div class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-4 py-2 rounded-xl w-full justify-center">
                     <span>🛡️</span>
-                    <span>نظام الحضور المباشر مشفر ومحمي ضد التزوير</span>
+                    <span>{{ attendance_security_label }}</span>
                 </div>
 
             </div>
@@ -1526,8 +1799,8 @@ window.addEventListener('keydown', function(e) {
 
         <!-- Projector Bottom Footer -->
         <div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-            <span>جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات</span>
-            <span class="font-mono text-slate-400 font-bold">المطور: MUNTADHER HAZIM | هاتف: 07724978301</span>
+            <span>{{ university_footer_label }}</span>
+            <span class="font-mono text-slate-400 font-bold">{{ developer_footer_label }}</span>
         </div>
 
     </div>
@@ -1553,9 +1826,9 @@ window.addEventListener('keydown', function(e) {
             </div>
 
             <div class="text-center space-y-2">
-                <h3 class="text-lg font-black text-slate-900">تحضير جميع الطلاب كحاضرين؟</h3>
+                <h3 class="text-lg font-black text-slate-900">{{ mark_all_present_title }}</h3>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    سيتم تعيين حالة جميع طلاب هذه الشعبة ({{ total_count }} طالب) كـ <strong class="text-emerald-700">حاضر</strong> دفعة واحدة وحفظها في قاعدة البيانات.
+                    {% blocktrans with count=total_count %}سيتم تعيين حالة جميع طلاب هذه الشعبة ({{ count }} طالب) كحاضر دفعة واحدة وحفظها في قاعدة البيانات.{% endblocktrans %}
                 </p>
             </div>
 
@@ -1566,11 +1839,11 @@ window.addEventListener('keydown', function(e) {
                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                         @click="showBulkModal = false; playChime();"
                         class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200">
-                    تأكيد تحضير الجميع
+                    {{ mark_all_present_button }}
                 </button>
                 <button @click="showBulkModal = false" 
                         class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
-                    إلغاء
+                    {{ close_label }}
                 </button>
             </div>
         </div>
@@ -1604,10 +1877,10 @@ window.addEventListener('keydown', function(e) {
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h3 class="text-lg font-black text-slate-900">شبكة القاعة المحلية المصغرة</h3>
+                        <h3 class="text-lg font-black text-slate-900">{{ hotspot_title }}</h3>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">Zero Internet</span>
                     </div>
-                    <p class="text-xs text-slate-500 font-medium">تسجيل حضور الطلاب عبر شبكة Wi-Fi / Hotspot المحلية دون الحاجة لإنترنت خارجي</p>
+                    <p class="text-xs text-slate-500 font-medium">{{ hotspot_description }}</p>
                 </div>
             </div>
 
@@ -1615,22 +1888,22 @@ window.addEventListener('keydown', function(e) {
             <div class="p-4 rounded-2xl border transition-all"
                  :class="isHotspotActive ? 'bg-emerald-50/80 border-emerald-300' : 'bg-slate-50 border-slate-200'">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-600">حالة وضع عدم الاتصال:</span>
+                    <span class="text-xs font-bold text-slate-600">{{ hotspot_status_label }}</span>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black"
                           :class="isHotspotActive ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-200' : 'bg-slate-200 text-slate-700'">
                         <span class="w-2 h-2 rounded-full" :class="isHotspotActive ? 'bg-white animate-ping' : 'bg-slate-400'"></span>
-                        <span x-text="isHotspotActive ? 'مفعّل وشغال (الباركود موجه للشبكة المحلية)' : 'غير مفعّل (الوضع الافتراضي)'"></span>
+                        <span x-text="isHotspotActive ? sessionDetailI18n.hotspotActiveText : sessionDetailI18n.hotspotInactiveText"></span>
                     </span>
                 </div>
             </div>
 
             <!-- IP Selector -->
             <div class="space-y-2">
-                <label class="block text-xs font-bold text-slate-700">عنوان IP لحاسوب الأستاذ / خادم القاعة:</label>
+                <label class="block text-xs font-bold text-slate-700">{{ hotspot_ip_label }}</label>
                 <div class="flex gap-2">
                     <input type="text" 
                            x-model="selectedIp" 
-                           placeholder="مثال: 192.168.43.1 أو 172.21.67.11" 
+                           placeholder="{{ hotspot_ip_placeholder }}"
                            class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50/50 text-slate-800">
                     <select x-model="selectedIp" 
                             class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-700 focus:ring-2 focus:ring-emerald-500">
@@ -1640,17 +1913,17 @@ window.addEventListener('keydown', function(e) {
                     </select>
                 </div>
                 <p class="text-[11px] text-slate-400">
-                    تم رصد العناوين المحلية النشطة تلقائياً. اختر عنوان نقطة الاتصال (Hotspot) أو عنوان الـ Wi-Fi.
+                    {{ hotspot_ip_help }}
                 </p>
             </div>
 
             <!-- Checkin URL Preview & Copy -->
             <div class="p-3.5 bg-slate-900 rounded-2xl text-white space-y-2">
                 <div class="flex items-center justify-between text-xs text-slate-400 font-bold">
-                    <span>🔗 الرابط المحلي الذي سيفتحه الطلاب:</span>
+                    <span>{{ hotspot_url_label }}</span>
                     <button @click="copyHotspotCheckinLink()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-400 text-xs font-bold transition-all">
-                        <span x-show="!copiedHotspotUrl">نسخ الرابط</span>
-                        <span x-show="copiedHotspotUrl">✓ تم النسخ!</span>
+                        <span x-show="!copiedHotspotUrl">{{ copy_link_label }}</span>
+                        <span x-show="copiedHotspotUrl">{{ copied_link_label }}</span>
                     </button>
                 </div>
                 <div class="font-mono text-emerald-400 font-bold text-xs break-all select-all p-2 bg-slate-950 rounded-xl"
@@ -1661,12 +1934,12 @@ window.addEventListener('keydown', function(e) {
             <div class="p-4 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-2 text-xs text-amber-900">
                 <div class="font-black text-amber-950 flex items-center gap-1.5">
                     <span>💡</span>
-                    <span>كيف تشغّل النظام في القاعة خلال دقيقة واحدة وبدون إنترنت؟</span>
+                    <span>{{ hotspot_steps_title }}</span>
                 </div>
                 <ol class="list-decimal list-inside space-y-1.5 font-medium text-amber-800 leading-relaxed">
-                    <li>شغّل <strong>نقطة اتصال الهواتف (Hotspot)</strong> من هاتفك أو اللابتوب (دون الحاجة لتفعيل باقة أو رصيد بيانات).</li>
-                    <li>اطلب من طلاب القاعة الاتصال بشبكة الـ Hotspot الخاصة بك.</li>
-                    <li>اضغط على زر <strong>تفعيل وتحديث الـ QR</strong> بالأسفل؛ سيمسح الطلاب الرمز من الشاشة أو البروجكتر ويسجلون حضورهم فورياً في أجزاء من الثانية!</li>
+                    <li>{% trans "شغّل" %} <strong>{{ phone_hotspot_label }}</strong> {{ hotspot_no_data_help }}</li>
+                    <li>{{ hotspot_connect_students }}</li>
+                    <li>{% trans "اضغط على زر" %} <strong>{{ hotspot_activate_qr }}</strong> {{ hotspot_scan_help }}</li>
                 </ol>
             </div>
 
@@ -1675,16 +1948,16 @@ window.addEventListener('keydown', function(e) {
                 <button @click="applyHotspotMode(true)" 
                         class="flex-1 py-3 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 active:scale-95">
                     <span>🚀</span>
-                    <span>تفعيل وتحديث رمز الـ QR محلياً</span>
+                    <span>{{ hotspot_enable_button }}</span>
                 </button>
                 <button x-show="isHotspotActive" 
                         @click="applyHotspotMode(false)" 
                         class="px-4 py-3 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors">
-                    إلغاء الوضع المحلي
+                    {{ hotspot_disable_button }}
                 </button>
                 <button @click="hotspotModalOpen = false" 
                         class="px-4 py-3 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
-                    إغلاق
+                    {{ close_label }}
                 </button>
             </div>
 
@@ -1698,20 +1971,20 @@ window.addEventListener('keydown', function(e) {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <div class="hidden print-only p-8">
     <div class="text-center space-y-2 mb-6 border-b pb-4">
-        <h1 class="text-2xl font-black text-slate-900">تقرير حضور الحصة الدراسية</h1>
-        <p class="text-slate-600 font-bold">مادة: {{ attendance_session.session.course.name }} ({{ attendance_session.session.course.code }})</p>
-        <p class="text-slate-500 text-xs">التاريخ: {{ attendance_session.date }} | المعلم: {{ attendance_session.session.teacher.user.get_full_name }} | القاعة: {{ attendance_session.session.room|default:"-" }}</p>
-        <p class="text-slate-400 text-xs">جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات | المطور: MUNTADHER HAZIM 07724978301</p>
+        <h1 class="text-2xl font-black text-slate-900">{{ printable_report_title }}</h1>
+        <p class="text-slate-600 font-bold">{{ course_label }} {{ attendance_session.session.course.name }} ({{ attendance_session.session.course.code }})</p>
+        <p class="text-slate-500 text-xs">{{ date_label }} {{ attendance_session.date }} | {{ instructor_label }} {{ attendance_session.session.teacher.user.get_full_name }} | {{ room_label }} {{ attendance_session.session.room|default:"-" }}</p>
+        <p class="text-slate-400 text-xs">{{ university_footer_label }} | {{ developer_footer_label }}</p>
     </div>
     
     <table class="min-w-full border border-slate-300 divide-y divide-slate-300 text-sm">
         <thead>
             <tr class="bg-slate-100 font-bold">
-                <th class="border border-slate-300 p-2 text-right">الرقم الجامعي</th>
-                <th class="border border-slate-300 p-2 text-right">اسم الطالب</th>
-                <th class="border border-slate-300 p-2 text-center">الحالة</th>
-                <th class="border border-slate-300 p-2 text-center">طريقة التحضير</th>
-                <th class="border border-slate-300 p-2 text-center">الطابع الزمني</th>
+                <th class="border border-slate-300 p-2 text-right">{{ university_id_label }}</th>
+                <th class="border border-slate-300 p-2 text-right">{{ student_name_label }}</th>
+                <th class="border border-slate-300 p-2 text-center">{{ status_label }}</th>
+                <th class="border border-slate-300 p-2 text-center">{{ attendance_method_label }}</th>
+                <th class="border border-slate-300 p-2 text-center">{{ timestamp_label }}</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-300">
@@ -1719,8 +1992,8 @@ window.addEventListener('keydown', function(e) {
                 <tr>
                     <td class="border border-slate-300 p-2 font-mono">{{ item.profile.student_id }}</td>
                     <td class="border border-slate-300 p-2 font-bold">{{ item.profile.user.get_full_name }}</td>
-                    <td class="border border-slate-300 p-2 text-center">{{ item.status_display }}</td>
-                    <td class="border border-slate-300 p-2 text-center">{{ item.record.get_method_display|default:"-" }}</td>
+                    <td class="border border-slate-300 p-2 text-center">{% trans item.status_display %}</td>
+                    <td class="border border-slate-300 p-2 text-center">{% if item.record %}{% trans item.record.get_method_display %}{% else %}-{% endif %}</td>
                     <td class="border border-slate-300 p-2 text-center font-mono">{{ item.record.timestamp|date:"H:i:s"|default:"-" }}</td>
                 </tr>
             {% endfor %}

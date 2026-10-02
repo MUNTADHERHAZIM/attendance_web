@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}لوحة الإدارة الشاملة - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "لوحة الإدارة الشاملة - نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8" x-data="{ showCodeModal: false }">
@@ -24,14 +25,14 @@
         <div>
             <div class="flex items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
-                    👑 صلاحيات الإدارة الكاملة (Super Admin)
+                    👑 {% trans "صلاحيات الإدارة الكاملة (Super Admin)" %}
                 </span>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                    🟢 الخادم متصل
+                    🟢 {% trans "الخادم متصل" %}
                 </span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1.5">لوحة الإدارة والتحكم المركزي</h1>
-            <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">المؤسسة التعليمية: {{ institution.name|default:"جامعة بغداد" }}</p>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1.5">{% trans "لوحة الإدارة والتحكم المركزي" %}</h1>
+            <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">{% trans "المؤسسة التعليمية:" %} {{ institution.name|default:"جامعة بغداد" }}</p>
         </div>
         
         <!-- Direct Master Actions -->
@@ -39,16 +40,16 @@
             <a href="/admin/" 
                target="_blank"
                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 shadow-md transition-all group"
-               title="فتح لوحة تحكم دجانغو الإدارية الشاملة بكل الصلاحيات">
+               title="{% trans 'فتح لوحة تحكم دجانغو الإدارية الشاملة بكل الصلاحيات' %}">
                 <span>⚙️</span>
-                <span>لوحة التحكم المركزية الشاملة (Admin)</span>
+                <span>{% trans "لوحة التحكم المركزية الشاملة (Admin)" %}</span>
                 <span class="text-xs text-indigo-300 group-hover:translate-x-[-2px] transition-transform">↗</span>
             </a>
             
             <a href="{% url 'reports:admin_import_web' %}" 
                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 transition-colors">
                 <span>📥</span>
-                <span>استيراد إكسل</span>
+                <span>{% trans "استيراد إكسل" %}</span>
             </a>
         </div>
     </div>
@@ -58,9 +59,9 @@
         <!-- Stat Card 1: Students -->
         <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">إجمالي الطلاب المسجلين</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "إجمالي الطلاب المسجلين" %}</p>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ total_students }}</h3>
-                <a href="/admin/accounts/studentprofile/" class="text-[11px] font-bold text-indigo-600 hover:underline mt-1 inline-block">إدارة الطلاب ←</a>
+                <a href="/admin/accounts/studentprofile/" class="text-[11px] font-bold text-indigo-600 hover:underline mt-1 inline-block">{% trans "إدارة الطلاب" %} ←</a>
             </div>
             <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl shrink-0">
                 👥
@@ -70,9 +71,9 @@
         <!-- Stat Card 2: Teachers -->
         <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الكادر التدريسي</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "الكادر التدريسي" %}</p>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ total_teachers }}</h3>
-                <a href="/admin/accounts/teacherprofile/" class="text-[11px] font-bold text-emerald-600 hover:underline mt-1 inline-block">إدارة الأساتذة ←</a>
+                <a href="/admin/accounts/teacherprofile/" class="text-[11px] font-bold text-emerald-600 hover:underline mt-1 inline-block">{% trans "إدارة الأساتذة" %} ←</a>
             </div>
             <div class="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl shrink-0">
                 👨‍🏫
@@ -82,9 +83,9 @@
         <!-- Stat Card 3: Classes & Courses -->
         <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الشعب والمواد</p>
-                <h3 class="text-xl sm:text-2xl font-black text-slate-800 mt-1">{{ total_classes }} <span class="text-xs font-normal text-slate-400">شعبة</span> / {{ total_courses }} <span class="text-xs font-normal text-slate-400">مادة</span></h3>
-                <a href="/admin/academics/classsection/" class="text-[11px] font-bold text-amber-600 hover:underline mt-1 inline-block">إدارة الشعب والمواد ←</a>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "الشعب والمواد" %}</p>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-800 mt-1">{{ total_classes }} <span class="text-xs font-normal text-slate-400">{% trans "شعبة" %}</span> / {{ total_courses }} <span class="text-xs font-normal text-slate-400">{% trans "مادة" %}</span></h3>
+                <a href="/admin/academics/classsection/" class="text-[11px] font-bold text-amber-600 hover:underline mt-1 inline-block">{% trans "إدارة الشعب والمواد" %} ←</a>
             </div>
             <div class="h-12 w-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl shrink-0">
                 🏫
@@ -94,9 +95,9 @@
         <!-- Stat Card 4: Attendance Rate Today -->
         <div class="bg-white p-5 border border-slate-200/90 shadow-2xs rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">نسبة حضور اليوم</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "نسبة حضور اليوم" %}</p>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ attendance_rate_today }}%</h3>
-                <span class="text-[11px] font-medium text-slate-400 mt-1 inline-block">{{ active_sessions_today }} جلسة نشطة حالياً</span>
+                <span class="text-[11px] font-medium text-slate-400 mt-1 inline-block">{{ active_sessions_today }} {% trans "جلسة نشطة حالياً" %}</span>
             </div>
             <div class="h-12 w-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center text-xl shrink-0">
                 📊
@@ -116,12 +117,12 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xl">🛡️</span>
                         <div>
-                            <h2 class="text-base font-black text-slate-900">مركز إدارة الحسابات والصلاحيات الشاملة</h2>
-                            <p class="text-xs text-slate-400 font-medium">كل الصلاحيات متاحة لك للتحكم بجميع المستخدمين والبيانات</p>
+                            <h2 class="text-base font-black text-slate-900">{% trans "مركز إدارة الحسابات والصلاحيات الشاملة" %}</h2>
+                            <p class="text-xs text-slate-400 font-medium">{% trans "كل الصلاحيات متاحة لك للتحكم بجميع المستخدمين والبيانات" %}</p>
                         </div>
                     </div>
                     <span class="text-xs font-mono font-bold px-2 py-0.5 bg-slate-100 rounded text-slate-600">
-                        {{ total_users }} مستخدم مسجل
+                        {{ total_users }} {% trans "مستخدم مسجل" %}
                     </span>
                 </div>
 

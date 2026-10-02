@@ -1,15 +1,15 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="h-full bg-slate-50">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_CODE == 'ar' %}rtl{% else %}ltr{% endif %}" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}نظام الحضور الذكي{% endblock %}</title>
+    <title>{% block title %}{% trans "نظام الحضور الذكي" %}{% endblock %}</title>
     
-    <!-- Google Fonts: Cairo -->
+    <!-- Arabic and Latin UI fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- CSS / Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,15 +40,14 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
     <!-- PWA & Mobile Optimization -->
-    <link rel="manifest" href="{% url 'manifest' %}">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{% url 'manifest_json' %}">
     <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="الحضور الذكي">
-    <meta name="application-name" content="نظام الحضور الذكي">
+    <meta name="apple-mobile-web-app-title" content="{% if LANGUAGE_CODE == 'en' %}Smart Attendance{% else %}الحضور الذكي{% endif %}">
+    <meta name="application-name" content="{% if LANGUAGE_CODE == 'en' %}Smart Attendance System{% else %}نظام الحضور الذكي{% endif %}">
     <meta name="msapplication-TileColor" content="#4f46e5">
     <meta name="msapplication-navbutton-color" content="#4f46e5">
     <meta name="format-detection" content="telephone=no">
@@ -66,6 +65,23 @@
         body {
             font-family: 'Cairo', sans-serif;
         }
+        html[lang="en"] body {
+            font-family: 'Inter', 'Cairo', sans-serif;
+        }
+        html[dir="ltr"] .text-right { text-align: left !important; }
+        html[dir="ltr"] .text-left { text-align: right !important; }
+        html[dir="ltr"] .space-x-reverse { --tw-space-x-reverse: 0; }
+        html[dir="ltr"] .right-0 { right: auto !important; left: 0 !important; }
+        html[dir="ltr"] .left-0 { left: auto !important; right: 0 !important; }
+        html[dir="ltr"] .border-l { border-left-width: 0 !important; border-right-width: 1px !important; }
+        html[dir="ltr"] .border-r { border-right-width: 0 !important; border-left-width: 1px !important; }
+        html[dir="ltr"] .ml-3 { margin-left: 0 !important; margin-right: .75rem !important; }
+        html[dir="ltr"] .mr-2 { margin-right: 0 !important; margin-left: .5rem !important; }
+        @media (max-width: 639px) {
+            html[dir="ltr"] .translate-x-full { --tw-translate-x: -100%; }
+        }
+        html[dir="ltr"] input,
+        html[dir="ltr"] textarea { direction: ltr; }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -230,11 +246,11 @@
                             <img src="{{ system_institution_logo }}" alt="Logo" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200 shadow-xs p-0.5">
                         {% else %}
                             <div class="h-9 w-9 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-brand-200">
-                                ح
+                                {% trans "ح" %}
                             </div>
                         {% endif %}
                         <div class="flex flex-col">
-                            <span class="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-none">نظام الحضور الذكي</span>
+                            <span class="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-none">{% trans "نظام الحضور الذكي" %}</span>
                             <span class="text-[10px] text-slate-400 font-semibold mt-0.5">{{ system_institution_name|default:"جامعة بغداد" }}</span>
                         </div>
                     </a>
@@ -245,21 +261,33 @@
                     <!-- Network Status Pill (Desktop & Tablet) -->
                     <div id="pwa-network-badge" class="hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span id="pwa-network-badge-text">متصل</span>
+                        <span id="pwa-network-badge-text">{% trans "متصل" %}</span>
                     </div>
+
+                    <form action="{% url 'set_language' %}" method="post" class="inline-flex">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        {% if LANGUAGE_CODE == "ar" %}
+                            <input type="hidden" name="language" value="en">
+                            <button type="submit" lang="en" dir="ltr" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50" aria-label="{% trans 'Switch language to English' %}">English</button>
+                        {% else %}
+                            <input type="hidden" name="language" value="ar">
+                            <button type="submit" lang="ar" dir="rtl" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50" aria-label="{% trans 'Switch language to Arabic' %}">العربية</button>
+                        {% endif %}
+                    </form>
 
                     <!-- PWA Header Install Button (Dynamic) -->
                     <button id="pwa-header-install-btn" onclick="pwaInstallApp()" class="hidden items-center space-x-reverse space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <span>تثبيت التطبيق</span>
+                        <span>{% trans "تثبيت التطبيق" %}</span>
                     </button>
 
                     {% if user.is_authenticated %}
-                        <div class="hidden sm:flex flex-col text-left items-end">
+                        <div class="hidden sm:flex flex-col text-right items-end">
                             <span class="text-sm font-semibold text-slate-700">{{ user.get_full_name|default:user.username }}</span>
-                            <span class="text-xs text-slate-400 font-medium">{{ user.get_role_display }}</span>
+                            <span class="text-xs text-slate-400 font-medium">{% if user.role == "STUDENT" %}{% trans "طالب" %}{% elif user.role == "TEACHER" %}{% trans "معلم / مشرف" %}{% elif user.role == "INSTITUTION_ADMIN" %}{% trans "مدير المؤسسة" %}{% else %}{% trans "مدير النظام" %}{% endif %}</span>
                         </div>
                         
                         <div class="relative" x-data="{ open: false }">
@@ -275,13 +303,13 @@
                                  x-transition:enter="transition ease-out duration-100"
                                  x-transition:enter-start="transform opacity-0 scale-95"
                                  x-transition:enter-end="transform opacity-100 scale-100">
-                                <a href="{% url 'accounts:profile_web' %}" class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">الملف الشخصي</a>
+                                <a href="{% url 'accounts:profile_web' %}" class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">{% trans "الملف الشخصي" %}</a>
                                 <div class="border-t border-slate-100"></div>
-                                <a href="/logout/" class="block px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors">تسجيل الخروج</a>
+                                <a href="/logout/" class="block px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors">{% trans "تسجيل الخروج" %}</a>
                             </div>
                         </div>
                     {% else %}
-                        <a href="/login/" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg text-white bg-brand-600 hover:bg-brand-700 transition-colors">تسجيل الدخول</a>
+                        <a href="/login/" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg text-white bg-brand-600 hover:bg-brand-700 transition-colors">{% trans "تسجيل الدخول" %}</a>
                     {% endif %}
                 </div>
             </div>
@@ -309,7 +337,7 @@
                 <div class="space-y-6">
                     <!-- Mobile Close Header -->
                     <div class="flex sm:hidden justify-between items-center pb-3 border-b border-slate-100">
-                        <span class="text-xs font-bold text-slate-500">القائمة الرئيسية</span>
+                        <span class="text-xs font-bold text-slate-500">{% trans "القائمة الرئيسية" %}</span>
                         <button @click="sidebarOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
@@ -325,7 +353,7 @@
                         <div class="overflow-hidden">
                             <p class="text-xs font-bold text-slate-800 truncate">{{ user.get_full_name|default:user.username }}</p>
                             <span class="inline-flex items-center px-2 py-0.5 mt-0.5 rounded-full text-[10px] font-bold bg-brand-600/10 text-brand-700">
-                                {{ user.get_role_display }}
+                                {% if user.role == "STUDENT" %}{% trans "طالب" %}{% elif user.role == "TEACHER" %}{% trans "معلم / مشرف" %}{% elif user.role == "INSTITUTION_ADMIN" %}{% trans "مدير المؤسسة" %}{% else %}{% trans "مدير النظام" %}{% endif %}
                             </span>
                         </div>
                     </div>
@@ -334,81 +362,81 @@
                     <nav class="space-y-5">
                         <!-- Section: الرئيسية -->
                         <div>
-                            <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">الرئيسية</p>
+                            <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "الرئيسية" %}</p>
                             <a href="/" 
                                class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if request.path == '/' %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                 <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if request.path == '/' %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                                 </svg>
-                                لوحة التحكم
+                                {% trans "لوحة التحكم" %}
                             </a>
                         </div>
 
                         <!-- Section: Admin & Institution Management -->
                         {% if user.is_super_admin or user.is_institution_admin %}
                             <div>
-                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">إدارة الحضور الذكي</p>
+                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "إدارة الحضور الذكي" %}</p>
                                 <div class="space-y-1">
                                     <a href="{% url 'attendance:teacher_sessions_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/attendance/teacher/sessions/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                         </svg>
-                                        جدول المحاضرات والجلسات
+                                        {% trans "جدول المحاضرات والجلسات" %}
                                     </a>
                                     <a href="{% url 'attendance:create_custom_session' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/session/create-custom/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/attendance/session/create-custom/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        بدء جلسة تحضير طارئة
+                                        {% trans "بدء جلسة تحضير طارئة" %}
                                     </a>
                                     <a href="{% url 'attendance:student_records_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/attendance/student/records/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                                         </svg>
-                                        سجلات حضور الطلاب
+                                        {% trans "سجلات حضور الطلاب" %}
                                     </a>
                                     <a href="{% url 'attendance:student_checkin_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/checkin/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/attendance/checkin/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
                                         </svg>
-                                        شاشة مسح QR (تجربة)
+                                        {% trans "شاشة مسح QR (تجربة)" %}
                                     </a>
                                 </div>
                             </div>
 
                             <div>
-                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">البيانات والتقارير</p>
+                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "البيانات والتقارير" %}</p>
                                 <div class="space-y-1">
                                     <a href="{% url 'reports:admin_import_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/reports/admin/import/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/reports/admin/import/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
                                         </svg>
-                                        استيراد الطلاب من Excel
+                                        {% trans "استيراد الطلاب من Excel" %}
                                     </a>
                                     <a href="{% url 'reports:admin_reports_overview' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/reports/admin/overview/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/reports/admin/overview/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                         </svg>
-                                        التقارير وسجل التدقيق
+                                        {% trans "التقارير وسجل التدقيق" %}
                                     </a>
                                 </div>
                             </div>
 
                             <div>
-                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">إدارة الحسابات والنظام</p>
+                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "إدارة الحسابات والنظام" %}</p>
                                 <div class="space-y-1">
                                     <a href="{% url 'accounts:admin_users_directory' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/accounts/admin/users/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 {% if '/accounts/admin/users/' in request.path %}text-brand-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                         </svg>
-                                        دليل وإدارة الحسابات
+                                        {% trans "دليل وإدارة الحسابات" %}
                                     </a>
                                     <a href="/admin/" target="_blank"
                                        class="flex items-center justify-between px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
@@ -417,7 +445,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             </svg>
-                                            لوحة إدارة Django
+                                            {% trans "لوحة إدارة Django" %}
                                         </div>
                                         <span class="text-xs text-slate-400">↗</span>
                                     </a>
@@ -428,35 +456,35 @@
                         <!-- Section: Teacher Navigation -->
                         {% if user.is_teacher and not user.is_super_admin and not user.is_institution_admin %}
                             <div>
-                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">التعليم والتحضير</p>
+                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "التعليم والتحضير" %}</p>
                                 <div class="space-y-1">
                                     <a href="{% url 'attendance:teacher_sessions_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                         </svg>
-                                        محاضراتي الحالية
+                                        {% trans "محاضراتي الحالية" %}
                                     </a>
                                     <a href="{% url 'attendance:create_custom_session' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/session/create-custom/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        بدء تحضير طارئ
+                                        {% trans "بدء تحضير طارئ" %}
                                     </a>
                                     <a href="{% url 'accounts:teacher_students' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/accounts/teacher/students/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                         </svg>
-                                        طلابي والشعب الدراسية
+                                        {% trans "طلابي والشعب الدراسية" %}
                                     </a>
                                     <a href="{% url 'reports:admin_reports_overview' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/reports/' in request.path and '/import/' not in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                         </svg>
-                                        تقارير الحضور والغياب
+                                        {% trans "تقارير الحضور والغياب" %}
                                     </a>
                                 </div>
                             </div>
@@ -465,21 +493,21 @@
                         <!-- Section: Student Navigation -->
                         {% if user.is_student %}
                             <div>
-                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">الخدمات الطلابية</p>
+                                <p class="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "الخدمات الطلابية" %}</p>
                                 <div class="space-y-2">
                                     <a href="{% url 'attendance:student_checkin_web' %}" 
                                        class="flex items-center px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 rounded-xl shadow-md shadow-brand-200 hover:from-brand-700 hover:to-indigo-700 transition-all">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
                                         </svg>
-                                        مسح QR الحضور
+                                        {% trans "مسح QR الحضور" %}
                                     </a>
                                     <a href="{% url 'attendance:student_records_web' %}" 
                                        class="flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}bg-brand-50 text-brand-700 shadow-sm border border-brand-100/80 font-bold{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                                         <svg class="w-5 h-5 ml-3 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                         </svg>
-                                        سجلي الشخصي
+                                        {% trans "سجلي الشخصي" %}
                                     </a>
                                 </div>
                             </div>
@@ -491,11 +519,11 @@
                 <div class="pt-4 border-t border-slate-100 text-center">
                     <div class="inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>خادم محلي متصل</span>
+                        <span>{% trans "خادم محلي متصل" %}</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1.5 font-medium">نظام الحضور الذكي v1.0.0</p>
+                    <p class="text-[11px] text-slate-400 mt-1.5 font-medium">{% trans "نظام الحضور الذكي" %} v1.0.0</p>
                     <div class="mt-2 pt-2 border-t border-slate-100/70 text-[11px] text-slate-500 font-medium">
-                        <span>المطور: </span><span class="font-bold text-indigo-600">MUNTADHER HAZIM</span>
+                        <span>{% trans "المطور:" %} </span><span class="font-bold text-indigo-600">MUNTADHER HAZIM</span>
                         <div class="text-[10px] text-slate-400 font-mono mt-0.5" dir="ltr">07724978301</div>
                     </div>
                 </div>
@@ -520,7 +548,7 @@
                             </span>
                             <button @click="visible = false"
                                     class="ml-3 mr-1 text-current opacity-50 hover:opacity-100 transition-opacity text-lg leading-none font-bold shrink-0"
-                                    title="إغلاق">✕</button>
+                                    title="{% trans 'إغلاق' %}">✕</button>
                         </div>
                     {% endfor %}
                 </div>
@@ -538,7 +566,7 @@
             <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span class="text-[10px]">الرئيسية</span>
+            <span class="text-[10px]">{% trans "الرئيسية" %}</span>
         </a>
 
         {% if user.is_student %}
@@ -548,20 +576,20 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
                 </div>
-                <span class="text-[10px] -mt-1 font-bold text-brand-700">مسح QR</span>
+                <span class="text-[10px] -mt-1 font-bold text-brand-700">{% trans "مسح QR" %}</span>
             </a>
             <a href="{% url 'attendance:student_records_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span class="text-[10px]">سجلي</span>
+                <span class="text-[10px]">{% trans "سجلي" %}</span>
             </a>
         {% elif user.is_teacher %}
             <a href="{% url 'attendance:teacher_sessions_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span class="text-[10px]">المحاضرات</span>
+                <span class="text-[10px]">{% trans "المحاضرات" %}</span>
             </a>
             <a href="{% url 'attendance:create_custom_session' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all">
                 <div class="relative -top-2 bg-gradient-to-tr from-brand-600 to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-brand-500/30">
@@ -569,32 +597,32 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
                 </div>
-                <span class="text-[10px] -mt-1 font-bold text-brand-700">تحضير طارئ</span>
+                <span class="text-[10px] -mt-1 font-bold text-brand-700">{% trans "تحضير طارئ" %}</span>
             </a>
             <a href="{% url 'reports:admin_reports_overview' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/reports/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
                 </svg>
-                <span class="text-[10px]">التقارير</span>
+                <span class="text-[10px]">{% trans "التقارير" %}</span>
             </a>
         {% elif user.is_super_admin or user.is_institution_admin %}
             <a href="{% url 'attendance:teacher_sessions_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/teacher/sessions/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span class="text-[10px]">الجلسات</span>
+                <span class="text-[10px]">{% trans "الجلسات" %}</span>
             </a>
             <a href="{% url 'attendance:student_records_web' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/attendance/student/records/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
                 </svg>
-                <span class="text-[10px]">السجلات</span>
+                <span class="text-[10px]">{% trans "السجلات" %}</span>
             </a>
             <a href="{% url 'reports:admin_reports_overview' %}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all {% if '/reports/' in request.path %}text-brand-600 font-bold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z" />
                 </svg>
-                <span class="text-[10px]">التقارير</span>
+                <span class="text-[10px]">{% trans "التقارير" %}</span>
             </a>
         {% endif %}
 
@@ -603,14 +631,14 @@
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span class="text-[10px]">حسابي</span>
+                <span class="text-[10px]">{% trans "حسابي" %}</span>
             </a>
         {% else %}
             <a href="/login/" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-brand-600 font-bold">
                 <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span class="text-[10px]">دخول</span>
+                <span class="text-[10px]">{% trans "دخول" %}</span>
             </a>
         {% endif %}
     </div>
@@ -627,21 +655,21 @@
             </div>
             <div class="flex-grow">
                 <div class="flex items-center space-x-reverse space-x-2">
-                    <h4 class="text-sm font-bold text-white">تثبيت تطبيق الحضور الذكي</h4>
+                    <h4 class="text-sm font-bold text-white">{% trans "تثبيت تطبيق الحضور الذكي" %}</h4>
                     <span class="px-1.5 py-0.5 bg-brand-500/30 border border-brand-400/40 text-brand-300 text-[10px] font-extrabold rounded-md">PWA</span>
                 </div>
                 <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                    ثبّت التطبيق على جهازك للوصول السريع، مسح رموز QR بلمسة واحدة، والعمل دون اتصال بالإنترنت!
+                    {% trans "ثبّت التطبيق على جهازك للوصول السريع، مسح رموز QR بلمسة واحدة، والعمل دون اتصال بالإنترنت!" %}
                 </p>
                 <div class="flex items-center space-x-reverse space-x-2 mt-3.5">
                     <button onclick="pwaInstallApp()" class="flex-1 py-2 px-3 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-500/25 transition-all text-center flex items-center justify-center space-x-reverse space-x-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <span>تثبيت التطبيق الآن</span>
+                        <span>{% trans "تثبيت التطبيق الآن" %}</span>
                     </button>
                     <button onclick="pwaDismissBanner()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-colors">
-                        لاحقاً
+                        {% trans "لاحقاً" %}
                     </button>
                 </div>
             </div>
@@ -657,26 +685,26 @@
             <div class="w-16 h-16 mx-auto mb-3.5 bg-gradient-to-tr from-brand-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 p-2.5">
                 <img src="{% static 'images/pwa/icon-192x192.png' %}" alt="App" class="w-full h-full object-contain rounded-xl">
             </div>
-            <h3 class="text-base font-bold text-white mb-1">تثبيت التطبيق على جهاز iOS</h3>
-            <p class="text-xs text-slate-300 mb-5 leading-relaxed">لتشغيل نظام الحضور الذكي كتطبيق أصلي، اتبع الخطوات البسيطة التالية في متصفح Safari:</p>
+            <h3 class="text-base font-bold text-white mb-1">{% trans "تثبيت التطبيق على جهاز iOS" %}</h3>
+            <p class="text-xs text-slate-300 mb-5 leading-relaxed">{% trans "لتشغيل نظام الحضور الذكي كتطبيق أصلي، اتبع الخطوات البسيطة التالية في متصفح Safari:" %}</p>
             
             <div class="space-y-3 text-right bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 text-xs text-slate-200 mb-5">
                 <div class="flex items-center space-x-reverse space-x-3">
                     <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">1</span>
-                    <span>اضغط على زر المشاركة <strong>(Share ⎋)</strong> في أسفل متصفح سفاري.</span>
+                    <span>{% trans "اضغط على زر المشاركة" %} <strong>(Share ⎋)</strong> {% trans "في أسفل متصفح سفاري." %}</span>
                 </div>
                 <div class="flex items-center space-x-reverse space-x-3">
                     <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">2</span>
-                    <span>مرر للأسفل واختر <strong>"إضافة إلى الصفحة الرئيسية" ⊞</strong>.</span>
+                    <span>{% trans "مرر للأسفل واختر" %} <strong>"{% trans 'إضافة إلى الصفحة الرئيسية' %}" ⊞</strong>.</span>
                 </div>
                 <div class="flex items-center space-x-reverse space-x-3">
                     <span class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold text-xs flex-shrink-0">3</span>
-                    <span>اضغط على <strong>"إضافة" (Add)</strong> في أعلى الزاوية.</span>
+                    <span>{% trans "اضغط على" %} <strong>"{% trans 'إضافة' %}" (Add)</strong> {% trans "في أعلى الزاوية." %}</span>
                 </div>
             </div>
 
             <button onclick="pwaCloseIosModal()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl transition-colors">
-                فهمت ذلك
+                {% trans "فهمت ذلك" %}
             </button>
         </div>
     </div>
@@ -687,11 +715,11 @@
             <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </div>
         <div>
-            <p class="text-xs font-bold text-white">يتوفر إصدار جديد من النظام</p>
-            <p class="text-[11px] text-slate-300">تم تنزيل التحديث في الخلفية وهو جاهز للتطبيق.</p>
+            <p class="text-xs font-bold text-white">{% trans "يتوفر إصدار جديد من النظام" %}</p>
+            <p class="text-[11px] text-slate-300">{% trans "تم تنزيل التحديث في الخلفية وهو جاهز للتطبيق." %}</p>
         </div>
         <button id="pwa-update-btn" class="mr-2 py-1 px-3 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow transition-colors">
-            تحديث فوري
+            {% trans "تحديث فوري" %}
         </button>
     </div>
 
@@ -753,7 +781,9 @@
                 const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
                 if (Array.isArray(queue) && queue.length) {
                     event.preventDefault();
-                    event.returnValue = 'لديك طلبات حضور محفوظة لم تؤكد مزامنتها. هل تريد مغادرة الصفحة؟';
+                    event.returnValue = document.documentElement.lang === 'en'
+                        ? 'You have attendance requests saved on this device that have not been synced. Leave this page?'
+                        : 'لديك طلبات حضور محفوظة لم تؤكد مزامنتها. هل تريد مغادرة الصفحة؟';
                 }
             } catch (error) {
                 console.error('[Attendance] Could not inspect saved queue before leaving:', error);
@@ -777,6 +807,17 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
                         console.log('[PWA] Service Worker registered:', registration.scope);
+                        const saveOfflineLanguage = () => {
+                            const worker = navigator.serviceWorker.controller || registration.active;
+                            if (worker) {
+                                worker.postMessage({
+                                    type: 'SET_LANGUAGE',
+                                    language: document.documentElement.lang === 'en' ? 'en' : 'ar'
+                                });
+                            }
+                        };
+                        saveOfflineLanguage();
+                        navigator.serviceWorker.ready.then(saveOfflineLanguage);
 
                         // Detect update
                         registration.addEventListener('updatefound', () => {
@@ -850,7 +891,9 @@
                 const iosModal = document.getElementById('pwa-ios-modal');
                 if (iosModal) iosModal.classList.remove('hidden');
             } else {
-                alert('التطبيق مثبت بالفعل أو يمكنك تثبيته من خيارات المتصفح (Install App).');
+                alert(document.documentElement.lang === 'en'
+                    ? 'The app is already installed, or you can install it from your browser options.'
+                    : 'التطبيق مثبت بالفعل أو يمكنك تثبيته من خيارات المتصفح (Install App).');
             }
         };
 
@@ -894,11 +937,11 @@
                 if (isOnline) {
                     badge.className = 'hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all';
                     badge.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-                    badgeText.textContent = 'متصل';
+                    badgeText.textContent = document.documentElement.lang === 'en' ? 'Online' : 'متصل';
                 } else {
                     badge.className = 'hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-full text-xs font-bold transition-all';
                     badge.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
-                    badgeText.textContent = 'أوفلاين';
+                    badgeText.textContent = document.documentElement.lang === 'en' ? 'Offline' : 'أوفلاين';
                 }
             }
 
@@ -907,11 +950,15 @@
                 if (isOnline) {
                     toast.className = 'fixed bottom-24 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 bg-emerald-900/90 text-emerald-100 border border-emerald-400/50 rounded-full shadow-2xl text-xs font-bold flex items-center space-x-reverse space-x-2 backdrop-blur-md transition-all duration-300 no-print';
                     toastDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                    toastText.textContent = '⚡ تم استعادة الاتصال بالشبكة';
+                    toastText.textContent = document.documentElement.lang === 'en'
+                        ? '⚡ Network connection restored'
+                        : '⚡ تم استعادة الاتصال بالشبكة';
                 } else {
                     toast.className = 'fixed bottom-24 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 bg-amber-900/90 text-amber-100 border border-amber-400/50 rounded-full shadow-2xl text-xs font-bold flex items-center space-x-reverse space-x-2 backdrop-blur-md transition-all duration-300 no-print';
                     toastDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-                    toastText.textContent = '⚠️ أنت تعمل في وضع عدم الاتصال (Offline)';
+                    toastText.textContent = document.documentElement.lang === 'en'
+                        ? '⚠️ You are working offline'
+                        : '⚠️ أنت تعمل في وضع عدم الاتصال (Offline)';
                 }
 
                 setTimeout(() => {
@@ -948,7 +995,7 @@
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'custom-select-container';
-                wrapper.dir = 'rtl';
+                wrapper.dir = document.documentElement.dir;
 
                 const trigger = document.createElement('button');
                 trigger.type = 'button';
@@ -979,7 +1026,10 @@
                     }
 
                     const selectedOpt = select.options[select.selectedIndex];
-                    label.textContent = selectedOpt ? selectedOpt.textContent.trim() : (select.getAttribute('placeholder') || 'اختر من القائمة...');
+                    label.textContent = selectedOpt ? selectedOpt.textContent.trim() : (
+                        select.getAttribute('placeholder') ||
+                        (document.documentElement.lang === 'en' ? 'Select an option...' : 'اختر من القائمة...')
+                    );
                     
                     dropdown.querySelectorAll('.custom-select-item').forEach(item => {
                         if (item.dataset.value === select.value) {

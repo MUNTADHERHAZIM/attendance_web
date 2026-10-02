@@ -1,30 +1,31 @@
+{% load i18n %}
 {% if review_required_count %}
     <div class="mb-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-right text-xs font-bold text-amber-950">
         <span class="text-base">⚠️</span>
-        <span>تنبيه للأستاذ: يوجد {{ review_required_count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة.</span>
+        <span>{% blocktrans with count=review_required_count %}تنبيه للأستاذ: يوجد {{ count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة.{% endblocktrans %}</span>
     </div>
 {% endif %}
 {% if review_submissions %}
     <section class="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-right" aria-live="polite">
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-                <h3 class="text-sm font-black text-amber-950">طلبات الهاتف غير المتحقق منها</h3>
-                <p class="mt-1 text-xs text-amber-800">هذه الطلبات وصلت من جهاز الطالب لكن تعذر التحقق من QR أو OTP. لا تُحتسب حضوراً إلا بعد موافقتك.</p>
+                <h3 class="text-sm font-black text-amber-950">{% trans "طلبات الهاتف غير المتحقق منها" %}</h3>
+                <p class="mt-1 text-xs text-amber-800">{% trans "هذه الطلبات وصلت من جهاز الطالب لكن تعذر التحقق من QR أو OTP. لا تُحتسب حضوراً إلا بعد موافقتك." %}</p>
             </div>
-            <span class="rounded-full bg-amber-200 px-3 py-1 text-xs font-black text-amber-950">{{ review_submissions|length }} بانتظارك</span>
+            <span class="rounded-full bg-amber-200 px-3 py-1 text-xs font-black text-amber-950">{{ review_submissions|length }} {% trans "بانتظارك" %}</span>
         </div>
         <div class="mb-3 flex flex-wrap items-center gap-2">
             <label class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-bold">
                 <input type="checkbox" class="review-select-all" onchange="window.__sessionManager?.toggleAllReviewSubmissions(this.checked)">
-                تحديد الطلبات الظاهرة
+                {% trans "تحديد الطلبات الظاهرة" %}
             </label>
             <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('approve', true)"
-                    class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">موافقة وإضافة المحدد</button>
+                    class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">{% trans "موافقة وإضافة المحدد" %}</button>
             <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('approve', false)"
-                    class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">موافقة حضور المحدد</button>
+                    class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">{% trans "موافقة حضور المحدد" %}</button>
             <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('reject', false)"
-                    class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">رفض المحدد</button>
-            <span id="review-selection-count" class="text-xs font-bold text-amber-900">0 محدد</span>
+                    class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">{% trans "رفض المحدد" %}</button>
+            <span id="review-selection-count" class="text-xs font-bold text-amber-900">0 {% trans "محدد" %}</span>
         </div>
         <div class="space-y-2">
             {% for submission in review_submissions %}
@@ -35,25 +36,25 @@
                             <span class="truncate text-sm font-black text-slate-900">{{ submission.student_name }}</span>
                         </label>
                         <p class="mt-1 text-[11px] text-slate-600">
-                            استُلم {{ submission.received_at|date:"Y-m-d H:i:s" }} · {{ submission.token_error }}
-                            {% if submission.device_id %} · جهاز {{ submission.device_id|truncatechars:24 }}{% endif %}
+                            {% trans "استُلم" %} {{ submission.received_at|date:"Y-m-d H:i:s" }} · {{ submission.token_error }}
+                            {% if submission.device_id %} · {% trans "جهاز" %} {{ submission.device_id|truncatechars:24 }}{% endif %}
                         </p>
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">
                         <button type="button"
                                 onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'approve', true)"
                                 class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">
-                            موافقة وإضافة للشعبة
+                            {% trans "موافقة وإضافة للشعبة" %}
                         </button>
                         <button type="button"
                                 onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'approve', false)"
                                 class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">
-                            موافقة على الحضور فقط
+                            {% trans "موافقة على الحضور فقط" %}
                         </button>
                         <button type="button"
                                 onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'reject', false)"
                                 class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">
-                            رفض / إزالة
+                            {% trans "رفض / إزالة" %}
                         </button>
                     </div>
                 </div>
@@ -67,17 +68,17 @@
             <tr class="bg-slate-50/90 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
                 <th scope="col" class="py-3.5 px-4 text-right min-w-[245px]">
                     <div class="flex items-center gap-1.5">
-                        <input type="checkbox" aria-label="تحديد جميع الطلاب الظاهرين" class="student-select-all" onchange="window.__sessionManager?.toggleAllStudents(this.checked)">
+                        <input type="checkbox" aria-label="{% trans 'تحديد جميع الطلاب الظاهرين' %}" class="student-select-all" onchange="window.__sessionManager?.toggleAllStudents(this.checked)">
                         <span>👤</span>
-                        <span>اسم الطالب والمعلومات</span>
+                        <span>{% trans "اسم الطالب والمعلومات" %}</span>
                     </div>
                 </th>
-                <th scope="col" class="py-3.5 px-3 text-center min-w-[110px]">الرقم الجامعي</th>
-                <th scope="col" class="py-3.5 px-3 text-center min-w-[100px]">نوع الدراسة</th>
-                <th scope="col" class="py-3.5 px-3 text-center min-w-[110px]">حالة الحضور</th>
-                <th scope="col" class="py-3.5 px-3 text-center min-w-[100px]">وقت التسجيل</th>
-                <th scope="col" class="py-3.5 px-3 text-center min-w-[120px]">طريقة التحضير</th>
-                <th scope="col" class="py-3.5 px-4 text-center min-w-[210px] sticky left-0 z-20 bg-slate-100/95 backdrop-blur-xs shadow-[-6px_0_12px_rgba(0,0,0,0.08)] border-r border-slate-200">تعديل يدوي فوري</th>
+                <th scope="col" class="py-3.5 px-3 text-center min-w-[110px]">{% trans "الرقم الجامعي" %}</th>
+                <th scope="col" class="py-3.5 px-3 text-center min-w-[100px]">{% trans "نوع الدراسة" %}</th>
+                <th scope="col" class="py-3.5 px-3 text-center min-w-[110px]">{% trans "حالة الحضور" %}</th>
+                <th scope="col" class="py-3.5 px-3 text-center min-w-[100px]">{% trans "وقت التسجيل" %}</th>
+                <th scope="col" class="py-3.5 px-3 text-center min-w-[120px]">{% trans "طريقة التحضير" %}</th>
+                <th scope="col" class="py-3.5 px-4 text-center min-w-[210px] sticky left-0 z-20 bg-slate-100/95 backdrop-blur-xs shadow-[-6px_0_12px_rgba(0,0,0,0.08)] border-r border-slate-200">{% trans "تعديل يدوي فوري" %}</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white text-xs sm:text-sm font-medium" id="studentsTableBody">
@@ -90,7 +91,7 @@
                     <!-- 1. Student Avatar + Name + Email -->
                     <td class="py-3.5 px-4 whitespace-nowrap">
                         <div class="flex items-center space-x-reverse space-x-3">
-                            <input type="checkbox" class="student-select" data-student-id="{{ item.profile.id }}" onchange="window.__sessionManager?.setStudentSelected({{ item.profile.id }}, this.checked)" aria-label="تحديد {{ item.profile.user.get_full_name }}">
+                            <input type="checkbox" class="student-select" data-student-id="{{ item.profile.id }}" onchange="window.__sessionManager?.setStudentSelected({{ item.profile.id }}, this.checked)" aria-label="{% trans 'تحديد' %} {{ item.profile.user.get_full_name }}">
                             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
                                 {{ item.profile.user.first_name|first|default:item.profile.user.username|first|upper }}
                             </div>
@@ -98,22 +99,22 @@
                                 <div class="text-sm font-black text-slate-900 truncate flex items-center gap-1.5">
                                     <span>{{ item.profile.user.get_full_name|default:item.profile.user.username }}</span>
                                     {% if item.record and 'طالب جديد' in item.record.notes or item.profile.student_id|slice:":4" == "NEW-" %}
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="طالب جديد تم تسجيله تلقائياً أثناء المحاضرة">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="{% trans 'طالب جديد تم تسجيله تلقائياً أثناء المحاضرة' %}">
                                             <span>🏷️</span>
-                                            <span>طالب جديد</span>
+                                            <span>{% trans "طالب جديد" %}</span>
                                         </span>
                                     {% endif %}
                                     {% if item.record and 'يتطلب مراجعة الأستاذ' in item.record.notes and item.profile.student_id|slice:":4" != "NEW-" %}
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs" title="راجع أهلية الطالب لهذه الشعبة">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs" title="{% trans 'راجع أهلية الطالب لهذه الشعبة' %}">
                                             <span>⚠️</span>
-                                            <span>يتطلب مراجعة</span>
+                                            <span>{% trans "يتطلب مراجعة" %}</span>
                                         </span>
                                     {% endif %}
                                     {% if item.is_shared_device %}
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs" 
-                                              title="⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس جهاز ({{ item.shared_with_names|join:' ، ' }})">
+                                              title="{% trans '⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس الجهاز' %} ({{ item.shared_with_names|join:' ، ' }})">
                                             <span>📱⚠️</span>
-                                            <span>جهاز مشترك مع {{ item.shared_with_names|length }} طالب</span>
+                                            <span>{% blocktrans count count=item.shared_with_names|length %}جهاز مشترك مع {{ count }} طالب{% plural %}جهاز مشترك مع {{ count }} طلاب{% endblocktrans %}</span>
                                         </span>
                                     {% endif %}
                                 </div>
@@ -156,7 +157,7 @@
                               {% elif item.status == 'EXCUSED' %}bg-blue-50 text-blue-700 border border-blue-200
                               {% else %}bg-rose-50 text-rose-700 border border-rose-200/90{% endif %}">
                             <span class="w-2 h-2 rounded-full {% if item.status == 'PRESENT' %}bg-emerald-500 animate-pulse{% elif item.status == 'LATE' %}bg-amber-500{% elif item.status == 'EXCUSED' %}bg-blue-500{% else %}bg-rose-500{% endif %}"></span>
-                            {{ item.status_display }}
+                            {% if item.status == 'PRESENT' %}{% trans "حاضر" %}{% elif item.status == 'LATE' %}{% trans "متأخر" %}{% elif item.status == 'EXCUSED' %}{% trans "معذور" %}{% else %}{% trans "غائب" %}{% endif %}
                         </span>
                     </td>
 
@@ -183,17 +184,17 @@
                                   {% elif item.record.method == 'BLUETOOTH' %}bg-cyan-100 text-cyan-800 border border-cyan-200
                                   {% elif item.record.method == 'MANUAL' %}bg-slate-100 text-slate-700 border border-slate-200
                                   {% else %}bg-slate-100 text-slate-700{% endif %}">
-                                {% if item.record.method == 'QR' %}📱 باركود QR
-                                {% elif item.record.method == 'OFFLINE_MANUAL' %}📶 بدون نت (فوري)
-                                {% elif item.record.method == 'RFID' %}💳 بطاقة RFID
-                                {% elif item.record.method == 'OFFLINE_OTP' %}🔢 كود OTP
-                                {% elif item.record.method == 'BLUETOOTH' %}📡 بلوتوث BLE
-                                {% elif item.record.method == 'MANUAL' %}✍️ يدوي
+                                {% if item.record.method == 'QR' %}📱 {% trans "باركود QR" %}
+                                {% elif item.record.method == 'OFFLINE_MANUAL' %}📶 {% trans "بدون اتصال (فوري)" %}
+                                {% elif item.record.method == 'RFID' %}💳 {% trans "بطاقة RFID" %}
+                                {% elif item.record.method == 'OFFLINE_OTP' %}🔢 {% trans "كود OTP" %}
+                                {% elif item.record.method == 'BLUETOOTH' %}📡 {% trans "بلوتوث BLE" %}
+                                {% elif item.record.method == 'MANUAL' %}✍️ {% trans "يدوي" %}
                                 {% else %}{{ item.record.get_method_display }}
                                 {% endif %}
                             </span>
                         {% else %}
-                            <span class="text-slate-300 text-xs">لم يسجل</span>
+                            <span class="text-slate-300 text-xs">{% trans "لم يسجل" %}</span>
                         {% endif %}
                     </td>
 
@@ -204,40 +205,41 @@
                                     hx-vals='{"student_profile_id": "{{ item.profile.id }}", "session_id": "{{ attendance_session.id }}", "status": "PRESENT"}' 
                                     hx-target="#student-list-container" 
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    title="تسجيل حاضر"
+                                    title="{% trans 'تسجيل حاضر' %}"
                                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all {% if item.status == 'PRESENT' and item.record.method != 'OFFLINE_MANUAL' %}bg-emerald-600 text-white shadow-xs{% else %}text-emerald-700 hover:bg-emerald-100/80{% endif %}">
-                                ✓ حاضر
+                                ✓ {% trans "حاضر" %}
                             </button>
                             <button hx-post="/attendance/record/manual-update-web/" 
                                     hx-vals='{"student_profile_id": "{{ item.profile.id }}", "session_id": "{{ attendance_session.id }}", "status": "PRESENT", "method": "OFFLINE_MANUAL"}' 
                                     hx-target="#student-list-container" 
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    title="تسجيل حاضر فوري لطالب لا يملك إنترنت"
+                                    title="{% trans 'تسجيل حضور فوري لطالب دون اتصال بالإنترنت' %}"
                                     class="px-2 py-1 text-xs font-bold rounded-lg transition-all {% if item.record.method == 'OFFLINE_MANUAL' %}bg-amber-500 text-white shadow-xs{% else %}text-amber-700 hover:bg-amber-100/80{% endif %}">
-                                📶 بدون نت
+                                📶 {% trans "بدون اتصال" %}
                             </button>
                             <button hx-post="/attendance/record/manual-update-web/" 
                                     hx-vals='{"student_profile_id": "{{ item.profile.id }}", "session_id": "{{ attendance_session.id }}", "status": "LATE"}' 
                                     hx-target="#student-list-container" 
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    title="تسجيل متأخر"
+                                    title="{% trans 'تسجيل متأخر' %}"
                                     class="px-2 py-1 text-xs font-bold rounded-lg transition-all {% if item.status == 'LATE' %}bg-amber-600 text-white shadow-xs{% else %}text-amber-700 hover:bg-amber-100/80{% endif %}">
-                                ⏳ متأخر
+                                ⏳ {% trans "متأخر" %}
                             </button>
                             <button hx-post="/attendance/record/manual-update-web/" 
                                     hx-vals='{"student_profile_id": "{{ item.profile.id }}", "session_id": "{{ attendance_session.id }}", "status": "ABSENT"}' 
                                     hx-target="#student-list-container" 
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    title="تسجيل غائب"
+                                    title="{% trans 'تسجيل غائب' %}"
                                     class="px-2 py-1 text-xs font-bold rounded-lg transition-all {% if item.status == 'ABSENT' %}bg-rose-600 text-white shadow-xs{% else %}text-rose-700 hover:bg-rose-100/80{% endif %}">
-                                ✕ غائب
+                                ✕ {% trans "غائب" %}
                             </button>
                         </div>
                         {% if item.profile.student_id|slice:":4" == "NEW-" %}
                             <button type="button"
+                                    data-action="{% if item.is_enrolled %}remove{% else %}enroll{% endif %}"
                                     onclick="window.__sessionManager?.manageStudentEnrollment(this, '{% url 'attendance:toggle_provisional_enrollment' attendance_session.id item.profile.id %}')"
                                     class="mt-1 rounded-lg border px-2 py-1 text-[10px] font-bold {% if item.is_enrolled %}border-rose-200 text-rose-700 hover:bg-rose-50{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
-                                {% if item.is_enrolled %}إزالة من قائمتي{% else %}اعتماد وإضافة للشعبة{% endif %}
+                                {% if item.is_enrolled %}{% trans "إزالة من قائمتي" %}{% else %}{% trans "اعتماد وإضافة للشعبة" %}{% endif %}
                             </button>
                         {% endif %}
                     </td>
@@ -249,12 +251,12 @@
                             <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl">
                                 👥
                             </div>
-                            <p class="font-black text-slate-700 text-base">لا يوجد طلاب مسجلون في هذه الشعبة الدراسية حالياً.</p>
+                            <p class="font-black text-slate-700 text-base">{% trans "لا يوجد طلاب مسجلون في هذه الشعبة الدراسية حالياً." %}</p>
                             <p class="text-xs text-slate-400 max-w-sm">
-                                يمكنك إضافة طلاب إلى الشعبة الدراسية من خلال صفحة "طلابي والشعب" أو استيراد ملف إكسل.
+                                {% trans 'يمكنك إضافة طلاب إلى الشعبة الدراسية من خلال صفحة "طلابي والشعب" أو استيراد ملف إكسل.' %}
                             </p>
                             <a href="{% url 'accounts:teacher_students' %}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-brand-600 bg-brand-50 border border-brand-200 hover:bg-brand-100 transition-colors">
-                                <span>➕ إضافة طلاب للشعبة</span>
+                                <span>➕ {% trans "إضافة طلاب للشعبة" %}</span>
                             </a>
                         </div>
                     </td>

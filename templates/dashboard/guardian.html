@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}متابعة الأبناء - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "متابعة الأبناء - نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- Header -->
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">متابعة حضور أبنائكم</h1>
-        <p class="text-sm text-slate-500 font-medium mt-1">تجدون أدناه تفاصيل ونسب حضور وغياب أبنائكم المسجلين في النظام.</p>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "متابعة حضور أبنائكم" %}</h1>
+        <p class="text-sm text-slate-500 font-medium mt-1">{% trans "تجدون أدناه تفاصيل ونسب حضور وغياب أبنائكم المسجلين في النظام." %}</p>
     </div>
 
     <!-- Wards Grid -->
@@ -23,18 +24,18 @@
                             </div>
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800">{{ item.student.user.get_full_name }}</h3>
-                                <p class="text-xs text-slate-400 font-semibold">الرقم الجامعي: {{ item.student.student_id }}</p>
+                                <p class="text-xs text-slate-400 font-semibold">{% trans "الرقم الجامعي:" %} {{ item.student.student_id }}</p>
                             </div>
                         </div>
                         
                         <div class="flex items-center space-x-reverse space-x-4">
                             <div class="text-right">
-                                <span class="text-xs font-bold text-slate-400 block uppercase">نسبة الحضور</span>
+                                <span class="text-xs font-bold text-slate-400 block uppercase">{% trans "نسبة الحضور" %}</span>
                                 <span class="text-xl font-black {% if item.rate >= 80 %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ item.rate }}%</span>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs font-bold text-slate-400 block uppercase">أيام الغياب</span>
-                                <span class="text-xl font-black text-slate-700">{{ item.absences }} أيام</span>
+                                <span class="text-xs font-bold text-slate-400 block uppercase">{% trans "أيام الغياب" %}</span>
+                                <span class="text-xl font-black text-slate-700">{{ item.absences }} {% trans "أيام" %}</span>
                             </div>
                         </div>
                     </div>
@@ -43,22 +44,22 @@
                     {% if item.rate < 80 and item.total > 0 %}
                         <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 flex items-center space-x-reverse space-x-2 text-xs font-bold">
                             <span>⚠</span>
-                            <span>تنبيه: الطالب متأخر دراسياً ومعرض للحرمان الأكاديمي لتجاوز الغياب المسموح به.</span>
+                            <span>{% trans "تنبيه: الطالب متأخر دراسياً ومعرض للحرمان الأكاديمي لتجاوز الغياب المسموح به." %}</span>
                         </div>
                     {% endif %}
 
                     <!-- Ward recent logs -->
                     <div class="space-y-3">
-                        <h4 class="text-sm font-bold text-slate-700">سجل الغياب والحضور الأخير</h4>
+                        <h4 class="text-sm font-bold text-slate-700">{% trans "سجل الغياب والحضور الأخير" %}</h4>
                         
                         <div class="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
                             {% if item.recent %}
                                 <table class="min-w-full divide-y divide-slate-150">
                                     <thead>
                                         <tr class="bg-slate-100">
-                                            <th class="px-4 py-2.5 text-right text-xs font-bold text-slate-500 uppercase">المادة</th>
-                                            <th class="px-4 py-2.5 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
-                                            <th class="px-4 py-2.5 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
+                                            <th class="px-4 py-2.5 text-right text-xs font-bold text-slate-500 uppercase">{% trans "المادة" %}</th>
+                                            <th class="px-4 py-2.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "التاريخ" %}</th>
+                                            <th class="px-4 py-2.5 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الحالة" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-150 font-medium">
@@ -84,7 +85,7 @@
                                 </table>
                             {% else %}
                                 <div class="text-center py-6 text-xs text-slate-400 font-bold">
-                                    لا يوجد سجلات حضور مسجلة حالياً.
+                                    {% trans "لا يوجد سجلات حضور مسجلة حالياً." %}
                                 </div>
                             {% endif %}
                         </div>
@@ -94,7 +95,7 @@
         </div>
     {% else %}
         <div class="bg-slate-150 p-8 text-center rounded-2xl border border-slate-200 text-slate-500 font-bold">
-            لم يتم العثور على أي أبناء مرتبطين بحسابكم. يرجى التواصل مع الدعم الفني للمؤسسة لربط الحساب.
+            {% trans "لم يتم العثور على أي أبناء مرتبطين بحسابكم. يرجى التواصل مع الدعم الفني للمؤسسة لربط الحساب." %}
         </div>
     {% endif %}
 </div>

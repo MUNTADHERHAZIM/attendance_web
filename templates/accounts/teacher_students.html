@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}إدارة طلابي - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "إدارة طلابي والشعب الدراسية" %} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="{ 
@@ -20,7 +21,7 @@
             
             <!-- Left Info -->
             <div class="flex items-center space-x-reverse space-x-4">
-                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-all" title="العودة">
+                <a href="/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-all" title="{% trans 'العودة' %}">
                     <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                     </svg>
@@ -28,17 +29,17 @@
                 <div>
                     <div class="flex flex-wrap items-center gap-2 mb-1">
                         <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200">
-                            👥 بوابة الأستاذ المستقلة
+                            👥 {% trans "بوابة الأستاذ المستقلة" %}
                         </span>
                         <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                            🏛️ {% if teacher.institution %}{{ teacher.institution.name }}{% else %}المؤسسة غير محددة{% endif %}
+                            🏛️ {% if teacher.institution %}{{ teacher.institution.name }}{% else %}{% trans "المؤسسة غير محددة" %}{% endif %}
                         </span>
                     </div>
-                    <h1 class="text-2xl font-black text-slate-900">إدارة طلابي والشعب الدراسية</h1>
+                    <h1 class="text-2xl font-black text-slate-900">{% trans "إدارة طلابي والشعب الدراسية" %}</h1>
                     <p class="text-xs text-slate-500 font-semibold mt-0.5 flex flex-wrap items-center gap-2">
-                        <span>إجمالي الطلاب في شعبك: <strong class="text-brand-600 font-black">{{ total_count }} طالب</strong></span>
+                        <span>{% trans "إجمالي الطلاب في شعبك:" %} <strong class="text-brand-600 font-black">{{ total_count }} {% trans "طالب" %}</strong></span>
                         <span class="text-slate-300">•</span>
-                        <span>القسم الأكاديمي: <strong class="text-indigo-600">{% if teacher.department %}{{ teacher.department.name }}{% elif teacher.specialization %}{{ teacher.specialization }}{% else %}القسم الأكاديمي{% endif %}</strong></span>
+                        <span>{% trans "القسم الأكاديمي:" %} <strong class="text-indigo-600">{% if teacher.department %}{{ teacher.department.name }}{% elif teacher.specialization %}{{ teacher.specialization }}{% else %}{% trans "القسم الأكاديمي" %}{% endif %}</strong></span>
                     </p>
                 </div>
             </div>
@@ -49,27 +50,27 @@
                         @click="sectionModalOpen = true" 
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border border-brand-200 text-brand-700 bg-brand-50 hover:bg-brand-100 transition-all shadow-xs hover:scale-[1.02] active:scale-95">
                     <span>🏫</span>
-                    <span>➕ إنشاء شعبة جديدة</span>
+                    <span>➕ {% trans "إنشاء شعبة جديدة" %}</span>
                 </button>
 
                 <button type="button" 
                         @click="addModalOpen = true" 
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 transition-all shadow-md shadow-brand-200 hover:scale-[1.02] active:scale-95">
                     <span>➕</span>
-                    <span>إضافة طالب جديد</span>
+                    <span>{% trans "إضافة طالب جديد" %}</span>
                 </button>
 
                 <button type="button" 
                         @click="importModalOpen = true" 
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all shadow-xs">
                     <span>📥</span>
-                    <span>استيراد ملف Excel</span>
+                    <span>{% trans "استيراد ملف Excel" %}</span>
                 </button>
 
                 <a href="{% url 'reports:admin_reports_overview' %}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-xs">
                     <span>📊</span>
-                    <span>تقارير الحضور</span>
+                    <span>{% trans "تقارير الحضور" %}</span>
                 </a>
             </div>
         </div>
@@ -82,21 +83,21 @@
             <a href="{% url 'accounts:teacher_students' %}{% if selected_section_id %}?section_id={{ selected_section_id }}{% endif %}" 
                class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
                       {% if not shift_filter %}bg-slate-900 text-white shadow-xs{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
-                <span>👥 جميع الطلاب</span>
+                <span>👥 {% trans "جميع الطلاب" %}</span>
                 <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if not shift_filter %}bg-white/20 text-white{% else %}bg-slate-200 text-slate-700{% endif %} font-mono">{{ total_count }}</span>
             </a>
 
             <a href="{% url 'accounts:teacher_students' %}?shift=MORNING{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
                       {% if shift_filter == 'MORNING' %}bg-amber-600 text-white shadow-xs{% else %}text-slate-600 hover:bg-amber-50 hover:text-amber-800{% endif %}">
-                <span>☀️ الدراسة الصباحية</span>
+                <span>☀️ {% trans "الدراسة الصباحية" %}</span>
                 <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if shift_filter == 'MORNING' %}bg-white/20 text-white{% else %}bg-amber-100 text-amber-800{% endif %} font-mono">{{ morning_count }}</span>
             </a>
 
             <a href="{% url 'accounts:teacher_students' %}?shift=EVENING{% if selected_section_id %}&section_id={{ selected_section_id }}{% endif %}" 
                class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5
                       {% if shift_filter == 'EVENING' %}bg-indigo-600 text-white shadow-xs{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-800{% endif %}">
-                <span>🌙 الدراسة المسائية</span>
+                <span>🌙 {% trans "الدراسة المسائية" %}</span>
                 <span class="px-1.5 py-0.5 rounded-full text-[10px] {% if shift_filter == 'EVENING' %}bg-white/20 text-white{% else %}bg-indigo-100 text-indigo-800{% endif %} font-mono">{{ evening_count }}</span>
             </a>
         </div>
@@ -112,7 +113,7 @@
                 <div class="relative flex-1">
                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">🔍</span>
                     <input type="text" name="q" value="{{ search_query }}" 
-                           placeholder="ابحث بالاسم الكامل، الرقم الجامعي، أو رقم الهاتف..." 
+                           placeholder="{% trans 'ابحث بالاسم الكامل، الرقم الجامعي، أو رقم الهاتف...' %}"
                            class="w-full pr-9 pl-4 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all bg-slate-50/60">
                 </div>
 
@@ -120,7 +121,7 @@
                 <div class="sm:w-64 relative" x-data="{ 
                     open: false, 
                     value: '{{ selected_section_id }}', 
-                    label: '{% for sec in my_sections %}{% if selected_section_id == sec.id|stringformat:'s' %}{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }}){% endif %}{% endfor %}' || 'جميع الشعب الدراسية' 
+                    label: '{% for sec in my_sections %}{% if selected_section_id == sec.id|stringformat:'s' %}{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %}){% endif %}{% endfor %}' || '{% trans "جميع الشعب الدراسية" %}'
                 }">
                     <input type="hidden" name="section_id" :value="value">
                     <button type="button" 
@@ -140,17 +141,17 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = ''; label = 'جميع الشعب الدراسية'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                        <div @click="value = ''; label = '{% trans "جميع الشعب الدراسية" %}'; open = false; $nextTick(() => $el.closest('form').submit())"
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>جميع الشعب الدراسية</span>
+                            <span>{% trans "جميع الشعب الدراسية" %}</span>
                             <span x-show="value === ''" class="text-brand-600">✓</span>
                         </div>
                         {% for sec in my_sections %}
-                            <div @click="value = '{{ sec.id }}'; label = '{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({{ sec.get_shift_display|escapejs }})'; open = false; $nextTick(() => $el.closest('form').submit())" 
+                            <div @click="value = '{{ sec.id }}'; label = '{{ sec.level|escapejs }} - {{ sec.name|escapejs }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})'; open = false; $nextTick(() => $el.closest('form').submit())"
                                  class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === '{{ sec.id }}' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                                <span class="truncate">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</span>
+                                <span class="truncate">{{ sec.level }} - {{ sec.name }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})</span>
                                 <span x-show="value === '{{ sec.id }}'" class="text-brand-600">✓</span>
                             </div>
                         {% endfor %}
@@ -158,11 +159,11 @@
                 </div>
 
                 <button type="submit" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors">
-                    بحث
+                    {% trans "بحث" %}
                 </button>
                 {% if search_query or selected_section_id or shift_filter %}
                     <a href="{% url 'accounts:teacher_students' %}" class="px-3 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 flex items-center justify-center">
-                        إلغاء التصفية
+                        {% trans "إلغاء التصفية" %}
                     </a>
                 {% endif %}
             </form>
@@ -188,15 +189,15 @@
              x-transition 
              class="p-3 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-xs font-bold text-amber-900">
             <div class="flex items-center gap-2">
-                <span>⚠️ تم تحديد <span class="font-black text-sm" x-text="selectedStudents.length"></span> طالب</span>
+                <span>⚠️ {% trans "تم تحديد" %} <span class="font-black text-sm" x-text="selectedStudents.length"></span> {% trans "طالب" %}</span>
             </div>
-            <form action="{% url 'accounts:teacher_bulk_delete_students' %}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف الطلاب المحددين نهائياً؟')">
+            <form action="{% url 'accounts:teacher_bulk_delete_students' %}" method="POST" onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف الطلاب المحددين نهائياً؟' %}')">
                 {% csrf_token %}
                 <template x-for="id in selectedStudents" :key="id">
                     <input type="hidden" name="selected_students" :value="id">
                 </template>
                 <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors flex items-center gap-1">
-                    <span>🗑️ حذف الطلاب المحددين</span>
+                    <span>🗑️ {% trans "حذف الطلاب المحددين" %}</span>
                 </button>
             </form>
         </div>
@@ -208,13 +209,13 @@
                         <th class="px-3 py-4 text-center w-10">
                             <input type="checkbox" x-model="selectAll" @change="toggleAll()" class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                         </th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">الطالب والبريد</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">الرقم الجامعي</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">نوع الدراسة</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">الشعبة الدراسية</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">رقم الهاتف</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">نسبة الحضور</th>
-                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">إجراءات</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "الطالب والبريد" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الرقم الجامعي" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "نوع الدراسة" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الشعبة الدراسية" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "رقم الهاتف" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "نسبة الحضور" %}</th>
+                        <th class="px-5 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "إجراءات" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
@@ -241,7 +242,7 @@
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
                                       {% if item.profile.study_shift == 'EVENING' %}bg-indigo-50 text-indigo-800 border border-indigo-200
                                       {% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
-                                    {% if item.profile.study_shift == 'EVENING' %}🌙 مسائي{% else %}☀️ صباحي{% endif %}
+                                    {% if item.profile.study_shift == 'EVENING' %}🌙 {% trans "مسائي" %}{% else %}☀️ {% trans "صباحي" %}{% endif %}
                                 </span>
                             </td>
                             <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-600">
@@ -265,7 +266,7 @@
                                         {{ item.rate }}%
                                     </span>
                                     <span class="text-[10px] text-slate-400 font-semibold">
-                                        حاضر: {{ item.present_count }} | غائب: {{ item.absent_count }}
+                                        {% trans "حاضر:" %} {{ item.present_count }} | {% trans "غائب:" %} {{ item.absent_count }}
                                     </span>
                                 </div>
                             </td>
@@ -273,12 +274,12 @@
                                 <div class="inline-flex items-center gap-1.5">
                                     <a href="{% url 'reports:admin_student_detail' item.profile.id %}" 
                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors">
-                                        <span>📄 السجل</span>
+                                        <span>📄 {% trans "السجل" %}</span>
                                     </a>
                                     <form method="post" action="{% url 'accounts:teacher_delete_student' item.profile.id %}" class="inline"
-                                          onsubmit="return confirm('هل أنت متأكد من حذف الطالب ({{ item.profile.user.get_full_name|escapejs }}) وسجلاته؟')">
+                                          onsubmit="return confirm('{% trans 'هل أنت متأكد من حذف الطالب' %} ({{ item.profile.user.get_full_name|escapejs }}) {% trans 'وسجلاته؟' %}')">
                                         {% csrf_token %}
-                                        <button type="submit" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors" title="حذف الطالب">
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors" title="{% trans 'حذف الطالب' %}">
                                             <span>🗑️</span>
                                         </button>
                                     </form>
@@ -290,9 +291,9 @@
                             <td colspan="8" class="px-6 py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center space-y-2">
                                     <span class="text-4xl">👥</span>
-                                    <p class="font-bold text-slate-600 text-sm">لا يوجد طلاب مسجلون في هذا البحث حالياً.</p>
+                                    <p class="font-bold text-slate-600 text-sm">{% trans "لا يوجد طلاب مسجلون في هذا البحث حالياً." %}</p>
                                     <button type="button" @click="addModalOpen = true" class="text-xs font-bold text-brand-600 underline">
-                                        انقر هنا لإضافة أول طالب
+                                        {% trans "انقر هنا لإضافة أول طالب" %}
                                     </button>
                                 </div>
                             </td>
@@ -322,7 +323,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2">
                     <span class="p-2 rounded-xl bg-brand-50 text-brand-600 text-lg">➕</span>
-                    <h3 class="text-lg font-black text-slate-900">إضافة طالب جديد إلى الشعبة</h3>
+                    <h3 class="text-lg font-black text-slate-900">{% trans "إضافة طالب جديد إلى الشعبة" %}</h3>
                 </div>
                 <button type="button" @click="addModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
             </div>
@@ -332,56 +333,56 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">الاسم الأول <span class="text-rose-500">*</span></label>
-                        <input type="text" name="first_name" required placeholder="مثال: علي" 
+                        <label class="block text-xs font-bold text-slate-700">{% trans "الاسم الأول" %} <span class="text-rose-500">*</span></label>
+                        <input type="text" name="first_name" required placeholder="{% trans 'مثال: علي' %}"
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">الاسم الأخير / اللقب <span class="text-rose-500">*</span></label>
-                        <input type="text" name="last_name" required placeholder="مثال: الكعبي" 
+                        <label class="block text-xs font-bold text-slate-700">{% trans "الاسم الأخير / اللقب" %} <span class="text-rose-500">*</span></label>
+                        <input type="text" name="last_name" required placeholder="{% trans 'مثال: الكعبي' %}"
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">الرقم الجامعي <span class="text-rose-500">*</span></label>
-                        <input type="text" name="student_id" required placeholder="مثال: 202410125" 
+                        <label class="block text-xs font-bold text-slate-700">{% trans "الرقم الجامعي" %} <span class="text-rose-500">*</span></label>
+                        <input type="text" name="student_id" required placeholder="{% trans 'مثال: 202410125' %}"
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div class="space-y-1">
                         <div class="flex items-center justify-between">
-                            <label class="block text-xs font-bold text-slate-700">الشعبة الدراسية <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-700">{% trans "الشعبة الدراسية" %} <span class="text-rose-500">*</span></label>
                             <button type="button" @click="addInlineSection = !addInlineSection" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 underline">
-                                <span x-text="addInlineSection ? '↩️ اختيار شعبة' : '➕ إنشاء شعبة'"></span>
+                                <span x-text="addInlineSection ? '↩️ {% trans "اختيار شعبة" %}' : '➕ {% trans "إنشاء شعبة" %}'"></span>
                             </button>
                         </div>
                         <div x-show="!addInlineSection">
                             <select name="section_id" :disabled="addInlineSection"
                                     class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
                                 {% for sec in my_sections %}
-                                    <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                                    <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})</option>
                                 {% empty %}
-                                    <option value="" disabled selected>لا توجد شعب سابقة - انقر إنشاء شعبة</option>
+                                    <option value="" disabled selected>{% trans "لا توجد شعب سابقة - انقر إنشاء شعبة" %}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div x-show="addInlineSection" class="p-2.5 bg-brand-50/70 rounded-xl border border-brand-200 space-y-2" style="display: none;">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-700">اسم الشعبة الجديدة</label>
-                                <input type="text" name="new_section_name" placeholder="مثال: شعبة ب" :disabled="!addInlineSection"
+                                <label class="block text-[10px] font-bold text-slate-700">{% trans "اسم الشعبة الجديدة" %}</label>
+                                <input type="text" name="new_section_name" placeholder="{% trans 'مثال: شعبة ب' %}" :disabled="!addInlineSection"
                                        class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold">
                             </div>
                             <div class="grid grid-cols-2 gap-1.5">
                                 <select name="new_section_level" :disabled="!addInlineSection" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold">
-                                    <option value="المرحلة الأولى">المرحلة الأولى</option>
-                                    <option value="المرحلة الثانية">المرحلة الثانية</option>
-                                    <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
-                                    <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                                    <option value="المرحلة الأولى">{% trans "المرحلة الأولى" %}</option>
+                                    <option value="المرحلة الثانية">{% trans "المرحلة الثانية" %}</option>
+                                    <option value="المرحلة الثالثة" selected>{% trans "المرحلة الثالثة" %}</option>
+                                    <option value="المرحلة الرابعة">{% trans "المرحلة الرابعة" %}</option>
                                 </select>
                                 <select name="new_section_shift" :disabled="!addInlineSection" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold">
-                                    <option value="MORNING">☀️ صباحي</option>
-                                    <option value="EVENING">🌙 مسائي</option>
+                                    <option value="MORNING">☀️ {% trans "صباحي" %}</option>
+                                    <option value="EVENING">🌙 {% trans "مسائي" %}</option>
                                 </select>
                             </div>
                         </div>
@@ -389,40 +390,40 @@
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">نوع الدراسة (الدوام) <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700">{% trans "نوع الدراسة (الدوام)" %} <span class="text-rose-500">*</span></label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-amber-50/50 transition-colors">
                             <input type="radio" name="study_shift" value="MORNING" checked class="text-brand-600 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-800">☀️ دراسة صباحية</span>
+                            <span class="text-xs font-bold text-slate-800">☀️ {% trans "دراسة صباحية" %}</span>
                         </label>
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-indigo-50/50 transition-colors">
                             <input type="radio" name="study_shift" value="EVENING" class="text-brand-600 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-800">🌙 دراسة مسائية</span>
+                            <span class="text-xs font-bold text-slate-800">🌙 {% trans "دراسة مسائية" %}</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">رقم الهاتف العراقي (11 رقماً يبدأ بـ 07)</label>
-                    <input type="tel" name="phone" maxlength="11" placeholder="مثال: 07724978301" 
+                    <label class="block text-xs font-bold text-slate-700">{% trans "رقم الهاتف العراقي (11 رقماً يبدأ بـ 07)" %}</label>
+                    <input type="tel" name="phone" maxlength="11" placeholder="{% trans 'مثال: 07724978301' %}"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500" dir="ltr">
-                    <p class="text-[10px] text-slate-400">يقبل الأرقام العراقية لشبكات آسيا سيل، زين، كورك.</p>
+                    <p class="text-[10px] text-slate-400">{% trans "يقبل الأرقام العراقية لشبكات آسيا سيل، زين، كورك." %}</p>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">بطاقة RFID / NFC (اختياري)</label>
-                    <input type="text" name="rfid_card" placeholder="رقم شريحة البطاقة إن توفرت" 
+                    <label class="block text-xs font-bold text-slate-700">{% trans "بطاقة RFID / NFC (اختياري)" %}</label>
+                    <input type="text" name="rfid_card" placeholder="{% trans 'رقم شريحة البطاقة إن توفرت' %}"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:bg-white focus:ring-2 focus:ring-brand-500">
                 </div>
 
                 <div class="flex gap-2 pt-3 border-t border-slate-100">
                     <button type="submit" 
                             class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm shadow-brand-200">
-                        حفظ وإلحاق الطالب
+                        {% trans "حفظ وإلحاق الطالب" %}
                     </button>
                     <button type="button" @click="addModalOpen = false" 
                             class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                 </div>
             </form>
@@ -448,7 +449,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2">
                     <span class="p-2 rounded-xl bg-emerald-50 text-emerald-600 text-lg">📥</span>
-                    <h3 class="text-lg font-black text-slate-900">إضافة قائمة الطلاب</h3>
+                    <h3 class="text-lg font-black text-slate-900">{% trans "إضافة قائمة الطلاب" %}</h3>
                 </div>
                 <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
             </div>
@@ -461,18 +462,18 @@
                     <button type="button" @click="pasteImport = false"
                             :class="!pasteImport ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'"
                             class="flex-1 rounded-lg px-3 py-2 text-xs font-black transition-all">
-                        📁 رفع ملف Excel / CSV
+                        📁 {% trans "رفع ملف Excel / CSV" %}
                     </button>
                     <button type="button" @click="pasteImport = true"
                             :class="pasteImport ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'"
                             class="flex-1 rounded-lg px-3 py-2 text-xs font-black transition-all">
-                        📝 لصق الأسماء نصياً
+                        📝 {% trans "لصق الأسماء نصياً" %}
                     </button>
                 </div>
 
                 <div class="space-y-2">
                     <div class="flex items-center justify-between">
-                        <label class="block text-xs font-bold text-slate-700">الشعبة المراد إلحاق الطلاب بها <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-bold text-slate-700">{% trans "الشعبة المراد إلحاق الطلاب بها" %} <span class="text-rose-500">*</span></label>
                         <button type="button" @click="importInlineSection = !importInlineSection" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline">
                             <span x-text="importInlineSection ? '↩️ اختيار شعبة سابقة' : '➕ إنشاء شعبة جديدة فوراً'"></span>
                         </button>
@@ -482,9 +483,9 @@
                         <select name="section_id" :disabled="importInlineSection"
                                 class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
                             {% for sec in my_sections %}
-                                <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({{ sec.get_shift_display }})</option>
+                                <option value="{{ sec.id }}">{{ sec.level }} - {{ sec.name }} ({% if sec.shift == "MORNING" %}{% trans "صباحي" %}{% else %}{% trans "مسائي" %}{% endif %})</option>
                             {% empty %}
-                                <option value="" disabled selected>لا توجد شعب سابقة - اضغط على (إنشاء شعبة جديدة فوراً) أعلاه</option>
+                                <option value="" disabled selected>{% trans "لا توجد شعب سابقة - اضغط على (إنشاء شعبة جديدة فوراً) أعلاه" %}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -493,28 +494,28 @@
                     <div x-show="importInlineSection" class="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2.5" style="display: none;">
                         <div class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
                             <span>✨</span>
-                            <span>سيتم إنشاء هذه الشعبة فوراً وإلحاق الطلاب المستوردين بها:</span>
+                            <span>{% trans "سيتم إنشاء هذه الشعبة فوراً وإلحاق الطلاب المستوردين بها:" %}</span>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-700">اسم الشعبة الجديدة <span class="text-rose-500">*</span></label>
-                            <input type="text" name="new_section_name" placeholder="مثال: شعبة ب أو Group B" :disabled="!importInlineSection"
+                            <label class="block text-[11px] font-bold text-slate-700">{% trans "اسم الشعبة الجديدة" %} <span class="text-rose-500">*</span></label>
+                            <input type="text" name="new_section_name" placeholder="{% trans 'مثال: شعبة ب أو Group B' %}" :disabled="!importInlineSection"
                                    class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700">المرحلة الدراسية</label>
+                                <label class="block text-[11px] font-bold text-slate-700">{% trans "المرحلة الدراسية" %}</label>
                                 <select name="new_section_level" :disabled="!importInlineSection" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                                    <option value="المرحلة الأولى">المرحلة الأولى</option>
-                                    <option value="المرحلة الثانية">المرحلة الثانية</option>
-                                    <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
-                                    <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                                    <option value="المرحلة الأولى">{% trans "المرحلة الأولى" %}</option>
+                                    <option value="المرحلة الثانية">{% trans "المرحلة الثانية" %}</option>
+                                    <option value="المرحلة الثالثة" selected>{% trans "المرحلة الثالثة" %}</option>
+                                    <option value="المرحلة الرابعة">{% trans "المرحلة الرابعة" %}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700">نوع الدراسة</label>
+                                <label class="block text-[11px] font-bold text-slate-700">{% trans "نوع الدراسة" %}</label>
                                 <select name="new_section_shift" :disabled="!importInlineSection" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                                    <option value="MORNING">☀️ صباحي</option>
-                                    <option value="EVENING">🌙 مسائي</option>
+                                    <option value="MORNING">☀️ {% trans "صباحي" %}</option>
+                                    <option value="EVENING">🌙 {% trans "مسائي" %}</option>
                                 </select>
                             </div>
                         </div>
@@ -522,30 +523,30 @@
                 </div>
 
                 <div x-show="!pasteImport" class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">ملف Excel أو CSV <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700">{% trans "ملف Excel أو CSV" %} <span class="text-rose-500">*</span></label>
                     <input type="file" name="excel_file" accept=".xlsx,.xls,.csv" :required="!pasteImport" :disabled="pasteImport"
                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
-                    <p class="text-[11px] text-slate-400 mt-1">يجب أن يحتوي الملف على عمود باسم (الاسم) وعمود باسم (الرقم الجامعي)، واختيارياً (الهاتف).</p>
+                    <p class="text-[11px] text-slate-400 mt-1">{% trans "يجب أن يحتوي الملف على عمود باسم (الاسم) وعمود باسم (الرقم الجامعي)، واختيارياً (الهاتف)." %}</p>
                 </div>
 
                 <div x-show="pasteImport" class="space-y-2" style="display:none">
-                    <label class="block text-xs font-bold text-slate-700">الصق قائمة أسماء الطلاب هنا (كل طالب في سطر مستقل) <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700">{% trans "الصق قائمة أسماء الطلاب هنا (كل طالب في سطر مستقل)" %} <span class="text-rose-500">*</span></label>
                     <textarea name="student_names" rows="7" maxlength="50000"
                               :required="pasteImport" :disabled="!pasteImport"
-                              placeholder="مثال:&#10;كلار جير علي الساعدي&#10;مصطفى حسين كاظم الكعبي&#10;يوسف أحمد جاسم البصري"
+                              placeholder="{% trans 'مثال: كلار جير علي الساعدي، مصطفى حسين كاظم الكعبي، يوسف أحمد جاسم البصري' %}"
                               class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"></textarea>
-                    <p class="text-[11px] leading-relaxed text-slate-500">سيُنشأ حساب ورقم جامعي تلقائياً لكل اسم جديد. الأسماء المسجلة مسبقاً في الشعبة نفسها ستُتجاوز لتفادي التكرار؛ راجع الأسماء المتشابهة بعد الاستيراد.</p>
+                    <p class="text-[11px] leading-relaxed text-slate-500">{% trans "سيُنشأ حساب ورقم جامعي تلقائياً لكل اسم جديد. الأسماء المسجلة مسبقاً في الشعبة نفسها ستُتجاوز لتفادي التكرار؛ راجع الأسماء المتشابهة بعد الاستيراد." %}</p>
                 </div>
 
                 <div class="flex gap-2 pt-3 border-t border-slate-100">
                     <button type="submit" 
                             :class="pasteImport ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'"
                             class="flex-1 py-3 text-white rounded-xl text-xs font-black transition-colors shadow-sm">
-                        <span x-text="pasteImport ? 'بدء الاستيراد وتضمين الطلاب 🚀' : 'رفع واستيراد الطلاب'"></span>
+                        <span x-text="pasteImport ? '{% trans "بدء الاستيراد وتضمين الطلاب 🚀" %}' : '{% trans "رفع واستيراد الطلاب" %}'"></span>
                     </button>
                     <button type="button" @click="importModalOpen = false" 
                             class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                 </div>
             </form>
@@ -571,7 +572,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2">
                     <span class="p-2 rounded-xl bg-brand-50 text-brand-600 text-lg">🏫</span>
-                    <h3 class="text-lg font-black text-slate-900">إنشاء شعبة دراسية جديدة</h3>
+                    <h3 class="text-lg font-black text-slate-900">{% trans "إنشاء شعبة دراسية جديدة" %}</h3>
                 </div>
                 <button type="button" @click="sectionModalOpen = false" class="text-slate-400 hover:text-slate-700">✕</button>
             </div>
@@ -580,31 +581,31 @@
                 {% csrf_token %}
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">اسم الشعبة / المجموعة <span class="text-rose-500">*</span></label>
-                    <input type="text" name="name" required placeholder="مثال: شعبة أ أو Group B" 
+                    <label class="block text-xs font-bold text-slate-700">{% trans "اسم الشعبة / المجموعة" %} <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" required placeholder="{% trans 'مثال: شعبة أ أو Group B' %}"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-brand-500">
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">المرحلة الدراسية <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700">{% trans "المرحلة الدراسية" %} <span class="text-rose-500">*</span></label>
                     <select name="level" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-                        <option value="المرحلة الأولى">المرحلة الأولى</option>
-                        <option value="المرحلة الثانية">المرحلة الثانية</option>
-                        <option value="المرحلة الثالثة" selected>المرحلة الثالثة</option>
-                        <option value="المرحلة الرابعة">المرحلة الرابعة</option>
+                        <option value="المرحلة الأولى">{% trans "المرحلة الأولى" %}</option>
+                        <option value="المرحلة الثانية">{% trans "المرحلة الثانية" %}</option>
+                        <option value="المرحلة الثالثة" selected>{% trans "المرحلة الثالثة" %}</option>
+                        <option value="المرحلة الرابعة">{% trans "المرحلة الرابعة" %}</option>
                     </select>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">نوع الدراسة (الدوام) <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-700">{% trans "نوع الدراسة (الدوام)" %} <span class="text-rose-500">*</span></label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-amber-50/50 transition-colors">
                             <input type="radio" name="shift" value="MORNING" checked class="text-brand-600 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-800">☀️ دراسة صباحية</span>
+                            <span class="text-xs font-bold text-slate-800">☀️ {% trans "دراسة صباحية" %}</span>
                         </label>
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 cursor-pointer hover:bg-indigo-50/50 transition-colors">
                             <input type="radio" name="shift" value="EVENING" class="text-brand-600 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-800">🌙 دراسة مسائية</span>
+                            <span class="text-xs font-bold text-slate-800">🌙 {% trans "دراسة مسائية" %}</span>
                         </label>
                     </div>
                 </div>
@@ -612,11 +613,11 @@
                 <div class="flex gap-2 pt-3 border-t border-slate-100">
                     <button type="submit" 
                             class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm shadow-brand-200">
-                        حفظ الشعبة
+                        {% trans "حفظ الشعبة" %}
                     </button>
                     <button type="button" @click="sectionModalOpen = false" 
                             class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
-                        إلغاء
+                        {% trans "إلغاء" %}
                     </button>
                 </div>
             </form>
@@ -625,7 +626,7 @@
 
     <!-- Institutional & Developer Footer -->
     <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
-        <p class="font-bold text-slate-500 font-mono">المطور: MUNTADHER HAZIM | هاتف: 07724978301</p>
+        <p class="font-bold text-slate-500 font-mono">{% trans "المطور:" %} MUNTADHER HAZIM | {% trans "هاتف:" %} 07724978301</p>
     </div>
 
 </div>

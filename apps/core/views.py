@@ -1,7 +1,11 @@
 import urllib.parse
+import json
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.utils import translation
+from django.conf import settings
 from apps.accounts.models import StudentProfile, TeacherProfile
 from apps.academics.models import Session, Department, ClassSection, Institution, Course
 from apps.attendance.models import AttendanceSession, AttendanceRecord
@@ -438,6 +442,113 @@ def custom_csrf_failure_view(request, reason=""):
 
 def offline_view(request):
     """Fallback offline view served by Service Worker when network is unavailable."""
+    language = request.GET.get("lang")
+    supported_languages = {code for code, _name in settings.LANGUAGES}
+    if language in supported_languages:
+        with translation.override(language):
+            return render(request, "offline.html")
     return render(request, "offline.html")
 
 
+def manifest_view(request):
+    """Serve PWA metadata in the language selected for the current browser."""
+    is_english = request.LANGUAGE_CODE.startswith("en")
+    if is_english:
+        manifest = {
+            "name": "Smart Attendance System",
+            "short_name": "Smart Attendance",
+            "description": "Student attendance management with offline check-in, instant reports, and automatic synchronization.",
+            "lang": "en",
+            "dir": "ltr",
+            "shortcuts": [
+                {
+                    "name": "Scan attendance QR code",
+                    "short_name": "QR Check-in",
+                    "description": "Open the QR scanner to record attendance",
+                    "url": "/attendance/checkin/",
+                },
+                {
+                    "name": "My classes and today's sessions",
+                    "short_name": "My Classes",
+                    "description": "View and manage class sessions",
+                    "url": "/attendance/teacher/sessions/",
+                },
+                {
+                    "name": "Attendance record",
+                    "short_name": "My Record",
+                    "description": "Review attendance records",
+                    "url": "/attendance/student/records/",
+                },
+                {
+                    "name": "Dashboard",
+                    "short_name": "Home",
+                    "description": "Go to the system dashboard",
+                    "url": "/",
+                },
+            ],
+        }
+    else:
+        manifest = {
+            "name": "نظام الحضور الذكي",
+            "short_name": "الحضور الذكي",
+            "description": "نظام تسجيل حضور وغياب الطلاب الذكي والمستقل عن الإنترنت مع تقارير فورية ومزامنة تلقائية",
+            "lang": "ar",
+            "dir": "rtl",
+            "shortcuts": [
+                {
+                    "name": "مسح رمز QR للتحضير",
+                    "short_name": "تحضير QR",
+                    "description": "فتح ماسح رمز الاستجابة السريعة لتسجيل الحضور",
+                    "url": "/attendance/checkin/",
+                },
+                {
+                    "name": "محاضراتي وجلسات اليوم",
+                    "short_name": "المحاضرات",
+                    "description": "عرض وإدارة الجلسات والمحاضرات الدراسية",
+                    "url": "/attendance/teacher/sessions/",
+                },
+                {
+                    "name": "سجل الحضور والغياب",
+                    "short_name": "سجلي",
+                    "description": "مراجعة كشوفات وسجلات الحضور",
+                    "url": "/attendance/student/records/",
+                },
+                {
+                    "name": "لوحة التحكم الرئيسية",
+                    "short_name": "الرئيسية",
+                    "description": "الانتقال إلى الشاشة الرئيسية للنظام",
+                    "url": "/",
+                },
+            ],
+        }
+
+    manifest.update({
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+        "orientation": "portrait-primary",
+        "background_color": "#0f172a",
+        "theme_color": "#4f46e5",
+        "categories": ["education", "productivity", "utilities"],
+        "icons": [
+            {
+                "src": f"/static/images/pwa/icon-{size}.png",
+                "sizes": f"{size}x{size}",
+                "type": "image/png",
+            }
+            for size in (72, 96, 128, 144, 152, 192, 384, 512)
+        ] + [
+            {
+                "src": f"/static/images/pwa/icon-maskable-{size}.png",
+                "sizes": f"{size}x{size}",
+                "type": "image/png",
+                "purpose": "maskable",
+            }
+            for size in (192, 512)
+        ],
+    })
+    response = JsonResponse(manifest)
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Vary"] = "Cookie"
+    return response

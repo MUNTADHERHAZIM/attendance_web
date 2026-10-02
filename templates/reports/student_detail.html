@@ -1,47 +1,48 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}تقرير الطالب: {{ student.user.get_full_name }} - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "تقرير الطالب:" %} {{ student.user.get_full_name }} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- Header Back Button -->
     <div class="flex justify-between items-center no-print">
         <a href="/" class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
-            ← العودة للرئيسية
+            ← {% trans "العودة للرئيسية" %}
         </a>
         <button onclick="window.print()" 
                 class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
-            🖨 طباعة تقرير الطالب
+            🖨 {% trans "طباعة تقرير الطالب" %}
         </button>
     </div>
 
     <!-- Student Details Card -->
     <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
-        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">بيانات الطالب الأكاديمية</h3>
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">{% trans "بيانات الطالب الأكاديمية" %}</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 font-semibold text-sm">
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">الاسم الكامل:</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "الاسم الكامل:" %}</span>
                 <span class="text-slate-800 font-bold">{{ student.user.get_full_name }}</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">الرقم الجامعي:</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "الرقم الجامعي:" %}</span>
                 <span class="text-slate-800 font-mono font-bold">{{ student.student_id }}</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">البريد الإلكتروني:</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "البريد الإلكتروني:" %}</span>
                 <span class="text-slate-700 font-mono text-xs">{{ student.user.email }}</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">رقم الهاتف:</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "رقم الهاتف:" %}</span>
                 <span class="text-slate-800 font-mono">{{ student.user.phone|default:"-" }}</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">المؤسسة / الكلية:</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "المؤسسة / الكلية:" %}</span>
                 <span class="text-slate-800">{{ student.institution.name }}</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span class="text-slate-400 block text-xs mb-1">بطاقة RFID:</span>
-                <span class="text-slate-800 font-mono text-xs">{{ student.rfid_card|default:"غير مربوطة" }}</span>
+                <span class="text-slate-400 block text-xs mb-1">{% trans "بطاقة RFID:" %}</span>
+                <span class="text-slate-800 font-mono text-xs">{{ student.rfid_card|default:_("غير مربوطة") }}</span>
             </div>
         </div>
     </div>
@@ -51,7 +52,7 @@
         <!-- Rate Card -->
         <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between col-span-1 md:col-span-2">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">معدل الحضور العام</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "معدل الحضور العام" %}</p>
                 <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ rate }}%</h3>
             </div>
             <div class="h-12 w-12 rounded-xl flex items-center justify-center text-xl font-bold
@@ -63,7 +64,7 @@
         <!-- Present Card -->
         <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">الحاضرة</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "الحاضرة" %}</p>
                 <h3 class="text-2xl font-bold text-emerald-600 mt-2">{{ present }}</h3>
             </div>
         </div>
@@ -71,7 +72,7 @@
         <!-- Late Card -->
         <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">المتأخرة</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "المتأخرة" %}</p>
                 <h3 class="text-2xl font-bold text-amber-600 mt-2">{{ late }}</h3>
             </div>
         </div>
@@ -79,7 +80,7 @@
         <!-- Absent Card -->
         <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">أيام الغياب</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "أيام الغياب" %}</p>
                 <h3 class="text-2xl font-bold text-rose-600 mt-2">{{ absent }}</h3>
             </div>
         </div>
@@ -87,20 +88,20 @@
 
     <!-- Attendance Record Logs -->
     <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">سجل حضور وغياب الطالب المفصل</h2>
+        <h2 class="text-lg font-bold text-slate-900 mb-4">{% trans "سجل حضور وغياب الطالب المفصل" %}</h2>
         
         <div class="overflow-x-auto">
             {% if records %}
                 <table class="min-w-full divide-y divide-slate-100 text-right">
                     <thead>
                         <tr class="bg-slate-50">
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">المادة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الفصل الدراسي / الشعبة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">التاريخ</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">وقت تسجيل الحضور</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">الحالة</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">طريقة الحضور</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">ملاحظات ومبررات</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "المادة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الفصل الدراسي / الشعبة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "التاريخ" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "وقت تسجيل الحضور" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "الحالة" %}</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{% trans "طريقة الحضور" %}</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{% trans "ملاحظات ومبررات" %}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium text-sm">
@@ -140,7 +141,7 @@
                 </table>
             {% else %}
                 <div class="text-center py-10 text-slate-400 font-semibold text-sm">
-                    لا توجد أي سجلات حضور مسجلة للطالب في النظام.
+                    {% trans "لا توجد أي سجلات حضور مسجلة للطالب في النظام." %}
                 </div>
             {% endif %}
         </div>

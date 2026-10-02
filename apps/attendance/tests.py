@@ -715,6 +715,13 @@ def test_checkin_page_warns_and_resumes_saved_offline_requests(db):
     assert "attendance_sync_navigation" in page
     assert "لديك طلبات حضور محفوظة لم تؤكد مزامنتها" in page
 
+    client = Client()
+    client.cookies["django_language"] = "en"
+    english_page = client.get("/attendance/checkin/").content.decode()
+    assert 'lang="en" dir="ltr"' in english_page
+    assert "Could not start the camera." in english_page
+    assert "The server could not be reached." in english_page
+
 
 def test_qr_rotation_does_not_invalidate_a_recent_qr_token(attendance_api_setup):
     attendance_session, _, _, _, _ = attendance_api_setup
@@ -755,6 +762,36 @@ def test_teacher_session_screen_generates_and_server_renders_missing_otp(
     assert f'data-quick-otp="{attendance_session.quick_otp}"' in response.content.decode()
     assert attendance_session.quick_otp.encode() in response.content
     assert b'x-text="quickOtp ||' in response.content
+
+    client.cookies["django_language"] = "en"
+    english_response = client.get(f"/attendance/session/{attendance_session.id}/")
+    english_page = english_response.content.decode()
+    assert english_response.status_code == 200
+    assert 'lang="en" dir="ltr"' in english_page
+    assert "Smart classroom attendance session" in english_page
+    assert "Attendance is closed" in english_page
+
+
+def test_teacher_dashboard_renders_english_tabs_and_schedule(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    attendance_session.session.day_of_week = timezone.localtime().weekday()
+    attendance_session.session.save(update_fields=["day_of_week"])
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+    client.cookies["django_language"] = "en"
+
+    response = client.get("/")
+    page = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'lang="en" dir="ltr"' in page
+    assert "Weekly lecture schedule" in page
+    assert "Scheduled lectures" in page
+    assert "My courses" in page
+    assert "Previous sessions" in page
+    assert "1 class" in page
 
 
 def test_offline_emergency_screen_generates_missing_otp(attendance_api_setup):

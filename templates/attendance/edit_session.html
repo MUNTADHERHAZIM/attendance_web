@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}تعديل بيانات المحاضرة: {{ session_obj.course.name }} - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "تعديل بيانات المحاضرة:" %} {{ session_obj.course.name }} - {% trans "نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
@@ -8,7 +9,7 @@
     <!-- 🌟 Header / Navigation Banner -->
     <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-            <a href="/attendance/session/{{ att_session.id }}/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all" title="العودة لشاشة المحاضرة">
+            <a href="/attendance/session/{{ att_session.id }}/" class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all" title="{% trans 'العودة لشاشة المحاضرة' %}">
                 <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                 </svg>
@@ -16,21 +17,21 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        ✏️ وضع التعديل
+                        ✏️ {% trans "وضع التعديل" %}
                     </span>
                     <span class="text-xs font-mono font-bold text-slate-400">جلسة رقم #{{ att_session.id }}</span>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-                    تعديل بيانات وتفاصيل المحاضرة
+                    {% trans "تعديل بيانات وتفاصيل المحاضرة" %}
                 </h1>
                 <p class="text-xs text-slate-500 font-medium mt-0.5">
-                    يمكنك تعديل اسم المادة، الشعبة، نوع الدراسة (صباحي/مسائي)، التوقيت، القاعة، ورمز الـ OTP بكل سهولة.
+                    {% trans "يمكنك تعديل اسم المادة، الشعبة، نوع الدراسة (صباحي/مسائي)، التوقيت، القاعة، ورمز الـ OTP بكل سهولة." %}
                 </p>
             </div>
         </div>
 
         <a href="/attendance/session/{{ att_session.id }}/" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all">
-            <span>إلغاء والعودة</span>
+            <span>{% trans "إلغاء والعودة" %}</span>
         </a>
     </div>
 
@@ -43,22 +44,22 @@
             <div>
                 <h3 class="text-sm font-black text-brand-700 flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
                     <span>📚</span>
-                    <span>1. المادة والشعبة الدراسية</span>
+                    <span>1. {% trans "المادة والشعبة الدراسية" %}</span>
                 </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم المادة الدراسية *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "اسم المادة الدراسية *" %}</label>
                         <input type="text" 
                                name="course_name" 
                                value="{{ session_obj.course.name }}" 
                                required 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: الذكاء الاصطناعي التوليدي">
+                               placeholder="{% trans 'مثال: الذكاء الاصطناعي التوليدي' %}">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">رمز المادة (Code)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "رمز المادة (Code)" %}</label>
                         <input type="text" 
                                name="course_code" 
                                value="{{ session_obj.course.code }}" 
@@ -67,22 +68,22 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم الشعبة / الفصل *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "اسم الشعبة / الفصل *" %}</label>
                         <input type="text" 
                                name="section_name" 
                                value="{{ session_obj.class_section.name }}" 
                                required 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: شعبة أ">
+                               placeholder="{% trans 'مثال: شعبة أ' %}">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">المستوى / الصف الدراسي</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "المستوى / الصف الدراسي" %}</label>
                         <input type="text" 
                                name="section_level" 
                                value="{{ session_obj.class_section.level }}" 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: المستوى الثالث أو المرحلة الثانية">
+                               placeholder="{% trans 'مثال: المستوى الثالث أو المرحلة الثانية' %}">
                     </div>
                 </div>
             </div>
@@ -91,20 +92,20 @@
             <div>
                 <h3 class="text-sm font-black text-brand-700 flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
                     <span>⏰</span>
-                    <span>2. التوقيت، نوع الدراسة، والمكان</span>
+                    <span>2. {% trans "التوقيت، نوع الدراسة، والمكان" %}</span>
                 </h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الدراسة (الدوام) *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "نوع الدراسة (الدوام) *" %}</label>
                         <select name="shift" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all">
-                            <option value="MORNING" {% if att_session.shift == 'MORNING' or session_obj.shift == 'MORNING' %}selected{% endif %}>☀️ صباحي</option>
-                            <option value="EVENING" {% if att_session.shift == 'EVENING' or session_obj.shift == 'EVENING' %}selected{% endif %}>🌙 مسائي</option>
+                            <option value="MORNING" {% if att_session.shift == 'MORNING' or session_obj.shift == 'MORNING' %}selected{% endif %}>☀️ {% trans "صباحي" %}</option>
+                            <option value="EVENING" {% if att_session.shift == 'EVENING' or session_obj.shift == 'EVENING' %}selected{% endif %}>🌙 {% trans "مسائي" %}</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">تاريخ المحاضرة *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "تاريخ المحاضرة *" %}</label>
                         <input type="date" 
                                name="session_date" 
                                value="{{ current_date }}" 
@@ -113,16 +114,16 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">القاعة / المختبر</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "القاعة / المختبر" %}</label>
                         <input type="text" 
                                name="room" 
                                value="{{ session_obj.room|default:'' }}" 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: القاعة الذكية - مختبر الحاسوب 2">
+                               placeholder="{% trans 'مثال: القاعة الذكية - مختبر الحاسوب 2' %}">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">وقت البدء (ساعة:دقيقة)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "وقت البدء (ساعة:دقيقة)" %}</label>
                         <input type="time" 
                                name="start_time" 
                                value="{{ current_start_time }}" 
@@ -130,7 +131,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">وقت الانتهاء (ساعة:دقيقة)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "وقت الانتهاء (ساعة:دقيقة)" %}</label>
                         <input type="time" 
                                name="end_time" 
                                value="{{ current_end_time }}" 
@@ -138,12 +139,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع المحاضرة</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "نوع المحاضرة" %}</label>
                         <select name="lecture_type" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all">
-                            <option value="نظري" {% if att_session.lecture_type == 'نظري' %}selected{% endif %}>📖 نظري</option>
-                            <option value="عملي" {% if att_session.lecture_type == 'عملي' %}selected{% endif %}>💻 عملي / مختبر</option>
-                            <option value="تمارين" {% if att_session.lecture_type == 'تمارين' %}selected{% endif %}>✏️ تمارين ومناقشة</option>
-                            <option value="امتحان" {% if att_session.lecture_type == 'امتحان' %}selected{% endif %}>📝 اختبار / كويز</option>
+                            <option value="نظري" {% if att_session.lecture_type == 'نظري' %}selected{% endif %}>📖 {% trans "نظري" %}</option>
+                            <option value="عملي" {% if att_session.lecture_type == 'عملي' %}selected{% endif %}>💻 {% trans "عملي / مختبر" %}</option>
+                            <option value="تمارين" {% if att_session.lecture_type == 'تمارين' %}selected{% endif %}>✏️ {% trans "تمارين ومناقشة" %}</option>
+                            <option value="امتحان" {% if att_session.lecture_type == 'امتحان' %}selected{% endif %}>📝 {% trans "اختبار / كويز" %}</option>
                         </select>
                     </div>
                 </div>
@@ -153,27 +154,27 @@
             <div>
                 <h3 class="text-sm font-black text-brand-700 flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
                     <span>🔐</span>
-                    <span>3. موضوع المحاضرة ورموز التحضير</span>
+                    <span>3. {% trans "موضوع المحاضرة ورموز التحضير" %}</span>
                 </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">موضوع أو عنوان الدرس اليوم</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "موضوع أو عنوان الدرس اليوم" %}</label>
                         <input type="text" 
                                name="topic" 
                                value="{{ att_session.topic|default:'' }}" 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: المحاضرة 4 - الشبكات العصبية">
+                               placeholder="{% trans 'مثال: المحاضرة 4 - الشبكات العصبية' %}">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">كود التحضير السريع (OTP المكون من 6 أرقام)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "كود التحضير السريع (OTP المكون من 6 أرقام)" %}</label>
                         <input type="text" 
                                name="quick_otp" 
                                value="{{ att_session.quick_otp|default:'' }}" 
                                maxlength="6" 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold tracking-widest text-indigo-700 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: 849201">
+                               placeholder="{% trans 'مثال: 849201' %}">
                     </div>
                 </div>
 
@@ -181,12 +182,12 @@
                 <div class="mt-4 flex flex-wrap items-center gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
                     <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-800">
                         <input type="checkbox" name="is_active" value="1" {% if att_session.is_active %}checked{% endif %} class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4">
-                        <span>الجلسة نشطة ومفتوحة لاستقبال حضور الطلاب</span>
+                        <span>{% trans "الجلسة نشطة ومفتوحة لاستقبال حضور الطلاب" %}</span>
                     </label>
 
                     <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-800">
                         <input type="checkbox" name="is_frozen_qr" value="1" {% if att_session.is_frozen_qr %}checked{% endif %} class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
-                        <span>تثبيت رمز الـ QR (رمز ثابت طوال المحاضرة)</span>
+                        <span>{% trans "تثبيت رمز الـ QR (رمز ثابت طوال المحاضرة)" %}</span>
                     </label>
                 </div>
             </div>
@@ -194,11 +195,11 @@
             <!-- Action Buttons -->
             <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
                 <a href="/attendance/session/{{ att_session.id }}/" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-700 hover:bg-slate-100 text-center transition-all">
-                    إلغاء التعديل
+                    {% trans "إلغاء التعديل" %}
                 </a>
                 <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-sm font-black shadow-lg shadow-brand-200 transition-all hover:scale-[1.02] active:scale-95">
                     <span>💾</span>
-                    <span>حفظ التعديلات الآن</span>
+                    <span>{% trans "حفظ التعديلات الآن" %}</span>
                 </button>
             </div>
         </form>

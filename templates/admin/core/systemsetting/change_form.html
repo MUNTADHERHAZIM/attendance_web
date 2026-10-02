@@ -8,7 +8,7 @@
             <form method="post" action="{% url 'admin:core_systemsetting_captcha_toggle' %}">
                 {% csrf_token %}
                 <button type="submit" class="button">
-                    {% if original.value|lower == "true" %}تعطيل CAPTCHA{% else %}تفعيل CAPTCHA{% endif %}
+                    {% if original.value|lower == "true" %}{% trans "تعطيل CAPTCHA" %}{% else %}{% trans "تفعيل CAPTCHA" %}{% endif %}
                 </button>
             </form>
         </li>

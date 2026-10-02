@@ -1,9 +1,12 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ LANGUAGE_CODE }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 - خطأ أمان الجلسة | نظام الحضور الذكي</title>
+    <title>403 - {% trans "خطأ أمان الجلسة" %} | {% trans "نظام الحضور الذكي" %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -68,13 +71,13 @@
             border-radius: 16px;
             padding: 1rem 1.25rem;
             margin-bottom: 1.75rem;
-            text-align: right;
+            text-align: start;
             font-size: 0.85rem;
             color: #cbd5e1;
             line-height: 1.7;
         }
         .explanation-box ul {
-            padding-right: 1.2rem;
+            padding-inline-start: 1.2rem;
             margin-top: 0.5rem;
         }
         .btn-group {
@@ -127,36 +130,36 @@
 <body>
     <div class="error-card">
         <div class="shield-icon">🛡️</div>
-        <h1 class="title">تنبيه أمان الجلسة (CSRF Security)</h1>
-        <p class="subtitle">انتهت صلاحية رمز التحقق الأمني للنموذج</p>
+        <h1 class="title">{% trans "تنبيه أمان الجلسة (CSRF Security)" %}</h1>
+        <p class="subtitle">{% trans "انتهت صلاحية رمز التحقق الأمني للنموذج" %}</p>
 
         <div class="explanation-box">
-            <p><strong>لماذا ظهرت هذه الصفحة؟</strong></p>
-            <p>هذا إجراء أمني قياسي في النظام لمنع تزوير الطلبات، ويحدث غالباً عند:</p>
+            <p><strong>{% trans "لماذا ظهرت هذه الصفحة؟" %}</strong></p>
+            <p>{% trans "هذا إجراء أمني قياسي في النظام لمنع تزوير الطلبات، ويحدث غالباً عند:" %}</p>
             <ul>
-                <li>تسجيل الدخول في نافذة أخرى بينما كانت هذه الصفحة مفتوحة.</li>
-                <li>استخدام زر الرجوع للخلف (Back) وإعادة إرسال نموذج قديم.</li>
-                <li>مرور وقت طويل على فتح الصفحة قبل الضغط على زر الإرسال.</li>
+                <li>{% trans "تسجيل الدخول في نافذة أخرى بينما كانت هذه الصفحة مفتوحة." %}</li>
+                <li>{% trans "استخدام زر الرجوع للخلف (Back) وإعادة إرسال نموذج قديم." %}</li>
+                <li>{% trans "مرور وقت طويل على فتح الصفحة قبل الضغط على زر الإرسال." %}</li>
             </ul>
         </div>
 
         <div class="btn-group">
             <button onclick="window.location.reload();" class="btn btn-primary">
                 <span>🔄</span>
-                <span>تحديث الصفحة والمحاولة مجدداً</span>
+                <span>{% trans "تحديث الصفحة والمحاولة مجدداً" %}</span>
             </button>
             <a href="/login/" class="btn btn-secondary">
                 <span>🔑</span>
-                <span>صفحة تسجيل الدخول</span>
+                <span>{% trans "صفحة تسجيل الدخول" %}</span>
             </a>
             <a href="/" class="btn btn-secondary">
                 <span>🏠</span>
-                <span>الرئيسية</span>
+                <span>{% trans "الرئيسية" %}</span>
             </a>
         </div>
 
         <div class="dev-tag">
-            جامعة بغداد - نظام الحضور الذكي | المطور: MUNTADHER HAZIM (07724978301)
+            {% trans "جامعة بغداد - نظام الحضور الذكي" %} | {% trans "المطور:" %} MUNTADHER HAZIM (07724978301)
         </div>
     </div>
 </body>
