@@ -443,6 +443,7 @@
             }
             document.getElementById('offline-queue-message').textContent =
                 'جاري فتح شاشة المزامنة الآمنة؛ ستبقى الطلبات محفوظة حتى يؤكدها الخادم.';
+            sessionStorage.setItem('attendance_sync_navigation', '1');
             window.location.assign('/attendance/checkin/?sync_offline=' + Date.now());
         }
 
@@ -490,6 +491,17 @@
         });
         window.addEventListener('storage', function(event) {
             if (event.key === 'offline_attendance_queue') refreshOfflineQueue();
+        });
+        window.addEventListener('beforeunload', function(event) {
+            try {
+                const queue = readOfflineQueue();
+                if (queue.length) {
+                    event.preventDefault();
+                    event.returnValue = 'لديك طلبات حضور محفوظة على هذا الجهاز. ابقَ في الصفحة أو أعد فتح الموقع عند عودة الإنترنت.';
+                }
+            } catch (error) {
+                console.error('Could not check saved attendance before leaving:', error);
+            }
         });
         refreshOfflineQueue();
         if (navigator.onLine) {

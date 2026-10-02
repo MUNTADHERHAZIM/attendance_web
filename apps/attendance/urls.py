@@ -34,6 +34,7 @@ from .views import (
     delete_timetable_session_view,
     review_offline_submission_view,
     toggle_provisional_student_enrollment_view,
+    bulk_manage_session_students_view,
 )
 
 app_name = "attendance"
@@ -72,6 +73,11 @@ urlpatterns = [
         "session/<int:session_id>/students/<int:student_id>/enrollment/",
         toggle_provisional_student_enrollment_view,
         name="toggle_provisional_enrollment",
+    ),
+    path(
+        "session/<int:session_id>/students/bulk/",
+        bulk_manage_session_students_view,
+        name="bulk_manage_session_students",
     ),
     path("record/manual-update-web/", manual_update_web_view, name="manual_update_web"),
     path("record/bulk-update-web/", bulk_update_web_view, name="bulk_update_web"),

@@ -606,6 +606,85 @@ def test_teacher_can_remove_provisional_student_from_section(attendance_api_setu
     ).exists()
 
 
+def test_teacher_can_bulk_mark_selected_students_present(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, enrolled_student, _ = attendance_api_setup
+    section = attendance_session.session.class_section
+    second_user = User.objects.create_user(
+        username="second_enrolled_student",
+        password=None,
+        first_name="طالب",
+        last_name="ثاني",
+        role=User.Roles.STUDENT,
+    )
+    second_student = StudentProfile.objects.create(
+        user=second_user,
+        student_id="S101",
+        institution=section.department.institution,
+    )
+    second_student.sections.add(section)
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.post(
+        f"/attendance/session/{attendance_session.id}/students/bulk/",
+        data={
+            "student_ids": [enrolled_student.id, second_student.id],
+            "action": "present",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["changed_count"] == 2
+    assert AttendanceRecord.objects.filter(
+        student__in=[enrolled_student, second_student],
+        attendance_session=attendance_session,
+        status=AttendanceRecord.Statuses.PRESENT,
+    ).count() == 2
+
+
+def test_bulk_enrollment_only_changes_selected_provisional_students(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, enrolled_student, _ = attendance_api_setup
+    section = attendance_session.session.class_section
+    guest_user = User.objects.create_user(
+        username="bulk_provisional_guest",
+        password=None,
+        first_name="ضيف",
+        role=User.Roles.STUDENT,
+    )
+    provisional = StudentProfile.objects.create(
+        user=guest_user,
+        student_id="NEW-BULK-PROVISIONAL",
+        institution=section.department.institution,
+    )
+    AttendanceRecord.objects.create(
+        student=provisional,
+        attendance_session=attendance_session,
+        status=AttendanceRecord.Statuses.PRESENT,
+    )
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.post(
+        f"/attendance/session/{attendance_session.id}/students/bulk/",
+        data={
+            "student_ids": [enrolled_student.id, provisional.id],
+            "action": "enroll",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["changed_count"] == 1
+    assert response.json()["skipped_count"] == 1
+    assert provisional.sections.filter(id=section.id).exists()
+    assert enrolled_student.sections.filter(id=section.id).exists()
+
+
 def test_offline_fallback_has_self_contained_checkin_controls(db):
     response = APIClient().get("/offline/")
 
@@ -621,6 +700,20 @@ def test_offline_fallback_has_self_contained_checkin_controls(db):
     assert "cdn.tailwindcss.com" not in page
     assert 'href="/attendance/checkin/"' not in page
     assert "offline_checkin: true" in page
+    assert "beforeunload" in page
+    assert "أعد فتح هذا المتصفح عند عودة الاتصال" in page
+
+
+def test_checkin_page_warns_and_resumes_saved_offline_requests(db):
+    from django.test import Client
+
+    response = Client().get("/attendance/checkin/")
+
+    assert response.status_code == 200
+    page = response.content.decode()
+    assert "resumeSavedAttendanceQueue" in page
+    assert "attendance_sync_navigation" in page
+    assert "لديك طلبات حضور محفوظة لم تؤكد مزامنتها" in page
 
 
 def test_qr_rotation_does_not_invalidate_a_recent_qr_token(attendance_api_setup):

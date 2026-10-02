@@ -726,6 +726,40 @@
         let deferredPrompt = null;
         let newWorker = null;
 
+        function resumeSavedAttendanceQueue() {
+            if (!navigator.onLine || window.location.pathname === '/attendance/checkin/') return;
+            try {
+                const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+                if (!Array.isArray(queue) || !queue.length) {
+                    sessionStorage.removeItem('attendance_sync_navigation');
+                    return;
+                }
+                if (sessionStorage.getItem('attendance_sync_navigation') === '1') return;
+                sessionStorage.setItem('attendance_sync_navigation', '1');
+                window.location.assign('/attendance/checkin/?sync_offline=' + Date.now());
+            } catch (error) {
+                console.error('[Attendance] Could not inspect saved offline queue:', error);
+            }
+        }
+
+        window.addEventListener('load', resumeSavedAttendanceQueue, { once: true });
+        window.addEventListener('online', resumeSavedAttendanceQueue);
+        window.addEventListener('beforeunload', function(event) {
+            if (sessionStorage.getItem('attendance_sync_navigation') === '1') {
+                sessionStorage.removeItem('attendance_sync_navigation');
+                return;
+            }
+            try {
+                const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
+                if (Array.isArray(queue) && queue.length) {
+                    event.preventDefault();
+                    event.returnValue = 'لديك طلبات حضور محفوظة لم تؤكد مزامنتها. هل تريد مغادرة الصفحة؟';
+                }
+            } catch (error) {
+                console.error('[Attendance] Could not inspect saved queue before leaving:', error);
+            }
+        });
+
         const isIos = () => {
             const userAgent = window.navigator.userAgent.toLowerCase();
             return /iphone|ipad|ipod/.test(userAgent);

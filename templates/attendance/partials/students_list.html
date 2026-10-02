@@ -13,11 +13,27 @@
             </div>
             <span class="rounded-full bg-amber-200 px-3 py-1 text-xs font-black text-amber-950">{{ review_submissions|length }} بانتظارك</span>
         </div>
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+            <label class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-bold">
+                <input type="checkbox" class="review-select-all" onchange="window.__sessionManager?.toggleAllReviewSubmissions(this.checked)">
+                تحديد الطلبات الظاهرة
+            </label>
+            <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('approve', true)"
+                    class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">موافقة وإضافة المحدد</button>
+            <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('approve', false)"
+                    class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">موافقة حضور المحدد</button>
+            <button type="button" onclick="window.__sessionManager?.bulkReviewSubmissions('reject', false)"
+                    class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">رفض المحدد</button>
+            <span id="review-selection-count" class="text-xs font-bold text-amber-900">0 محدد</span>
+        </div>
         <div class="space-y-2">
             {% for submission in review_submissions %}
-                <div class="flex flex-col gap-2 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="offline-submission-row flex flex-col gap-2 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between" data-submission-id="{{ submission.id }}" data-review-url="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}">
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-black text-slate-900">{{ submission.student_name }}</p>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" class="offline-submission-select" data-submission-id="{{ submission.id }}" onchange="window.__sessionManager?.setSubmissionSelected({{ submission.id }}, this.checked)">
+                            <span class="truncate text-sm font-black text-slate-900">{{ submission.student_name }}</span>
+                        </label>
                         <p class="mt-1 text-[11px] text-slate-600">
                             استُلم {{ submission.received_at|date:"Y-m-d H:i:s" }} · {{ submission.token_error }}
                             {% if submission.device_id %} · جهاز {{ submission.device_id|truncatechars:24 }}{% endif %}
@@ -25,29 +41,17 @@
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">
                         <button type="button"
-                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
-                                hx-vals='{"action":"approve","enroll":"true"}'
-                                hx-target="#student-list-container"
-                                hx-swap="none"
-                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'approve', true)"
                                 class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">
                             موافقة وإضافة للشعبة
                         </button>
                         <button type="button"
-                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
-                                hx-vals='{"action":"approve","enroll":"false"}'
-                                hx-target="#student-list-container"
-                                hx-swap="none"
-                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'approve', false)"
                                 class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">
                             موافقة على الحضور فقط
                         </button>
                         <button type="button"
-                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
-                                hx-vals='{"action":"reject"}'
-                                hx-target="#student-list-container"
-                                hx-swap="none"
-                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                onclick="window.__sessionManager?.reviewSubmission(this.closest('.offline-submission-row'), 'reject', false)"
                                 class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">
                             رفض / إزالة
                         </button>
@@ -61,8 +65,9 @@
     <table class="min-w-full divide-y divide-slate-100 text-right">
         <thead>
             <tr class="bg-slate-50/90 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
-                <th scope="col" class="py-3.5 px-4 text-right min-w-[220px]">
+                <th scope="col" class="py-3.5 px-4 text-right min-w-[245px]">
                     <div class="flex items-center gap-1.5">
+                        <input type="checkbox" aria-label="تحديد جميع الطلاب الظاهرين" class="student-select-all" onchange="window.__sessionManager?.toggleAllStudents(this.checked)">
                         <span>👤</span>
                         <span>اسم الطالب والمعلومات</span>
                     </div>
@@ -85,6 +90,7 @@
                     <!-- 1. Student Avatar + Name + Email -->
                     <td class="py-3.5 px-4 whitespace-nowrap">
                         <div class="flex items-center space-x-reverse space-x-3">
+                            <input type="checkbox" class="student-select" data-student-id="{{ item.profile.id }}" onchange="window.__sessionManager?.setStudentSelected({{ item.profile.id }}, this.checked)" aria-label="تحديد {{ item.profile.user.get_full_name }}">
                             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
                                 {{ item.profile.user.first_name|first|default:item.profile.user.username|first|upper }}
                             </div>
@@ -229,10 +235,7 @@
                         </div>
                         {% if item.profile.student_id|slice:":4" == "NEW-" %}
                             <button type="button"
-                                    hx-post="{% url 'attendance:toggle_provisional_enrollment' attendance_session.id item.profile.id %}"
-                                    hx-target="#student-list-container"
-                                    hx-swap="none"
-                                    hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                    onclick="window.__sessionManager?.manageStudentEnrollment(this, '{% url 'attendance:toggle_provisional_enrollment' attendance_session.id item.profile.id %}')"
                                     class="mt-1 rounded-lg border px-2 py-1 text-[10px] font-bold {% if item.is_enrolled %}border-rose-200 text-rose-700 hover:bg-rose-50{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
                                 {% if item.is_enrolled %}إزالة من قائمتي{% else %}اعتماد وإضافة للشعبة{% endif %}
                             </button>

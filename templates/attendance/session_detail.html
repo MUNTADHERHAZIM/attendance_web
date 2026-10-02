@@ -65,6 +65,8 @@ function sessionDetailManager() {
         soundEnabled: true,
         filterStatus: 'ALL',
         searchQuery: '',
+        selectedStudentIds: new Set(),
+        selectedSubmissionIds: new Set(),
         quickOfflineQuery: '',
         offlineMessage: '',
         lastPresentCount: parseInt(ds.presentCount || '0', 10),
@@ -451,6 +453,160 @@ function sessionDetailManager() {
             }
         },
 
+        setStudentSelected: function(studentId, selected) {
+            if (selected) this.selectedStudentIds.add(Number(studentId));
+            else this.selectedStudentIds.delete(Number(studentId));
+            this.updateBulkSelectionUI();
+        },
+
+        toggleAllStudents: function(selected) {
+            document.querySelectorAll('#studentsTableBody .student-row').forEach((row) => {
+                if (row.style.display === 'none') return;
+                const checkbox = row.querySelector('.student-select');
+                if (!checkbox) return;
+                checkbox.checked = selected;
+                this.setStudentSelected(checkbox.dataset.studentId, selected);
+            });
+        },
+
+        setSubmissionSelected: function(submissionId, selected) {
+            if (selected) this.selectedSubmissionIds.add(Number(submissionId));
+            else this.selectedSubmissionIds.delete(Number(submissionId));
+            this.updateBulkSelectionUI();
+        },
+
+        toggleAllReviewSubmissions: function(selected) {
+            document.querySelectorAll('.offline-submission-select').forEach((checkbox) => {
+                checkbox.checked = selected;
+                this.setSubmissionSelected(checkbox.dataset.submissionId, selected);
+            });
+        },
+
+        updateBulkSelectionUI: function() {
+            const studentsCount = document.getElementById('student-selection-count');
+            const reviewCount = document.getElementById('review-selection-count');
+            if (studentsCount) studentsCount.textContent = this.selectedStudentIds.size + ' محدد';
+            if (reviewCount) reviewCount.textContent = this.selectedSubmissionIds.size + ' محدد';
+            document.querySelectorAll('.student-select').forEach((checkbox) => {
+                checkbox.checked = this.selectedStudentIds.has(Number(checkbox.dataset.studentId));
+            });
+            document.querySelectorAll('.offline-submission-select').forEach((checkbox) => {
+                checkbox.checked = this.selectedSubmissionIds.has(Number(checkbox.dataset.submissionId));
+            });
+        },
+
+        bulkManageStudents: async function(action) {
+            const ids = Array.from(this.selectedStudentIds);
+            if (!ids.length) {
+                alert('حدد طالباً واحداً على الأقل أولاً.');
+                return;
+            }
+            if (action === 'remove' && !window.confirm('سيتم إزالة الطلاب الجدد المحددين من الشعبة فقط، مع الاحتفاظ بسجلات حضورهم. هل تريد المتابعة؟')) return;
+            const button = document.getElementById('bulk-student-action-' + action);
+            if (button) button.disabled = true;
+            try {
+                const response = await fetch('/attendance/session/' + this.sessionId + '/students/bulk/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken
+                    },
+                    body: JSON.stringify({ student_ids: ids, action: action })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تنفيذ الإجراء الجماعي.');
+                this.selectedStudentIds.clear();
+                alert(data.message + (data.skipped_count ? ' تم تجاوز ' + data.skipped_count + ' طالباً غير جديد.' : ''));
+                this.refreshStudents();
+            } catch (error) {
+                alert(error.message || 'تعذر تنفيذ الإجراء الجماعي.');
+            } finally {
+                if (button) button.disabled = false;
+            }
+        },
+
+        reviewSubmission: async function(row, action, enroll) {
+            if (!row) return;
+            if (action === 'reject' && !window.confirm('هل تريد رفض طلب الحضور هذا؟')) return;
+            try {
+                const body = new URLSearchParams({ action: action, enroll: enroll ? 'true' : 'false' });
+                const response = await fetch(row.dataset.reviewUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                        'X-CSRFToken': this.csrfToken
+                    },
+                    body: body.toString()
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'تعذرت مراجعة الطلب.');
+                this.selectedSubmissionIds.delete(Number(row.dataset.submissionId));
+                this.refreshStudents();
+            } catch (error) {
+                alert(error.message || 'تعذرت مراجعة الطلب.');
+            }
+        },
+
+        bulkReviewSubmissions: async function(action, enroll) {
+            const ids = Array.from(this.selectedSubmissionIds);
+            if (!ids.length) {
+                alert('حدد طلباً واحداً على الأقل أولاً.');
+                return;
+            }
+            if (action === 'reject' && !window.confirm('سيتم رفض جميع طلبات الحضور المحددة. هل تريد المتابعة؟')) return;
+            let completed = 0;
+            const failed = [];
+            const selectedRows = ids
+                .map((id) => document.querySelector('.offline-submission-row[data-submission-id="' + id + '"]'))
+                .filter(Boolean);
+            for (const row of selectedRows) {
+                const id = Number(row.dataset.submissionId);
+                try {
+                    const body = new URLSearchParams({ action: action, enroll: enroll ? 'true' : 'false' });
+                    const response = await fetch(row.dataset.reviewUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                            'X-CSRFToken': this.csrfToken
+                        },
+                        body: body.toString()
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error(data.error || 'تعذرت المراجعة');
+                    completed += 1;
+                } catch (error) {
+                    failed.push(id);
+                    console.error('Bulk review failed for submission', id, error);
+                }
+            }
+            this.selectedSubmissionIds = new Set(failed);
+            alert('تم تنفيذ الإجراء على ' + completed + ' طلب.' + (failed.length ? ' تعذر تنفيذ ' + failed.length + ' طلب؛ بقيت محددة للمحاولة.' : ''));
+            this.refreshStudents();
+        },
+
+        manageStudentEnrollment: async function(button, url) {
+            const removing = button.textContent.includes('إزالة');
+            if (removing && !window.confirm('ستتم إزالة الطالب من هذه الشعبة دون حذف سجل الحضور. هل تريد المتابعة؟')) return;
+            button.disabled = true;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': this.csrfToken }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تحديث عضوية الطالب.');
+                this.refreshStudents();
+            } catch (error) {
+                alert(error.message || 'تعذر تحديث عضوية الطالب.');
+            } finally {
+                button.disabled = false;
+            }
+        },
+
         refreshAndPrint: function() {
             var self = this;
             if (!window.htmx) {
@@ -504,6 +660,7 @@ function sessionDetailManager() {
                     }
 
                     self.filterRows();
+                    self.updateBulkSelectionUI();
                     var meta = document.getElementById('attendance-poll-meta');
                     if (meta) {
                         var currentPresent = parseInt(meta.getAttribute('data-present') || '0', 10);
@@ -1096,6 +1253,15 @@ window.addEventListener('keydown', function(e) {
                         class="px-3 py-2 text-xs font-bold text-indigo-700 hover:text-indigo-900 border border-indigo-200 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
                     تحديث للطباعة
                 </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
+                <span class="text-xs font-black text-indigo-950">الإجراء على المحدد:</span>
+                <button id="bulk-student-action-present" type="button" @click="bulkManageStudents('present')" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">تحضير حاضر</button>
+                <button id="bulk-student-action-late" type="button" @click="bulkManageStudents('late')" class="rounded-lg bg-amber-500 px-3 py-2 text-xs font-black text-white hover:bg-amber-600">تحضير متأخر</button>
+                <button id="bulk-student-action-absent" type="button" @click="bulkManageStudents('absent')" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">تسجيل غائب</button>
+                <button id="bulk-student-action-enroll" type="button" @click="bulkManageStudents('enroll')" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100">إضافة الجدد للشعبة</button>
+                <button id="bulk-student-action-remove" type="button" @click="bulkManageStudents('remove')" class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-800 hover:bg-rose-100">إزالة الجدد من الشعبة</button>
+                <span id="student-selection-count" class="mr-auto text-xs font-black text-indigo-950">0 محدد</span>
             </div>
 
             <!-- HTMX polling container for Student Table -->

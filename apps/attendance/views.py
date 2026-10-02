@@ -1648,6 +1648,125 @@ def toggle_provisional_student_enrollment_view(request, session_id, student_id):
 
 
 @login_required
+@require_POST
+def bulk_manage_session_students_view(request, session_id):
+    if not (
+        request.user.is_teacher()
+        or request.user.is_super_admin()
+        or request.user.is_institution_admin()
+    ):
+        return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
+
+    attendance_session = _manageable_attendance_session(request.user, session_id)
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"success": False, "error": "صيغة الطلب غير صالحة."}, status=400)
+    if not isinstance(payload, dict):
+        return JsonResponse({"success": False, "error": "صيغة الطلب غير صالحة."}, status=400)
+
+    student_ids = payload.get("student_ids")
+    action = payload.get("action")
+    if (
+        not isinstance(student_ids, list)
+        or not student_ids
+        or len(student_ids) > 500
+        or not all(isinstance(item, int) and item > 0 for item in student_ids)
+    ):
+        return JsonResponse({"success": False, "error": "حدد طالباً واحداً على الأقل."}, status=400)
+    if action not in {"present", "absent", "late", "enroll", "remove"}:
+        return JsonResponse({"success": False, "error": "الإجراء الجماعي غير صالح."}, status=400)
+
+    section = attendance_session.session.class_section
+    students = list(_get_students_for_session(attendance_session).filter(id__in=set(student_ids)))
+    if not students:
+        return JsonResponse({"success": False, "error": "لم يتم العثور على طلاب محددين في هذه الجلسة."}, status=404)
+
+    skipped_count = 0
+    if action in {"enroll", "remove"}:
+        eligible_students = [
+            student for student in students if student.student_id.startswith("NEW-")
+        ]
+        if not eligible_students:
+            return JsonResponse(
+                {"success": False, "error": "حدد طالباً جديداً واحداً على الأقل لتعديل عضويته."},
+                status=400,
+            )
+        skipped_count = len(students) - len(eligible_students)
+        changed = 0
+        with transaction.atomic():
+            for student in eligible_students:
+                is_enrolled = student.sections.filter(id=section.id).exists()
+                if action == "enroll" and not is_enrolled:
+                    student.sections.add(section)
+                    changed += 1
+                elif action == "remove" and is_enrolled:
+                    student.sections.remove(section)
+                    changed += 1
+                    continue
+                if action == "enroll":
+                    record = AttendanceRecord.objects.filter(
+                        student=student,
+                        attendance_session=attendance_session,
+                    ).first()
+                    if record and record.notes:
+                        record.notes = "راجع الأستاذ الطالب واعتمده وأضيف إلى قائمة الشعبة."
+                        record.modified_by = request.user
+                        record.save(update_fields=["notes", "modified_by", "updated_at"])
+                        queue_for_sync(record, SyncQueue.Actions.UPDATE)
+        audit_action = "إضافة_جماعية_للطلاب_الجدد_إلى_الشعبة" if action == "enroll" else "إزالة_جماعية_للطلاب_الجدد_من_الشعبة"
+    else:
+        status_by_action = {
+            "present": AttendanceRecord.Statuses.PRESENT,
+            "absent": AttendanceRecord.Statuses.ABSENT,
+            "late": AttendanceRecord.Statuses.LATE,
+        }
+        changed = 0
+        with transaction.atomic():
+            for student in students:
+                record, created = AttendanceRecord.objects.update_or_create(
+                    student=student,
+                    attendance_session=attendance_session,
+                    defaults={
+                        "status": status_by_action[action],
+                        "method": AttendanceRecord.Methods.MANUAL,
+                        "modified_by": request.user,
+                        "notes": "تحديث جماعي يدوي من شاشة الجلسة.",
+                    },
+                )
+                queue_for_sync(
+                    record,
+                    SyncQueue.Actions.CREATE if created else SyncQueue.Actions.UPDATE,
+                )
+                changed += 1
+        audit_action = "تحديث_جماعي_لحالة_الحضور"
+
+    AuditLog.objects.create(
+        user=request.user,
+        action=audit_action,
+        ip_address=_get_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT"),
+        details={
+            "attendance_session_id": attendance_session.id,
+            "action": action,
+            "selected_count": len(students),
+            "changed_count": changed,
+            "skipped_count": skipped_count,
+            "student_profile_ids": [student.id for student in students],
+        },
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "changed_count": changed,
+            "selected_count": len(students),
+            "skipped_count": skipped_count,
+            "message": f"اكتمل الإجراء الجماعي: تم تحديث {changed} من أصل {len(students)} طالباً.",
+        }
+    )
+
+
+@login_required
 def manual_update_web_view(request):
     """Handles inline manual updates from the teacher detail screen via HTMX."""
     if not request.user.is_teacher():
