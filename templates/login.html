@@ -86,17 +86,32 @@ html[lang="en"] body {
 }
 html[dir="ltr"] .form-panel,
 html[dir="ltr"] .field-label,
-html[dir="ltr"] .check-row {
+html[dir="ltr"] .check-row,
+html[dir="ltr"] .custom-select-btn {
     direction: ltr;
     text-align: left;
 }
 html[dir="ltr"] .input-icon-r {
     right: auto;
-    left: 1rem;
+    left: 0.95rem;
+}
+html[dir="ltr"] .pwd-eye {
+    left: auto;
+    right: 0.85rem;
 }
 html[dir="ltr"] .form-input {
     direction: ltr;
     text-align: left;
+    padding-left: 2.85rem !important;
+    padding-right: 1rem !important;
+}
+html[dir="ltr"] .form-input.no-icon {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+html[dir="ltr"] .form-input.has-pwd-toggle {
+    padding-left: 2.85rem !important;
+    padding-right: 2.85rem !important;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -354,52 +369,90 @@ body::after {
 /* ── Input ── */
 .input-wrap {
     position: relative;
-    margin-bottom: 1rem;
+    margin-bottom: 1.05rem;
 }
 .input-icon-r {
     position: absolute;
-    right: .875rem; top: 50%; transform: translateY(-50%);
+    right: 0.95rem;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--slate-400);
-    font-size: .95rem; pointer-events: none;
-    transition: color .2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    pointer-events: none;
+    transition: color .2s ease;
+    z-index: 2;
 }
 .form-input {
     width: 100%;
-    height: 44px;
-    background: #fff;
+    height: 48px;
+    background: #ffffff;
     border: 1.5px solid var(--slate-200);
     border-radius: var(--r-md);
-    padding: 0 2.75rem 0 .875rem;
-    font-family: 'Cairo', sans-serif;
-    font-size: .9rem; font-weight: 500;
+    padding: 0 1rem 0 1rem;
+    padding-right: 2.85rem;
+    padding-left: 1rem;
+    font-family: inherit;
+    font-size: .925rem;
+    font-weight: 500;
     color: var(--slate-900);
     outline: none;
     transition: var(--t);
     direction: rtl;
+    text-align: right;
     box-shadow: var(--shadow-sm);
+}
+.form-input.no-icon {
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+}
+.form-input.has-pwd-toggle {
+    padding-left: 2.85rem !important;
+    padding-right: 2.85rem !important;
 }
 .form-input::placeholder { color: var(--slate-400); font-weight: 400; }
 .form-input:hover  { border-color: var(--slate-300); }
 .form-input:focus  {
     border-color: var(--indigo-500);
-    box-shadow: 0 0 0 3px rgba(99,102,241,.12), var(--shadow-sm);
+    box-shadow: 0 0 0 3.5px rgba(99,102,241,.14), var(--shadow-sm);
 }
-.form-input:focus + .input-icon-r { color: var(--indigo-500); }
-.form-input.is-error { border-color: var(--red-500); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+.form-input:focus ~ .input-icon-r,
+.form-input:focus + .input-icon-r { color: var(--indigo-600); }
+.form-input.is-error { border-color: var(--red-500); box-shadow: 0 0 0 3px rgba(239,68,68,.12); }
 .form-input.is-ok    { border-color: var(--green-500); }
 select.form-input { cursor: pointer; appearance: none; }
 
 /* Password toggle */
 .pwd-eye {
     position: absolute;
-    left: .875rem; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--slate-400); font-size: .875rem;
-    padding: .2rem; border-radius: 4px;
-    transition: color .15s;
+    left: 0.85rem;
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--slate-400);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 8px;
+    transition: all .15s ease;
     line-height: 1;
+    z-index: 2;
 }
-.pwd-eye:hover { color: var(--indigo-600); }
+.pwd-eye:hover { color: var(--indigo-600); background: var(--slate-100); }
+
+.form-row-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 0.85rem;
+    margin-bottom: 0.5rem;
+}
 
 /* ── CAPTCHA ── */
 .captcha-row {
@@ -616,12 +669,65 @@ select.form-input { cursor: pointer; appearance: none; }
 .pane-leave-from { opacity: 1; transform: translateX(0); }
 .pane-leave-to   { opacity: 0; transform: translateX(-12px); }
 
-/* ── Responsive ── */
+/* ── Responsive Mobile App Look ── */
 @media (max-width: 700px) {
-    body { padding: 0; align-items: flex-start; }
-    .card { grid-template-columns: 1fr; border-radius: 0; min-height: 100svh; }
-    .info-panel { display: none; }
-    .form-panel { padding: 2.5rem 1.5rem; justify-content: flex-start; padding-top: 3rem; }
+    body {
+        padding: 0;
+        align-items: flex-start;
+        background: #f8fafc;
+    }
+    .card {
+        grid-template-columns: 1fr;
+        border-radius: 0;
+        min-height: 100svh;
+        border: none;
+        box-shadow: none;
+        background: #ffffff;
+    }
+    .info-panel {
+        display: none;
+    }
+    .form-panel {
+        padding: 1.25rem 1.25rem;
+        padding-top: max(1.25rem, env(safe-area-inset-top));
+        padding-bottom: max(2rem, env(safe-area-inset-bottom));
+        justify-content: flex-start;
+    }
+    .mobile-app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--slate-100);
+    }
+    .tabs {
+        background: var(--slate-100);
+        border-radius: 14px;
+        padding: 4px;
+    }
+    .tab-btn {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 10px;
+    }
+    .form-head h1 {
+        font-size: 1.4rem;
+    }
+    .btn-primary {
+        height: 50px;
+        font-size: 1rem;
+        border-radius: 14px;
+    }
+    .form-row-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+}
+@media (min-width: 701px) {
+    .mobile-app-header {
+        display: none;
+    }
 }
 </style>
 </head>
@@ -691,6 +797,26 @@ select.form-input { cursor: pointer; appearance: none; }
          FORM PANEL
     ═══════════════════════════════════════════ -->
     <div class="form-panel">
+
+        <!-- Mobile App Brand Bar (Visible on mobile screens) -->
+        <div class="mobile-app-header">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; box-shadow: 0 4px 10px rgba(79,70,229,0.25);">
+                    {% if system_institution_logo %}
+                        <img src="{{ system_institution_logo }}" alt="Logo" style="width: 28px; height: 28px; object-fit: contain;" />
+                    {% else %}
+                        🎓
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: var(--slate-900);">{% trans "نظام الحضور الذكي" %}</div>
+                    <div style="font-size: 0.68rem; color: var(--slate-400); font-weight: 600;">{{ system_institution_name|default:"Smart Attendance System" }}</div>
+                </div>
+            </div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--indigo-600); background: var(--indigo-50); padding: 4px 8px; border-radius: 8px;">
+                v1.0
+            </div>
+        </div>
 
         <!-- Tabs & Install Button -->
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 1.75rem;">
@@ -764,7 +890,7 @@ select.form-input { cursor: pointer; appearance: none; }
                 <div class="input-wrap" style="margin-bottom:.75rem">
                     <input id="id_password" name="password"
                            :type="showPwd ? 'text' : 'password'"
-                           class="form-input" placeholder="••••••••"
+                           class="form-input has-pwd-toggle" placeholder="••••••••"
                            autocomplete="current-password" required>
                     <span class="input-icon-r">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -789,7 +915,7 @@ select.form-input { cursor: pointer; appearance: none; }
                     </button>
                 </div>
 
-                <input x-show="captchaEnabled" type="text" name="captcha_login" class="form-input captcha-input"
+                <input x-show="captchaEnabled" type="text" name="captcha_login" class="form-input no-icon captcha-input"
                        x-model="capLoginInput"
                        @input="capLoginInput = capLoginInput.toUpperCase()"
                        placeholder="{% trans 'اكتب رمز التحقق أعلاه' %}"
@@ -863,7 +989,6 @@ select.form-input { cursor: pointer; appearance: none; }
                            @input="validateEnglishName(); saveRegDraft()"
                            autocomplete="username"
                            name="username"
-                           dir="ltr"
                            placeholder="e.g. ahmed_ali, sarah24" required>
                     <span class="input-icon-r">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -882,8 +1007,8 @@ select.form-input { cursor: pointer; appearance: none; }
                     </span>
                 </div>
 
-                <!-- Role + Phone in a grid -->
-                <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:.75rem">
+                <!-- Role + Phone in responsive grid -->
+                <div class="form-row-grid">
                     <div style="position:relative;" @click.away="roleDropdownOpen = false">
                         <div class="field-label"><label>{% trans "نوع الحساب *" %}</label></div>
                         <button type="button" 
@@ -905,7 +1030,7 @@ select.form-input { cursor: pointer; appearance: none; }
                             <div @click="reg.role = 'STUDENT'; roleDropdownOpen = false"
                                  :style="reg.role === 'STUDENT' ? 'background:var(--indigo-50);color:var(--indigo-700);font-weight:700;' : ''"
                                  class="dropdown-item">
-                                <div style="display:flex;align-items:center;gap:.6rem;">
+                                 <div style="display:flex;align-items:center;gap:.6rem;">
                                     <span style="font-size:1.2rem;">🎓</span>
                                     <div>
                                         <div style="font-size:.85rem;font-weight:700;">{% trans "طالب" %}</div>
@@ -931,16 +1056,16 @@ select.form-input { cursor: pointer; appearance: none; }
                     <div>
                         <div class="field-label">
                             <label>{% trans "رقم الجوال العراقي *" %}</label>
-                            <span style="font-size:.7rem;font-weight:700;color:var(--indigo-600)">{% trans "11 رقماً (07XXXXXXXXX)" %}</span>
+                            <span style="font-size:.7rem;font-weight:700;color:var(--indigo-600)">{% trans "11 رقماً" %}</span>
                         </div>
                         <div class="input-wrap" style="margin-bottom:0">
-                            <input type="tel" class="form-input" 
+                            <input type="tel" class="form-input no-icon" 
                                    x-model="reg.phone" 
                                    @input="validateIraqiPhone(); saveRegDraft()"
                                    maxlength="11"
                                    autocomplete="tel"
+                                   inputmode="numeric"
                                    name="phone"
-                                   dir="ltr"
                                    placeholder="07XXXXXXXXX" required>
                         </div>
                     </div>
@@ -966,7 +1091,6 @@ select.form-input { cursor: pointer; appearance: none; }
                                x-model="reg.teacherCode" 
                                @input="saveRegDraft()"
                                autocomplete="off"
-                               dir="ltr"
                                placeholder="{% trans 'أدخل كود التحقق المعتمد من الإدارة' %}">
                         <span class="input-icon-r">
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -988,7 +1112,7 @@ select.form-input { cursor: pointer; appearance: none; }
                 <!-- Password -->
                 <div class="field-label" style="margin-top:.9rem"><label>{% trans "كلمة المرور *" %}</label></div>
                 <div class="input-wrap" style="margin-bottom:.25rem">
-                    <input :type="showRegPwd ? 'text' : 'password'" class="form-input"
+                    <input :type="showRegPwd ? 'text' : 'password'" class="form-input has-pwd-toggle"
                            x-model="reg.password" placeholder="{% trans '8 أحرف على الأقل' %}"
                            autocomplete="new-password"
                            name="new-password"
@@ -1007,7 +1131,7 @@ select.form-input { cursor: pointer; appearance: none; }
                 <!-- Confirm Password -->
                 <div class="field-label" style="margin-top:.75rem"><label>{% trans "تأكيد كلمة المرور *" %}</label></div>
                 <div class="input-wrap" style="margin-bottom:.25rem">
-                    <input :type="showRegConfirmPwd ? 'text' : 'password'" class="form-input"
+                    <input :type="showRegConfirmPwd ? 'text' : 'password'" class="form-input has-pwd-toggle"
                            :class="pwdMatchStatus === 'ok' ? 'is-ok' : pwdMatchStatus === 'err' ? 'is-error' : ''"
                            x-model="reg.confirmPassword" placeholder="{% trans 'أعد إدخال كلمة المرور للتأكيد' %}"
                            @input="checkPwdMatch()" required>
@@ -1048,10 +1172,11 @@ select.form-input { cursor: pointer; appearance: none; }
                     </button>
                 </div>
 
-                <input x-show="captchaEnabled" type="text" class="form-input captcha-input"
+                <input x-show="captchaEnabled" type="text" class="form-input no-icon captcha-input"
                        x-model="capRegInput"
                        @input="capRegInput = capRegInput.toUpperCase()"
                        placeholder="{% trans 'اكتب رمز التحقق أعلاه' %}"
+                       maxlength="6" autocomplete="off" spellcheck="false">
                        maxlength="6" autocomplete="off" spellcheck="false">
 
                 <!-- Submit -->

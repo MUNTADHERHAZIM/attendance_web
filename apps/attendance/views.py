@@ -169,18 +169,14 @@ class StudentCheckInRateThrottle(SimpleRateThrottle):
 
 def _get_students_for_session(attendance_session):
     """
-    ✅ Returns students enrolled in the specific class section of the session,
-    plus any students who checked into this session (including newly created guest students).
+    ✅ Returns only students who have actually recorded attendance in this session.
+    Enrolled students who have not yet checked in will NOT appear in the session list.
     """
-    class_section = attendance_session.session.class_section
-    enrolled_pks = list(
-        StudentProfile.objects.filter(sections=class_section).values_list("pk", flat=True)
-    )
     recorded_pks = list(
         AttendanceRecord.objects.filter(attendance_session=attendance_session).values_list("student_id", flat=True)
     )
-    all_pks = set(enrolled_pks + recorded_pks)
-    return StudentProfile.objects.filter(pk__in=all_pks).select_related("user").order_by("user__first_name", "user__last_name", "student_id")
+    return StudentProfile.objects.filter(pk__in=recorded_pks).select_related("user").order_by("-id")
+
 
 
 def _get_shared_device_map(attendance_session):
@@ -489,7 +485,11 @@ def quick_offline_checkin_view(request):
     profile_id = request.POST.get("student_profile_id")
 
     att_session = _manageable_attendance_session(request.user, session_id)
-    section_students = _get_students_for_session(att_session)
+    class_section = att_session.session.class_section
+    section_students = StudentProfile.objects.filter(
+        Q(sections=class_section) |
+        Q(pk__in=AttendanceRecord.objects.filter(attendance_session=att_session).values_list("student_id", flat=True))
+    ).distinct()
 
     target_student = None
     if profile_id and str(profile_id).isdigit():
@@ -1580,7 +1580,7 @@ def toggle_provisional_student_enrollment_view(request, session_id, student_id):
         return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
 
     attendance_session = _manageable_attendance_session(request.user, session_id)
-    student_profile = _get_students_for_session(attendance_session).filter(
+    student_profile = StudentProfile.objects.filter(
         id=student_id,
         student_id__startswith="NEW-",
         institution=attendance_session.session.class_section.department.institution,
@@ -1656,7 +1656,7 @@ def bulk_manage_session_students_view(request, session_id):
         return JsonResponse({"success": False, "error": "الإجراء الجماعي غير صالح."}, status=400)
 
     section = attendance_session.session.class_section
-    students = list(_get_students_for_session(attendance_session).filter(id__in=set(student_ids)))
+    students = list(StudentProfile.objects.filter(id__in=set(student_ids)))
     if not students:
         return JsonResponse({"success": False, "error": "لم يتم العثور على طلاب محددين في هذه الجلسة."}, status=404)
 
@@ -1763,9 +1763,7 @@ def manual_update_web_view(request):
         return HttpResponse("حالة غير صالحة", status=400)
 
     att_session = _manageable_attendance_session(request.user, session_id)
-    student = get_object_or_404(
-        _get_students_for_session(att_session), id=student_id
-    )
+    student = get_object_or_404(StudentProfile, id=student_id)
 
     method_param = request.POST.get("method")
     if method_param == "OFFLINE_MANUAL":
@@ -2927,6 +2925,15 @@ def quick_start_scheduled_session_view(request, session_id):
     if request.user.is_teacher() and timetable_session.teacher.user != request.user:
         messages.error(request, "غير مصرح لك بتشغيل هذه الحصة.")
         return redirect("dashboard")
+
+    # If an active session already exists for this timetable session right now, redirect directly to it
+    existing_today = AttendanceSession.objects.filter(
+        session=timetable_session,
+        is_active=True,
+        end_time__gt=now
+    ).order_by("-id").first()
+    if existing_today:
+        return redirect("attendance:session_detail_web", session_id=existing_today.id)
 
     # Give every launch a separate attendance record set.
     att_session = AttendanceSession.objects.create(

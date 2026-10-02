@@ -248,16 +248,17 @@
                 <tr>
                     <td colspan="7" class="px-6 py-14 text-center text-slate-400">
                         <div class="flex flex-col items-center justify-center space-y-3">
-                            <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl">
-                                👥
+                            <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl shadow-xs animate-pulse">
+                                📡
                             </div>
-                            <p class="font-black text-slate-700 text-base">{% trans "لا يوجد طلاب مسجلون في هذه الشعبة الدراسية حالياً." %}</p>
-                            <p class="text-xs text-slate-400 max-w-sm">
-                                {% trans 'يمكنك إضافة طلاب إلى الشعبة الدراسية من خلال صفحة "طلابي والشعب" أو استيراد ملف إكسل.' %}
+                            <p class="font-black text-slate-800 text-base">{% trans "بانتظار تسجيل حضور الطلاب..." %}</p>
+                            <p class="text-xs text-slate-500 max-w-md leading-relaxed">
+                                {% trans "لا يظهر أي طالب في هذه القائمة إلا بعد تسجيل حضوره الفعلي عبر رمز QR أو كود التحضير أو الحضور الفوري المباشر." %}
                             </p>
-                            <a href="{% url 'accounts:teacher_students' %}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-brand-600 bg-brand-50 border border-brand-200 hover:bg-brand-100 transition-colors">
-                                <span>➕ {% trans "إضافة طلاب للشعبة" %}</span>
-                            </a>
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                                <span>{% trans "البث المباشر للجلسة نشط ويتم التحديث تلقائياً" %}</span>
+                            </div>
                         </div>
                     </td>
                 </tr>
