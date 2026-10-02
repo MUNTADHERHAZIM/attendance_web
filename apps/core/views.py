@@ -8,9 +8,13 @@ from django.utils import translation
 from django.conf import settings
 from apps.accounts.models import StudentProfile, TeacherProfile
 from apps.academics.models import Session, Department, ClassSection, Institution, Course
-from apps.attendance.models import AttendanceSession, AttendanceRecord
+from apps.attendance.models import (
+    AttendanceRecord,
+    AttendanceSession,
+    OfflineAttendanceSubmission,
+)
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef, Q
 
 User = get_user_model()
 
@@ -169,8 +173,20 @@ def dashboard_view(request):
         upcoming_scheduled_sessions = AttendanceSession.objects.filter(
             Q(session__teacher=teacher_profile) | Q(created_by=user),
             date__gte=today,
-            is_active=False
-        ).distinct().select_related("session__course", "session__class_section").order_by("date", "start_time")
+            is_active=False,
+        ).annotate(
+            has_attendance_records=Exists(
+                AttendanceRecord.objects.filter(attendance_session_id=OuterRef("pk"))
+            ),
+            has_offline_submissions=Exists(
+                OfflineAttendanceSubmission.objects.filter(attendance_session_id=OuterRef("pk"))
+            ),
+        ).filter(
+            has_attendance_records=False,
+            has_offline_submissions=False,
+        ).distinct().select_related(
+            "session__course", "session__class_section"
+        ).order_by("date", "start_time")
 
         # 3. Courses: Taught in timetable OR owned in department/institution
         course_ids = list(sessions.values_list("course_id", flat=True).distinct())

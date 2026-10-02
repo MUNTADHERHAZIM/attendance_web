@@ -299,29 +299,19 @@ class StartAttendanceSessionView(APIView):
         end_time = now + timezone.timedelta(minutes=30)
         generated_otp = f"{random.randint(100000, 999999)}"
 
-        attendance_session, created = AttendanceSession.objects.get_or_create(
+        attendance_session = AttendanceSession.objects.create(
             session=session_obj,
             date=now.date(),
-            defaults={
-                "created_by": request.user,
-                "end_time": end_time,
-                "requires_wifi": requires_wifi,
-                "requires_geofence": requires_geofence,
-                "latitude": latitude,
-                "longitude": longitude,
-                "radius_meters": radius_meters,
-                "quick_otp": generated_otp,
-                "is_active": True,
-            },
+            created_by=request.user,
+            end_time=end_time,
+            requires_wifi=requires_wifi,
+            requires_geofence=requires_geofence,
+            latitude=latitude,
+            longitude=longitude,
+            radius_meters=radius_meters,
+            quick_otp=generated_otp,
+            is_active=True,
         )
-
-        if not created and not attendance_session.is_active:
-            attendance_session.is_active = True
-            attendance_session.end_time = end_time
-            attendance_session.qr_salt = uuid.uuid4()
-            if not attendance_session.quick_otp:
-                attendance_session.quick_otp = generated_otp
-            attendance_session.save(update_fields=["is_active", "end_time", "qr_salt", "quick_otp"])
 
         AuditLog.objects.create(
             user=request.user,
@@ -1192,28 +1182,16 @@ def start_session_web_view(request):
         now = timezone.now()
         end_time = now + timezone.timedelta(minutes=30)
 
-        attendance_session, created = AttendanceSession.objects.get_or_create(
+        attendance_session = AttendanceSession.objects.create(
             session=session_obj,
             date=now.date(),
-            defaults={
-                "created_by": request.user,
-                "end_time": end_time,
-                "requires_wifi": requires_wifi,
-                "requires_geofence": requires_geofence,
-                "quick_otp": generated_otp,
-                "is_active": True,
-            },
+            created_by=request.user,
+            end_time=end_time,
+            requires_wifi=requires_wifi,
+            requires_geofence=requires_geofence,
+            quick_otp=generated_otp,
+            is_active=True,
         )
-
-        if not created and not attendance_session.is_active:
-            attendance_session.is_active = True
-            attendance_session.end_time = end_time
-            attendance_session.requires_geofence = requires_geofence
-            attendance_session.requires_wifi = requires_wifi
-            if not attendance_session.quick_otp:
-                attendance_session.quick_otp = generated_otp
-            attendance_session.qr_salt = uuid.uuid4()
-            attendance_session.save(update_fields=["is_active", "end_time", "requires_geofence", "requires_wifi", "qr_salt", "quick_otp"])
 
         messages.success(request, f"تم تفعيل جلسة تحضير مادة {session_obj.course.name}")
         return redirect("attendance:session_detail_web", session_id=attendance_session.id)
@@ -2320,45 +2298,25 @@ def create_custom_session_view(request, timetable_id=None):
         is_scheduled_only = request.POST.get("action") == "schedule" or "schedule_only" in request.POST
         target_is_active = not is_scheduled_only
 
-        attendance_session, att_created = AttendanceSession.objects.get_or_create(
+        attendance_session = AttendanceSession.objects.create(
             session=session_obj,
             date=session_date,
-            defaults={
-                "created_by": request.user,
-                "start_time": start_dt,
-                "end_time": end_dt,
-                "requires_wifi": requires_wifi,
-                "allowed_wifi_ssid": allowed_wifi_ssid,
-                "allowed_ip_subnet": allowed_ip_subnet,
-                "requires_geofence": requires_geofence,
-                "latitude": latitude,
-                "longitude": longitude,
-                "radius_meters": radius_meters,
-                "topic": topic,
-                "lecture_type": lecture_type,
-                "shift": shift,
-                "is_active": target_is_active,
-            },
+            created_by=request.user,
+            end_time=end_dt,
+            requires_wifi=requires_wifi,
+            allowed_wifi_ssid=allowed_wifi_ssid,
+            allowed_ip_subnet=allowed_ip_subnet,
+            requires_geofence=requires_geofence,
+            latitude=latitude,
+            longitude=longitude,
+            radius_meters=radius_meters,
+            topic=topic,
+            lecture_type=lecture_type,
+            shift=shift,
+            is_active=target_is_active,
         )
-
-        if not att_created:
-            attendance_session.is_active = target_is_active
-            attendance_session.end_time = end_dt
-            attendance_session.requires_wifi = requires_wifi
-            attendance_session.allowed_wifi_ssid = allowed_wifi_ssid
-            attendance_session.allowed_ip_subnet = allowed_ip_subnet
-            attendance_session.requires_geofence = requires_geofence
-            if latitude and longitude:
-                attendance_session.latitude = latitude
-                attendance_session.longitude = longitude
-            attendance_session.radius_meters = radius_meters
-            if topic:
-                attendance_session.topic = topic
-            if lecture_type:
-                attendance_session.lecture_type = lecture_type
-            attendance_session.shift = shift
-            attendance_session.qr_salt = uuid.uuid4()
-            attendance_session.save()
+        attendance_session.start_time = start_dt
+        attendance_session.save(update_fields=["start_time"])
 
         shift_display = "صباحي" if shift == "MORNING" else "مسائي"
         AuditLog.objects.create(
@@ -2923,14 +2881,41 @@ def quick_start_scheduled_session_view(request, session_id):
             messages.error(request, "غير مصرح لك بتشغيل هذه الجلسة.")
             return redirect("dashboard")
 
-        # Activate
-        att_session.is_active = True
-        att_session.date = now.date()
-        att_session.start_time = now
-        att_session.end_time = now + timezone.timedelta(minutes=45)
-        att_session.qr_salt = uuid.uuid4()
-        att_session.quick_otp = generated_otp
-        att_session.save()
+        if att_session.is_active and att_session.end_time > now:
+            return redirect("attendance:session_detail_web", session_id=att_session.id)
+
+        has_previous_activity = (
+            att_session.records.exists() or att_session.offline_submissions.exists()
+        )
+        if has_previous_activity:
+            att_session = AttendanceSession.objects.create(
+                session=att_session.session,
+                created_by=request.user,
+                date=now.date(),
+                end_time=now + timezone.timedelta(minutes=45),
+                requires_wifi=att_session.requires_wifi,
+                requires_geofence=att_session.requires_geofence,
+                latitude=att_session.latitude,
+                longitude=att_session.longitude,
+                radius_meters=att_session.radius_meters,
+                quick_otp=generated_otp,
+                allowed_ip_subnet=att_session.allowed_ip_subnet,
+                allowed_wifi_ssid=att_session.allowed_wifi_ssid,
+                topic=att_session.topic,
+                lecture_type=att_session.lecture_type,
+                shift=att_session.shift,
+                is_active=True,
+            )
+            att_session.start_time = now
+            att_session.save(update_fields=["start_time"])
+        else:
+            att_session.is_active = True
+            att_session.date = now.date()
+            att_session.start_time = now
+            att_session.end_time = now + timezone.timedelta(minutes=45)
+            att_session.qr_salt = uuid.uuid4()
+            att_session.quick_otp = generated_otp
+            att_session.save()
 
         messages.success(request, f"⚡ تم تفعيل وبدء جلسة مادة ({att_session.session.course.name}) بنجاح!")
         return redirect("attendance:session_detail_web", session_id=att_session.id)
@@ -2943,26 +2928,18 @@ def quick_start_scheduled_session_view(request, session_id):
         messages.error(request, "غير مصرح لك بتشغيل هذه الحصة.")
         return redirect("dashboard")
 
-    # Create / activate today's AttendanceSession
-    att_session, created = AttendanceSession.objects.get_or_create(
+    # Give every launch a separate attendance record set.
+    att_session = AttendanceSession.objects.create(
         session=timetable_session,
         date=now.date(),
-        defaults={
-            "created_by": request.user,
-            "start_time": now,
-            "end_time": now + timezone.timedelta(minutes=45),
-            "quick_otp": generated_otp,
-            "is_active": True,
-            "shift": timetable_session.shift,
-        }
+        created_by=request.user,
+        end_time=now + timezone.timedelta(minutes=45),
+        quick_otp=generated_otp,
+        is_active=True,
+        shift=timetable_session.shift,
     )
-    if not created and not att_session.is_active:
-        att_session.is_active = True
-        att_session.start_time = now
-        att_session.end_time = now + timezone.timedelta(minutes=45)
-        att_session.quick_otp = generated_otp
-        att_session.qr_salt = uuid.uuid4()
-        att_session.save()
+    att_session.start_time = now
+    att_session.save(update_fields=["start_time"])
 
     messages.success(request, f"⚡ تم تفعيل وبدء جلسة تحضير مادة ({timetable_session.course.name}) بنجاح!")
     return redirect("attendance:session_detail_web", session_id=att_session.id)

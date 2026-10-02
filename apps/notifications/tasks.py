@@ -159,9 +159,11 @@ def mark_absent_for_closed_sessions():
     from apps.attendance.models import AttendanceSession, AttendanceRecord
     from apps.accounts.models import StudentProfile
 
+    now = timezone.now()
     recently_closed = AttendanceSession.objects.filter(
         is_active=False,
-        end_time__gte=timezone.now() - timezone.timedelta(minutes=5),
+        end_time__gte=now - timezone.timedelta(minutes=5),
+        end_time__lte=now,
     ).select_related("session__class_section")
 
     created_count = 0

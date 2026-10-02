@@ -31,7 +31,6 @@ class AttendanceSession(models.Model):
     class Meta:
         verbose_name = "جلسة تحضير"
         verbose_name_plural = "جلسات التحضير"
-        unique_together = ("session", "date")
 
     def __str__(self):
         return f"جلسة {self.session} بتاريخ {self.date}"

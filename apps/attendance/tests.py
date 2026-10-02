@@ -160,6 +160,37 @@ def test_teacher_cannot_read_another_teachers_qr(attendance_api_setup):
     assert response.status_code == 404
 
 
+def test_each_start_request_gets_a_fresh_attendance_session(attendance_api_setup):
+    attendance_session, _, _, student, _ = attendance_api_setup
+    client = APIClient()
+    client.force_authenticate(user=attendance_session.session.teacher.user)
+
+    first_response = client.post(
+        "/attendance/api/session/start/",
+        {"session": attendance_session.session_id},
+        format="json",
+    )
+    second_response = client.post(
+        "/attendance/api/session/start/",
+        {"session": attendance_session.session_id},
+        format="json",
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+    first_id = first_response.data["id"]
+    second_id = second_response.data["id"]
+    assert first_id != second_id
+    assert not AttendanceRecord.objects.filter(
+        attendance_session_id__in=[first_id, second_id],
+        student=student,
+    ).exists()
+    assert AttendanceRecord.objects.filter(
+        attendance_session=attendance_session,
+        student=student,
+    ).exists()
+
+
 def test_malformed_freeze_qr_json_returns_bad_request(attendance_api_setup):
     from django.test import Client
 
@@ -770,6 +801,31 @@ def test_teacher_session_screen_generates_and_server_renders_missing_otp(
     assert 'lang="en" dir="ltr"' in english_page
     assert "Smart classroom attendance session" in english_page
     assert "Attendance is closed" in english_page
+
+
+def test_quick_start_after_attendance_creates_a_fresh_session(attendance_api_setup):
+    from django.test import Client
+
+    old_session, _, _, student, _ = attendance_api_setup
+    old_session.is_active = False
+    old_session.end_time = timezone.now() - timezone.timedelta(minutes=1)
+    old_session.save(update_fields=["is_active", "end_time"])
+
+    client = Client()
+    client.force_login(old_session.session.teacher.user)
+    response = client.post(f"/attendance/session/{old_session.id}/quick-start/")
+
+    assert response.status_code == 302
+    new_session_id = int(response.url.rstrip("/").split("/")[-1])
+    assert new_session_id != old_session.id
+    assert AttendanceRecord.objects.filter(
+        attendance_session=old_session,
+        student=student,
+    ).exists()
+    assert not AttendanceRecord.objects.filter(
+        attendance_session_id=new_session_id,
+        student=student,
+    ).exists()
 
 
 def test_teacher_dashboard_renders_english_tabs_and_schedule(attendance_api_setup):
