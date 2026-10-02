@@ -220,6 +220,7 @@
                 <span id="offline-queue-count" class="text-amber-300">0</span>
             </p>
             <p id="offline-queue-message" class="mt-2 text-xs leading-relaxed text-slate-300"></p>
+            <ul id="offline-queue-items" class="max-h-36 space-y-1 overflow-y-auto rounded-lg bg-slate-800/80 p-2 text-right text-[11px] text-slate-200"></ul>
             <button id="offline-sync-button" type="button" onclick="openCheckinForSync()"
                     class="mt-3 w-full rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
                 إعادة المحاولة عند عودة الاتصال
@@ -242,8 +243,25 @@
                 const queue = readOfflineQueue();
                 document.getElementById('offline-queue-count').textContent = String(queue.length);
                 document.getElementById('offline-queue-message').textContent = queue.length
-                    ? 'لم يؤكد الخادم تسجيل هذه الطلبات بعد. لا تمسح بيانات المتصفح قبل مزامنتها.'
+                    ? 'هذه الطلبات محفوظة على هذا الجهاز فقط، ولا يراها الأستاذ قبل مزامنتها. أعد فتح هذا المتصفح عند عودة الاتصال.'
                     : 'لا توجد طلبات معلقة على هذا الجهاز.';
+                const list = document.getElementById('offline-queue-items');
+                list.replaceChildren();
+                queue.forEach(item => {
+                    const row = document.createElement('li');
+                    row.className = 'border-b border-slate-700 py-1 last:border-0';
+                    const name = document.createElement('strong');
+                    name.textContent = item.student_name || 'اسم غير محفوظ';
+                    const state = document.createElement('span');
+                    state.className = 'block text-slate-400';
+                    state.textContent = item.sync_error || (
+                        item.sync_status === 'needs_review'
+                            ? 'يحتاج إعادة فحص أو مراجعة الأستاذ'
+                            : 'بانتظار المزامنة'
+                    );
+                    row.append(name, state);
+                    list.appendChild(row);
+                });
             } catch (error) {
                 console.error('Could not read offline attendance queue:', error);
                 document.getElementById('offline-queue-message').textContent =
@@ -381,6 +399,7 @@
 
                 const queuedRequest = {
                     student_name: studentName,
+                    session_id: /^\d+$/.test(sessionId) ? Number(sessionId) : null,
                     guest_checkin: true,
                     offline_checkin: true,
                     device_id: getOfflineDeviceId(),
@@ -391,7 +410,6 @@
                 };
                 if (useOtp) {
                     queuedRequest.otp = otp;
-                    queuedRequest.session_id = Number(sessionId);
                 } else {
                     queuedRequest.token = token;
                 }
@@ -474,6 +492,15 @@
             if (event.key === 'offline_attendance_queue') refreshOfflineQueue();
         });
         refreshOfflineQueue();
+        if (navigator.onLine) {
+            setTimeout(function() {
+                try {
+                    if (readOfflineQueue().length) openCheckinForSync();
+                } catch (error) {
+                    console.error('Could not resume offline attendance sync:', error);
+                }
+            }, 500);
+        }
     </script>
 </body>
 </html>

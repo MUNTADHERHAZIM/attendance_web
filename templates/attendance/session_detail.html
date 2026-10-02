@@ -445,6 +445,30 @@ function sessionDetailManager() {
             });
         },
 
+        refreshStudents: function() {
+            if (window.htmx) {
+                window.htmx.trigger('#student-list-container', 'refresh');
+            }
+        },
+
+        refreshAndPrint: function() {
+            var self = this;
+            if (!window.htmx) {
+                window.print();
+                return;
+            }
+            window.htmx.ajax(
+                'GET',
+                '/attendance/session/' + self.sessionId + '/students-list/',
+                { target: '#student-list-container', swap: 'innerHTML' }
+            ).then(function() {
+                window.print();
+            }).catch(function(error) {
+                console.error('Could not refresh attendance list before printing:', error);
+                alert('تعذر تحديث كشف الحضور قبل الطباعة. تحقق من الاتصال ثم أعد المحاولة.');
+            });
+        },
+
         init: function() {
             var self = this;
             window.__sessionManager = self;
@@ -603,7 +627,7 @@ window.addEventListener('keydown', function(e) {
                             <span>📊</span>
                             <span>تصدير كشف إكسل (Excel)</span>
                         </a>
-                        <button onclick="window.print()" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-700">
+                        <button onclick="window.__sessionManager.refreshAndPrint()" class="w-full text-right p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2.5 text-xs font-bold text-slate-700">
                             <span>🖨️</span>
                             <span>طباعة كشف الحضور الآن</span>
                         </button>
@@ -1068,12 +1092,16 @@ window.addEventListener('keydown', function(e) {
                         class="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors">
                     إعادة ضبط
                 </button>
+                <button @click="refreshStudents()"
+                        class="px-3 py-2 text-xs font-bold text-indigo-700 hover:text-indigo-900 border border-indigo-200 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                    تحديث للطباعة
+                </button>
             </div>
 
             <!-- HTMX polling container for Student Table -->
             <div id="student-list-container" 
                  hx-get="{% url 'attendance:session_students_list' attendance_session.id %}" 
-                 hx-trigger="every 3s" 
+                 hx-trigger="every 3s, refresh"
                  hx-swap="innerHTML"
                  class="min-h-[300px]">
                 {% include "attendance/partials/students_list.html" %}

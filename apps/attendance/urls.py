@@ -32,6 +32,8 @@ from .views import (
     delete_attendance_session_view,
     bulk_delete_sessions_view,
     delete_timetable_session_view,
+    review_offline_submission_view,
+    toggle_provisional_student_enrollment_view,
 )
 
 app_name = "attendance"
@@ -61,6 +63,16 @@ urlpatterns = [
     path("timetable-session/<int:session_id>/delete/", delete_timetable_session_view, name="delete_timetable_session"),
     path("session/<int:session_id>/print/", printable_qr_sheet_view, name="printable_qr_sheet"),
     path("session/<int:session_id>/students-list/", session_students_list_partial, name="session_students_list"),
+    path(
+        "session/<int:session_id>/offline-submissions/<int:submission_id>/review/",
+        review_offline_submission_view,
+        name="review_offline_submission",
+    ),
+    path(
+        "session/<int:session_id>/students/<int:student_id>/enrollment/",
+        toggle_provisional_student_enrollment_view,
+        name="toggle_provisional_enrollment",
+    ),
     path("record/manual-update-web/", manual_update_web_view, name="manual_update_web"),
     path("record/bulk-update-web/", bulk_update_web_view, name="bulk_update_web"),
     path("checkin/", student_checkin_web_view, name="student_checkin_web"),

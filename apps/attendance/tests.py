@@ -5,7 +5,11 @@ from rest_framework.test import APIClient
 from django.utils import timezone
 from apps.academics.models import Institution, Session, Course, Department, ClassSection, AcademicYear, Semester
 from apps.accounts.models import User, StudentProfile, TeacherProfile
-from apps.attendance.models import AttendanceSession, AttendanceRecord
+from apps.attendance.models import (
+    AttendanceSession,
+    AttendanceRecord,
+    OfflineAttendanceSubmission,
+)
 from apps.attendance.utils import generate_qr_token, verify_qr_token, is_ip_in_subnet
 from apps.core.models import AuditLog
 
@@ -465,6 +469,141 @@ def test_offline_mode_does_not_accept_an_invalid_qr_signature(attendance_api_set
 
     assert response.status_code == 400
     assert not StudentProfile.objects.filter(student_id__startswith="NEW-").exists()
+
+
+def test_invalid_offline_signature_is_saved_for_teacher_review(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": generate_qr_token(attendance_session) + "x",
+            "student_name": "طالب من طلب قديم",
+            "offline_checkin": True,
+            "guest_checkin": True,
+            "queue_id": "legacy-q-123",
+            "device_id": "student-phone",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["stored_for_review"] is True
+    assert not AttendanceRecord.objects.filter(
+        attendance_session=attendance_session,
+        student__student_id__startswith="NEW-",
+    ).exists()
+    submission = OfflineAttendanceSubmission.objects.get(queue_id="legacy-q-123")
+    assert submission.status == OfflineAttendanceSubmission.Statuses.PENDING
+    assert submission.student_name == "طالب من طلب قديم"
+
+
+def test_invalid_offline_otp_is_saved_for_teacher_review(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "otp": "000000",
+            "session_id": attendance_session.id,
+            "student_name": "طالب من OTP محفوظ",
+            "offline_checkin": True,
+            "queue_id": "offline-otp-review-123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["stored_for_review"] is True
+    submission = OfflineAttendanceSubmission.objects.get(
+        queue_id="offline-otp-review-123"
+    )
+    assert "OTP" in submission.token_error
+    assert not AttendanceRecord.objects.filter(
+        attendance_session=attendance_session,
+        student__student_id__startswith="NEW-",
+    ).exists()
+
+
+def test_teacher_can_approve_offline_request_and_enroll_new_student(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    submission = OfflineAttendanceSubmission.objects.create(
+        attendance_session=attendance_session,
+        student_name="طالب جديد للمراجعة",
+        queue_id="review-q-123",
+        token_error="توقيع الرمز غير صالح",
+    )
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+    inbox = client.get(
+        f"/attendance/session/{attendance_session.id}/students-list/"
+    )
+    assert inbox.status_code == 200
+    assert "طالب جديد للمراجعة" in inbox.content.decode()
+    assert "موافقة وإضافة للشعبة" in inbox.content.decode()
+
+    response = client.post(
+        f"/attendance/session/{attendance_session.id}/offline-submissions/{submission.id}/review/",
+        {"action": "approve", "enroll": "true"},
+        format="multipart",
+    )
+
+    assert response.status_code == 200
+    submission.refresh_from_db()
+    assert submission.status == OfflineAttendanceSubmission.Statuses.APPROVED
+    assert submission.student.sections.filter(
+        id=attendance_session.session.class_section_id
+    ).exists()
+    record = AttendanceRecord.objects.get(
+        attendance_session=attendance_session,
+        student=submission.student,
+    )
+    assert record.status == AttendanceRecord.Statuses.PRESENT
+    assert record.method == AttendanceRecord.Methods.MANUAL
+    assert "وقت وصول الطلب إلى الخادم" in record.notes
+
+
+def test_teacher_can_remove_provisional_student_from_section(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    section = attendance_session.session.class_section
+    guest_user = User.objects.create_user(
+        username="provisional_guest",
+        password="unused",
+        first_name="ضيف",
+        role=User.Roles.STUDENT,
+    )
+    provisional = StudentProfile.objects.create(
+        user=guest_user,
+        student_id="NEW-PROVISIONAL",
+        institution=section.department.institution,
+    )
+    provisional.sections.add(section)
+    AttendanceRecord.objects.create(
+        student=provisional,
+        attendance_session=attendance_session,
+        status=AttendanceRecord.Statuses.PRESENT,
+    )
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.post(
+        f"/attendance/session/{attendance_session.id}/students/{provisional.id}/enrollment/",
+        {},
+        format="multipart",
+    )
+
+    assert response.status_code == 200
+    assert not provisional.sections.filter(id=section.id).exists()
+    assert AttendanceRecord.objects.filter(
+        student=provisional,
+        attendance_session=attendance_session,
+    ).exists()
 
 
 def test_offline_fallback_has_self_contained_checkin_controls(db):

@@ -4,6 +4,59 @@
         <span>تنبيه للأستاذ: يوجد {{ review_required_count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة.</span>
     </div>
 {% endif %}
+{% if review_submissions %}
+    <section class="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-right" aria-live="polite">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+                <h3 class="text-sm font-black text-amber-950">طلبات الهاتف غير المتحقق منها</h3>
+                <p class="mt-1 text-xs text-amber-800">هذه الطلبات وصلت من جهاز الطالب لكن تعذر التحقق من QR أو OTP. لا تُحتسب حضوراً إلا بعد موافقتك.</p>
+            </div>
+            <span class="rounded-full bg-amber-200 px-3 py-1 text-xs font-black text-amber-950">{{ review_submissions|length }} بانتظارك</span>
+        </div>
+        <div class="space-y-2">
+            {% for submission in review_submissions %}
+                <div class="flex flex-col gap-2 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-black text-slate-900">{{ submission.student_name }}</p>
+                        <p class="mt-1 text-[11px] text-slate-600">
+                            استُلم {{ submission.received_at|date:"Y-m-d H:i:s" }} · {{ submission.token_error }}
+                            {% if submission.device_id %} · جهاز {{ submission.device_id|truncatechars:24 }}{% endif %}
+                        </p>
+                    </div>
+                    <div class="flex shrink-0 flex-wrap gap-2">
+                        <button type="button"
+                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
+                                hx-vals='{"action":"approve","enroll":"true"}'
+                                hx-target="#student-list-container"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-700">
+                            موافقة وإضافة للشعبة
+                        </button>
+                        <button type="button"
+                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
+                                hx-vals='{"action":"approve","enroll":"false"}'
+                                hx-target="#student-list-container"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50">
+                            موافقة على الحضور فقط
+                        </button>
+                        <button type="button"
+                                hx-post="{% url 'attendance:review_offline_submission' attendance_session.id submission.id %}"
+                                hx-vals='{"action":"reject"}'
+                                hx-target="#student-list-container"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                class="rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">
+                            رفض / إزالة
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
 <div id="students-table-scroller" class="overflow-x-auto rounded-xl border border-slate-200/90 shadow-2xs">
     <table class="min-w-full divide-y divide-slate-100 text-right">
         <thead>
@@ -54,7 +107,7 @@
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs" 
                                               title="⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس جهاز ({{ item.shared_with_names|join:' ، ' }})">
                                             <span>📱⚠️</span>
-                                            <span>جهاز مشترك مع: {{ item.shared_with_names|join:' ، ' }}</span>
+                                            <span>جهاز مشترك مع {{ item.shared_with_names|length }} طالب</span>
                                         </span>
                                     {% endif %}
                                 </div>
@@ -174,6 +227,16 @@
                                 ✕ غائب
                             </button>
                         </div>
+                        {% if item.profile.student_id|slice:":4" == "NEW-" %}
+                            <button type="button"
+                                    hx-post="{% url 'attendance:toggle_provisional_enrollment' attendance_session.id item.profile.id %}"
+                                    hx-target="#student-list-container"
+                                    hx-swap="none"
+                                    hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'
+                                    class="mt-1 rounded-lg border px-2 py-1 text-[10px] font-bold {% if item.is_enrolled %}border-rose-200 text-rose-700 hover:bg-rose-50{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
+                                {% if item.is_enrolled %}إزالة من قائمتي{% else %}اعتماد وإضافة للشعبة{% endif %}
+                            </button>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

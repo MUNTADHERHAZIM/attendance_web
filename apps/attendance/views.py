@@ -17,6 +17,7 @@ from django.db.models import Q
 
 import json
 import random
+from urllib.parse import parse_qs, unquote, urlparse
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,7 +25,12 @@ from rest_framework.throttling import SimpleRateThrottle
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from rest_framework import serializers as drf_serializers
 
-from .models import AttendanceSession, AttendanceRecord, SyncQueue
+from .models import (
+    AttendanceSession,
+    AttendanceRecord,
+    OfflineAttendanceSubmission,
+    SyncQueue,
+)
 from .serializers import AttendanceSessionSerializer, AttendanceRecordSerializer
 from .utils import (
     DEFAULT_QR_TOKEN_TTL,
@@ -88,6 +94,66 @@ def _ensure_attendance_otp(attendance_session):
         attendance_session.quick_otp = str(secrets.randbelow(900000) + 100000)
         attendance_session.save(update_fields=["quick_otp"])
     return attendance_session.quick_otp
+
+
+def _unverified_qr_session_id(token):
+    """Extracts a session candidate for human review only; never authenticates the QR."""
+    raw_token = str(token or "").strip()
+    if "token=" in raw_token:
+        raw_token = parse_qs(urlparse(raw_token).query).get("token", [raw_token])[0]
+    raw_token = unquote(raw_token)
+    candidate = raw_token.split(":", 1)[0]
+    return int(candidate) if candidate.isdigit() else None
+
+
+def _store_unverified_offline_submission(request, attendance_session, reason):
+    if request.data.get("offline_checkin") is not True or not attendance_session:
+        return None
+
+    student_name = str(request.data.get("student_name") or "").strip()
+    if not student_name or len(student_name) > 150:
+        return None
+
+    queue_id = str(request.data.get("queue_id") or "").strip()
+    if (
+        not queue_id
+        or len(queue_id) > 64
+        or not queue_id.isascii()
+        or not all(char.isalnum() or char in "_-" for char in queue_id)
+    ):
+        return Response(
+            {"error": "معرف طلب المزامنة غير صالح؛ بقي الطلب محفوظاً على الجهاز."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    submission, _ = OfflineAttendanceSubmission.objects.get_or_create(
+        queue_id=queue_id,
+        defaults={
+            "attendance_session": attendance_session,
+            "student_name": student_name,
+            "device_id": str(request.data.get("device_id") or "")[:128],
+            "token_error": reason,
+        },
+    )
+    if (
+        submission.attendance_session_id != attendance_session.id
+        or submission.student_name != student_name
+    ):
+        return Response(
+            {"error": "معرف طلب المزامنة مستخدم لطلب مختلف."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    return Response(
+        {
+            "stored_for_review": True,
+            "review_status": submission.status,
+            "message": (
+                "وصل الطلب إلى قائمة مراجعة الأستاذ، لكنه لم يُعتمد حضوراً "
+                "لأن رمز الحضور لم يمكن التحقق منه."
+            ),
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 class StudentCheckInRateThrottle(SimpleRateThrottle):
@@ -551,6 +617,24 @@ class StudentCheckInView(APIView):
                 allow_rotated_salt=offline_checkin,
             )
             if not attendance_session:
+                raw_candidate_session_id = session_id or _unverified_qr_session_id(token)
+                try:
+                    candidate_session_id = int(raw_candidate_session_id)
+                except (TypeError, ValueError, OverflowError):
+                    candidate_session_id = 0
+                if (
+                    offline_checkin
+                    and error_msg == "توقيع الرمز غير صالح"
+                    and 0 < candidate_session_id <= 9223372036854775807
+                ):
+                    candidate_session = AttendanceSession.objects.filter(
+                        id=candidate_session_id
+                    ).first()
+                    review_response = _store_unverified_offline_submission(
+                        request, candidate_session, error_msg
+                    )
+                    if review_response:
+                        return review_response
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         else:
             otp_clean = str(otp).strip() if otp else ""
@@ -560,8 +644,22 @@ class StudentCheckInView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
+                try:
+                    session_id = int(session_id)
+                except (TypeError, ValueError, OverflowError):
+                    return Response(
+                        {"error": "معرّف جلسة التحضير غير صالح."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 attendance_session = get_object_or_404(AttendanceSession, id=session_id)
                 if not attendance_session.quick_otp or attendance_session.quick_otp != otp_clean:
+                    review_response = _store_unverified_offline_submission(
+                        request,
+                        attendance_session,
+                        "رمز التحضير السريع OTP غير صحيح أو انتهى.",
+                    )
+                    if review_response:
+                        return review_response
                     return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
@@ -876,7 +974,11 @@ class StudentCheckInView(APIView):
         if is_new_student:
             msg = "تم تسجيل حضورك كطالب جديد بانتظار مراجعة الأستاذ. يرجى التأكد من إضافة اسمك إلى القائمة."
         elif requires_teacher_review:
-            msg = "تم تسجيل الحضور وإبلاغ الأستاذ بأن حسابك غير مسجل في هذه الشعبة."
+            msg = (
+                "وصل طلبك بعد انقطاع الاتصال ووُضع بانتظار مراجعة الأستاذ."
+                if offline_checkin
+                else "تم تسجيل الحضور وإبلاغ الأستاذ بأن حسابك غير مسجل في هذه الشعبة."
+            )
         else:
             msg = (
                 "تم تسجيل حضورك بنجاح وفي الوقت المحدد ✔"
@@ -1147,6 +1249,9 @@ def session_detail_web_view(request, session_id):
     # ✅ FIX: Get students in section + any newly checked-in students
     students_in_section = _get_students_for_session(attendance_session)
     shared_device_map = _get_shared_device_map(attendance_session)
+    enrolled_ids = set(
+        attendance_session.session.class_section.students.values_list("id", flat=True)
+    )
 
     records_map = {
         r.student_id: r
@@ -1165,6 +1270,7 @@ def session_detail_web_view(request, session_id):
                 "status_display": rec.get_status_display() if rec else "غائب",
                 "is_shared_device": bool(shared_with),
                 "shared_with_names": shared_with,
+                "is_enrolled": std.id in enrolled_ids,
             }
         )
 
@@ -1176,7 +1282,10 @@ def session_detail_web_view(request, session_id):
     review_required_count = sum(
         1
         for item in students_list
-        if item["profile"].student_id.startswith("NEW-")
+        if (
+            item["profile"].student_id.startswith("NEW-")
+            and not item["is_enrolled"]
+        )
         or (
             item["record"]
             and item["record"].notes
@@ -1221,9 +1330,13 @@ def session_detail_web_view(request, session_id):
         "absent_count": absent_cnt,
         "late_count": late_cnt,
         "attendance_rate": rate,
+        "review_required_count": review_required_count,
         "initial_qr_token": initial_qr_token,
         "primary_hotspot_ip": primary_hotspot_ip,
         "server_port": server_port,
+        "review_submissions": attendance_session.offline_submissions.filter(
+            status=OfflineAttendanceSubmission.Statuses.PENDING
+        ).order_by("received_at"),
     }
     return render(request, "attendance/session_detail.html", context)
 
@@ -1270,6 +1383,9 @@ def session_students_list_partial(request, session_id):
     # ✅ FIX: Use helper to get section-specific students + new check-ins
     students_in_section = _get_students_for_session(attendance_session)
     shared_device_map = _get_shared_device_map(attendance_session)
+    enrolled_ids = set(
+        attendance_session.session.class_section.students.values_list("id", flat=True)
+    )
 
     records_map = {
         r.student_id: r
@@ -1288,6 +1404,7 @@ def session_students_list_partial(request, session_id):
                 "status_display": rec.get_status_display() if rec else "غائب",
                 "is_shared_device": bool(shared_with),
                 "shared_with_names": shared_with,
+                "is_enrolled": std.id in enrolled_ids,
             }
         )
 
@@ -1299,7 +1416,10 @@ def session_students_list_partial(request, session_id):
     review_required_count = sum(
         1
         for item in students_list
-        if item["profile"].student_id.startswith("NEW-")
+        if (
+            item["profile"].student_id.startswith("NEW-")
+            and not item["is_enrolled"]
+        )
         or (
             item["record"]
             and item["record"].notes
@@ -1316,8 +1436,215 @@ def session_students_list_partial(request, session_id):
         "total_count": total_cnt,
         "attendance_rate": rate,
         "review_required_count": review_required_count,
+        "review_submissions": attendance_session.offline_submissions.filter(
+            status=OfflineAttendanceSubmission.Statuses.PENDING
+        ).order_by("received_at"),
     }
     return render(request, "attendance/partials/students_list.html", context)
+
+
+@login_required
+@require_POST
+def review_offline_submission_view(request, session_id, submission_id):
+    if not (
+        request.user.is_teacher()
+        or request.user.is_super_admin()
+        or request.user.is_institution_admin()
+    ):
+        return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
+
+    attendance_session = _manageable_attendance_session(request.user, session_id)
+    action = request.POST.get("action")
+    if action not in {"approve", "reject"}:
+        return JsonResponse({"success": False, "error": "إجراء المراجعة غير صالح."}, status=400)
+
+    with transaction.atomic():
+        try:
+            submission = OfflineAttendanceSubmission.objects.select_for_update().get(
+                id=submission_id,
+                attendance_session=attendance_session,
+            )
+        except OfflineAttendanceSubmission.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "طلب المراجعة غير موجود."},
+                status=404,
+            )
+        if submission.status != OfflineAttendanceSubmission.Statuses.PENDING:
+            return JsonResponse(
+                {"success": False, "error": "تمت مراجعة هذا الطلب مسبقاً."},
+                status=409,
+            )
+
+        if action == "reject":
+            submission.status = OfflineAttendanceSubmission.Statuses.REJECTED
+            submission.reviewed_by = request.user
+            submission.reviewed_at = timezone.now()
+            submission.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+            AuditLog.objects.create(
+                user=request.user,
+                action="رفض_طلب_حضور_غير_متصل",
+                ip_address=_get_ip(request),
+                user_agent=request.META.get("HTTP_USER_AGENT"),
+                details={
+                    "attendance_session_id": attendance_session.id,
+                    "submission_id": submission.id,
+                    "student_name": submission.student_name,
+                },
+            )
+            return JsonResponse(
+                {"success": True, "message": "تم رفض الطلب وإزالته من قائمة المراجعة."}
+            )
+
+        class_section = attendance_session.session.class_section
+        provisional_match = next(
+            (
+                record.student
+                for record in AttendanceRecord.objects.filter(
+                    attendance_session=attendance_session,
+                    student__student_id__startswith="NEW-",
+                ).select_related("student__user")
+                if normalize_arabic_text(
+                    record.student.user.get_full_name()
+                    or record.student.user.username
+                )
+                == normalize_arabic_text(submission.student_name)
+            ),
+            None,
+        )
+        student_profile = provisional_match
+        if not student_profile:
+            student_profile, match_error = find_matching_student(
+                submission.student_name, class_section
+            )
+            if match_error and "يوجد" in match_error:
+                return JsonResponse(
+                    {"success": False, "error": match_error}, status=409
+                )
+
+        if not student_profile:
+            name_parts = submission.student_name.split(maxsplit=1)
+            guest_user = User.objects.create(
+                username=f"guest_{uuid.uuid4().hex.lower()}",
+                first_name=name_parts[0],
+                last_name=name_parts[1] if len(name_parts) > 1 else "",
+                role=User.Roles.STUDENT,
+            )
+            guest_user.set_unusable_password()
+            guest_user.save(update_fields=["password"])
+            student_profile = StudentProfile.objects.create(
+                user=guest_user,
+                student_id=f"NEW-{uuid.uuid4().hex.upper()}",
+                institution=class_section.department.institution,
+                study_shift=attendance_session.shift or class_section.shift,
+            )
+
+        should_enroll = request.POST.get("enroll") == "true"
+        if should_enroll:
+            student_profile.sections.add(class_section)
+
+        record, created = AttendanceRecord.objects.update_or_create(
+            student=student_profile,
+            attendance_session=attendance_session,
+            defaults={
+                "status": AttendanceRecord.Statuses.PRESENT,
+                "method": AttendanceRecord.Methods.MANUAL,
+                "modified_by": request.user,
+                "notes": (
+                    "اعتماد يدوي من الأستاذ لطلب حضور تعذر التحقق من رمز الحضور. "
+                    "وقت الاستلام المسجل هو وقت وصول الطلب إلى الخادم."
+                ),
+            },
+        )
+        submission.status = OfflineAttendanceSubmission.Statuses.APPROVED
+        submission.student = student_profile
+        submission.reviewed_by = request.user
+        submission.reviewed_at = timezone.now()
+        submission.save(
+            update_fields=["status", "student", "reviewed_by", "reviewed_at"]
+        )
+        queue_for_sync(
+            record,
+            SyncQueue.Actions.CREATE if created else SyncQueue.Actions.UPDATE,
+        )
+        AuditLog.objects.create(
+            user=request.user,
+            action="اعتماد_طلب_حضور_غير_متصل",
+            ip_address=_get_ip(request),
+            user_agent=request.META.get("HTTP_USER_AGENT"),
+            details={
+                "attendance_session_id": attendance_session.id,
+                "submission_id": submission.id,
+                "student_profile_id": student_profile.id,
+                "student_name": submission.student_name,
+                "enrolled_in_section": should_enroll,
+            },
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "message": (
+                "تم اعتماد الحضور يدويًا وإضافة الطالب إلى الشعبة."
+                if should_enroll
+                else "تم اعتماد الحضور يدويًا."
+            ),
+        }
+    )
+
+
+@login_required
+@require_POST
+def toggle_provisional_student_enrollment_view(request, session_id, student_id):
+    if not (
+        request.user.is_teacher()
+        or request.user.is_super_admin()
+        or request.user.is_institution_admin()
+    ):
+        return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
+
+    attendance_session = _manageable_attendance_session(request.user, session_id)
+    student_profile = _get_students_for_session(attendance_session).filter(
+        id=student_id,
+        student_id__startswith="NEW-",
+        institution=attendance_session.session.class_section.department.institution,
+    ).first()
+    if not student_profile:
+        return JsonResponse({"success": False, "error": "الطالب المؤقت غير موجود في هذه الجلسة."}, status=404)
+
+    section = attendance_session.session.class_section
+    if student_profile.sections.filter(id=section.id).exists():
+        student_profile.sections.remove(section)
+        enrolled = False
+    else:
+        student_profile.sections.add(section)
+        enrolled = True
+        record = AttendanceRecord.objects.filter(
+            student=student_profile,
+            attendance_session=attendance_session,
+        ).first()
+        if record and record.notes:
+            record.notes = "راجع الأستاذ الطالب واعتمده وأضيف إلى قائمة الشعبة."
+            record.modified_by = request.user
+            record.save(update_fields=["notes", "modified_by", "updated_at"])
+            queue_for_sync(record, SyncQueue.Actions.UPDATE)
+
+    AuditLog.objects.create(
+        user=request.user,
+        action="تعديل_عضوية_طالب_مؤقت_في_الشعبة",
+        ip_address=_get_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT"),
+        details={
+            "attendance_session_id": attendance_session.id,
+            "student_profile_id": student_profile.id,
+            "enrolled": enrolled,
+        },
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "enrolled": enrolled,
+            "message": "تم تحديث عضوية الطالب في الشعبة.",
+        }
+    )
 
 
 @login_required

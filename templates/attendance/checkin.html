@@ -13,6 +13,7 @@
         resultMessage: '',
         resultType: '', // 'success' or 'error'
         offlineQueueCount: 0,
+        offlineQueueItems: [],
         offlineSyncMessage: '',
         isSyncingOfflineQueue: false,
         offlineRetryTimer: null,
@@ -36,6 +37,8 @@
                 } else {
                     this.pendingToken = urlToken;
                 }
+            } else if (urlParams.has('sync_offline')) {
+                this.scanning = false;
             } else {
                 this.initCamera();
             }
@@ -175,6 +178,7 @@
             const payload = {
                 token: cleanToken,
                 student_name: this.guestStudentName.trim() || (this.isLoggedIn ? this.studentUserName : null),
+                session_id: this.sessionId || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
                 gps_accuracy: this.gpsAccuracy || null,
@@ -266,7 +270,9 @@
             this.scanning = false;
 
             if (response.ok) {
-                this.resultType = 'success';
+                this.resultType = data.requires_teacher_review || data.is_new_student
+                    ? 'pending'
+                    : 'success';
                 this.resultMessage = data.message || 'تم تسجيل الحضور بنجاح!';
             } else {
                 this.resultType = 'error';
@@ -286,7 +292,7 @@
                 });
                 queue.push(queuedPayload);
                 localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
-                this.offlineQueueCount = queue.length;
+                this.refreshOfflineQueue();
                 this.offlineSyncMessage = 'يوجد طلب حضور محفوظ محلياً ولم يؤكده الخادم بعد.';
                 return true;
             } catch (err) {
@@ -302,6 +308,22 @@
             return queue;
         },
 
+        refreshOfflineQueue() {
+            try {
+                const queue = this.readOfflineQueue();
+                this.offlineQueueCount = queue.length;
+                this.offlineQueueItems = queue.map(item => ({
+                    name: item.student_name || 'اسم غير محفوظ',
+                    state: item.sync_status === 'needs_review'
+                        ? (item.sync_error || 'يحتاج مراجعة الأستاذ')
+                        : 'محفوظ على هذا الجهاز بانتظار المزامنة'
+                }));
+            } catch (err) {
+                console.error('Failed to refresh offline queue display:', err);
+                this.offlineSyncMessage = 'تعذر قراءة سجل المزامنة المحلي؛ لم يتم حذف بياناته.';
+            }
+        },
+
         async syncOfflineQueue(forceRetry = false) {
             if (this.isSyncingOfflineQueue || !navigator.onLine) return;
             this.isSyncingOfflineQueue = true;
@@ -309,6 +331,7 @@
             let remaining = [];
             let syncedCount = 0;
             let reviewCount = 0;
+            let serverReviewCount = 0;
             let firstReviewError = '';
             try {
                 queue = this.readOfflineQueue();
@@ -320,7 +343,7 @@
                     });
                     localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
                 }
-                this.offlineQueueCount = queue.length;
+                this.refreshOfflineQueue();
                 if (!queue.length) return;
                 this.offlineSyncMessage = 'جاري إرسال طلبات الحضور المحفوظة...';
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -369,21 +392,35 @@
                         continue;
                     }
 
+                    if (
+                        data.stored_for_review
+                        || data.requires_teacher_review
+                        || data.is_new_student
+                    ) {
+                        serverReviewCount += 1;
+                        firstReviewError ||= data.message || 'وصل الطلب إلى قائمة مراجعة الأستاذ.';
+                        continue;
+                    }
                     syncedCount += 1;
                 }
 
                 localStorage.setItem('offline_attendance_queue', JSON.stringify(remaining));
-                this.offlineQueueCount = remaining.length;
+                this.refreshOfflineQueue();
                 if (remaining.length === 0) {
-                    this.offlineSyncMessage = syncedCount
-                        ? `اكتملت المزامنة؛ أكد الخادم تسجيل ${syncedCount} طلب حضور.`
-                        : '';
-                    if (this.resultType === 'pending' && syncedCount) {
+                    const syncParts = [];
+                    if (syncedCount) syncParts.push(`أكد الخادم تسجيل ${syncedCount} طلب حضور`);
+                    if (serverReviewCount) {
+                        syncParts.push(`أُرسل ${serverReviewCount} طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد`);
+                    }
+                    this.offlineSyncMessage = syncParts.join('؛ ');
+                    if (serverReviewCount && this.resultType === 'pending') {
+                        this.resultMessage = 'وصل طلبك للأستاذ للمراجعة، ولم يُسجل حضوراً مؤكداً بعد.';
+                    } else if (this.resultType === 'pending' && syncedCount) {
                         this.resultType = 'success';
                         this.resultMessage = 'أكد الخادم تسجيل الحضور بعد عودة الاتصال.';
                     }
                 } else if (reviewCount) {
-                    this.offlineSyncMessage = `تم تأكيد ${syncedCount} طلباً. بقي ${reviewCount} طلباً يحتاج مراجعة الأستاذ: ${firstReviewError}`;
+                    this.offlineSyncMessage = `أكد الخادم ${syncedCount} طلباً. بقي ${reviewCount} طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: ${firstReviewError}`;
                 } else if (!this.offlineSyncMessage) {
                     this.offlineSyncMessage = `بقي ${remaining.length} طلباً محفوظاً ولم يؤكدها الخادم بعد.`;
                 }
@@ -404,12 +441,7 @@
         },
 
         initOfflineSync() {
-            try {
-                this.offlineQueueCount = this.readOfflineQueue().length;
-            } catch (err) {
-                console.error('Failed to read offline attendance queue:', err);
-                this.offlineSyncMessage = 'تعذر قراءة سجل المزامنة المحلي؛ لم يتم حذف بياناته.';
-            }
+            this.refreshOfflineQueue();
             window.addEventListener('online', () => this.syncOfflineQueue());
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) this.syncOfflineQueue();
@@ -539,7 +571,7 @@
         <div class="p-6 rounded-2xl border"
             :class="resultType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : (resultType === 'pending' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-800')">
             <div class="text-4xl mb-3" x-text="resultType === 'success' ? '✔' : (resultType === 'pending' ? '⏳' : '✖')"></div>
-            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'تم تسجيل الحضور' : (resultType === 'pending' ? 'الحضور بانتظار المزامنة' : 'تعذر تسجيل الحضور')"></h3>
+            <h3 class="text-lg font-black" x-text="resultType === 'success' ? 'تم تأكيد الحضور' : (resultType === 'pending' ? 'الحضور بانتظار المزامنة أو مراجعة الأستاذ' : 'تعذر تسجيل الحضور')"></h3>
             <p class="text-sm font-bold mt-2" x-text="resultMessage"></p>
         </div>
 
@@ -557,7 +589,15 @@
 
     <div x-show="offlineQueueCount > 0 || offlineSyncMessage" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold space-y-2">
         <p x-show="offlineSyncMessage" x-text="offlineSyncMessage"></p>
-        <p x-show="offlineQueueCount > 0" class="text-amber-800">الطلبات المحفوظة على هذا الجهاز: <span x-text="offlineQueueCount"></span></p>
+        <p x-show="offlineQueueCount > 0" class="text-amber-800">طلبات هذا الجهاز فقط (لا يراها الأستاذ قبل إرسالها للخادم): <span x-text="offlineQueueCount"></span></p>
+        <ul x-show="offlineQueueCount > 0" class="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2">
+            <template x-for="(item, index) in offlineQueueItems" :key="index">
+                <li class="border-b border-slate-100 py-1 last:border-0">
+                    <span class="font-black" x-text="item.name"></span>
+                    <span class="block text-[10px] font-medium text-slate-500" x-text="item.state"></span>
+                </li>
+            </template>
+        </ul>
         <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue(true)" :disabled="isSyncingOfflineQueue"
             class="px-3 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
             إعادة محاولة المزامنة / إعادة فحص المرفوض

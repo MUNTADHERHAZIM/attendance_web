@@ -109,6 +109,57 @@ class AttendanceRecord(models.Model):
         return f"{self.student} - {self.attendance_session.session.course.name} ({self.get_status_display()})"
 
 
+class OfflineAttendanceSubmission(models.Model):
+    class Statuses(models.TextChoices):
+        PENDING = "PENDING", "بانتظار المراجعة"
+        APPROVED = "APPROVED", "تمت الموافقة"
+        REJECTED = "REJECTED", "مرفوض"
+
+    attendance_session = models.ForeignKey(
+        AttendanceSession,
+        on_delete=models.CASCADE,
+        related_name="offline_submissions",
+        verbose_name="جلسة التحضير",
+    )
+    student_name = models.CharField(max_length=150, verbose_name="اسم الطالب")
+    device_id = models.CharField(max_length=128, blank=True, verbose_name="معرف الجهاز")
+    queue_id = models.CharField(max_length=64, unique=True, verbose_name="معرف طلب الجهاز")
+    token_error = models.CharField(max_length=255, verbose_name="سبب تعذر التحقق")
+    status = models.CharField(
+        max_length=10,
+        choices=Statuses.choices,
+        default=Statuses.PENDING,
+        db_index=True,
+        verbose_name="حالة المراجعة",
+    )
+    student = models.ForeignKey(
+        "accounts.StudentProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="offline_attendance_submissions",
+        verbose_name="ملف الطالب المعتمد",
+    )
+    received_at = models.DateTimeField(auto_now_add=True, verbose_name="وقت استلام الخادم")
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="وقت المراجعة")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_offline_attendance_submissions",
+        verbose_name="راجع الطلب",
+    )
+
+    class Meta:
+        verbose_name = "طلب حضور غير متصل للمراجعة"
+        verbose_name_plural = "طلبات الحضور غير المتصلة للمراجعة"
+        ordering = ["received_at"]
+
+    def __str__(self):
+        return f"{self.student_name} - {self.attendance_session} ({self.get_status_display()})"
+
+
 class SyncQueue(models.Model):
     class Actions(models.TextChoices):
         CREATE = "CREATE", "إضافة"
