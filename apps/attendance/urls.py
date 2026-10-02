@@ -6,6 +6,7 @@ from .views import (
     StudentCheckInView,
     ManualAttendanceRecordUpdateView,
     CloseAttendanceSessionView,
+    control_attendance_session_view,
     # Web Template Views
     start_session_web_view,
     session_detail_web_view,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("api/session/<int:session_id>/qr/", GetDynamicQRTokenView.as_view(), name="get_qr_token"),
     path("api/session/<int:session_id>/toggle-freeze/", toggle_freeze_qr_view, name="toggle_freeze_qr"),
     path("api/session/<int:session_id>/close/", CloseAttendanceSessionView.as_view(), name="close_session"),
+    path("api/session/<int:session_id>/control/", control_attendance_session_view, name="control_session"),
     path("api/checkin/", StudentCheckInView.as_view(), name="checkin"),
     path("api/record/update/", ManualAttendanceRecordUpdateView.as_view(), name="manual_update"),
     path("api/record/quick-offline-checkin/", quick_offline_checkin_view, name="quick_offline_checkin"),

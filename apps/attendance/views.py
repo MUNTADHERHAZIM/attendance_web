@@ -1,5 +1,6 @@
 import uuid
 import qrcode
+import secrets
 from io import BytesIO
 from datetime import time, date, datetime
 
@@ -80,6 +81,13 @@ def _get_ip(request):
     if x_forwarded_for:
         return x_forwarded_for.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR", "")
+
+
+def _ensure_attendance_otp(attendance_session):
+    if not attendance_session.quick_otp or not attendance_session.quick_otp.isdigit():
+        attendance_session.quick_otp = str(secrets.randbelow(900000) + 100000)
+        attendance_session.save(update_fields=["quick_otp"])
+    return attendance_session.quick_otp
 
 
 class StudentCheckInRateThrottle(SimpleRateThrottle):
@@ -297,6 +305,7 @@ class GetDynamicQRTokenView(APIView):
             _manageable_attendance_sessions(request.user),
             id=session_id,
             is_active=True,
+            end_time__gt=timezone.now(),
         )
         # Check custom requested speed from query param (e.g. 15, 30, 60, 120)
         speed_param = request.GET.get("speed")
@@ -306,15 +315,8 @@ class GetDynamicQRTokenView(APIView):
         except (ValueError, TypeError):
             speed_val = 30
 
-        # If not frozen, rotate salt normally
-        if not getattr(attendance_session, "is_frozen_qr", False):
-            attendance_session.qr_salt = uuid.uuid4()
-            attendance_session.save(update_fields=["qr_salt"])
-
-        # Auto-ensure quick_otp exists
-        if not attendance_session.quick_otp:
-            attendance_session.quick_otp = f"{random.randint(100000, 999999)}"
-            attendance_session.save(update_fields=["quick_otp"])
+        # Keep an OTP available from the initial server-rendered teacher screen.
+        _ensure_attendance_otp(attendance_session)
 
         token_ttl = (
             FROZEN_QR_TOKEN_TTL
@@ -553,15 +555,27 @@ class StudentCheckInView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
-                attendance_session = get_object_or_404(AttendanceSession, id=session_id, is_active=True)
+                attendance_session = get_object_or_404(AttendanceSession, id=session_id)
                 if not attendance_session.quick_otp or attendance_session.quick_otp != otp_clean:
                     return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
         # 3. Never extend an expired session as a side effect of a student check-in.
-        if not attendance_session.is_active or attendance_session.end_time <= timezone.now():
+        if not attendance_session.is_active:
             return Response(
-                {"error": "جلسة التحضير لهذه المحاضرة مغلقة حالياً من قِبل الأستاذ."},
+                {
+                    "error": "أوقف الأستاذ استقبال الحضور لهذه المحاضرة. احتفظ بطلبك واطلب منه فتح الجلسة لمزامنته.",
+                    "session_closed": True,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if attendance_session.end_time <= timezone.now():
+            end_label = timezone.localtime(attendance_session.end_time).strftime("%H:%M")
+            return Response(
+                {
+                    "error": f"انتهت فترة الحضور عند الساعة {end_label}. احتفظ بطلبك واطلب من الأستاذ تمديد الفترة لمزامنته.",
+                    "session_expired": True,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -961,6 +975,87 @@ class CloseAttendanceSessionView(APIView):
         return Response({"message": "تم إغلاق جلسة التحضير بنجاح."}, status=status.HTTP_200_OK)
 
 
+@login_required
+@require_POST
+def control_attendance_session_view(request, session_id):
+    """Teacher control for closing, reopening, or extending the attendance window."""
+    if not (
+        request.user.is_teacher()
+        or request.user.is_super_admin()
+        or request.user.is_institution_admin()
+    ):
+        return JsonResponse({"success": False, "error": "غير مصرح لك"}, status=403)
+
+    attendance_session = _manageable_attendance_session(request.user, session_id)
+    try:
+        payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"success": False, "error": "بيانات الطلب غير صالحة"}, status=400)
+    if not isinstance(payload, dict):
+        return JsonResponse({"success": False, "error": "صيغة الطلب غير صالحة"}, status=400)
+
+    action = payload.get("action")
+    if action not in {"close", "reopen", "extend"}:
+        return JsonResponse({"success": False, "error": "الإجراء المطلوب غير معروف"}, status=400)
+
+    if action in {"reopen", "extend"}:
+        try:
+            minutes = int(payload.get("minutes", 0))
+        except (TypeError, ValueError):
+            minutes = 0
+        if not 5 <= minutes <= 240:
+            return JsonResponse(
+                {"success": False, "error": "اختر مدة بين 5 و240 دقيقة."},
+                status=400,
+            )
+        now = timezone.now()
+        if action == "extend":
+            base_end = max(attendance_session.end_time, now)
+            attendance_session.end_time = base_end + timezone.timedelta(minutes=minutes)
+            attendance_session.is_active = True
+        else:
+            attendance_session.end_time = now + timezone.timedelta(minutes=minutes)
+            attendance_session.is_active = True
+            attendance_session.start_time = now
+            attendance_session.qr_salt = uuid.uuid4()
+            if not attendance_session.quick_otp:
+                attendance_session.quick_otp = f"{random.randint(100000, 999999)}"
+    else:
+        attendance_session.is_active = False
+        attendance_session.qr_salt = uuid.uuid4()
+
+    fields = ["is_active", "end_time", "qr_salt", "quick_otp", "start_time"]
+    attendance_session.save(update_fields=fields)
+    AuditLog.objects.create(
+        user=request.user,
+        action={
+            "close": "إغلاق_جلسة_تحضير",
+            "reopen": "إعادة_فتح_جلسة_تحضير",
+            "extend": "تمديد_فترة_الحضور",
+        }[action],
+        ip_address=_get_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT"),
+        details={
+            "attendance_session_id": attendance_session.id,
+            "action": action,
+            "minutes": payload.get("minutes"),
+            "end_time": attendance_session.end_time.isoformat(),
+        },
+    )
+    message = {
+        "close": "أُغلق استقبال الحضور. الطلبات الجديدة سترفض.",
+        "reopen": "أُعيد فتح استقبال الحضور.",
+        "extend": "تم تمديد فترة استقبال الحضور.",
+    }[action]
+    return JsonResponse({
+        "success": True,
+        "message": message,
+        "is_active": attendance_session.is_active,
+        "end_time": attendance_session.end_time.isoformat(),
+        "server_now": timezone.now().isoformat(),
+    })
+
+
 # =====================================================================
 # 2. WEB TEMPLATE VIEWS
 # =====================================================================
@@ -1078,7 +1173,8 @@ def session_detail_web_view(request, session_id):
         )
     )
     initial_qr_token = ""
-    if attendance_session.is_active:
+    if attendance_session.is_active and attendance_session.end_time > timezone.now():
+        _ensure_attendance_otp(attendance_session)
         if not attendance_session.qr_salt:
             attendance_session.qr_salt = uuid.uuid4()
             attendance_session.save(update_fields=["qr_salt"])
@@ -2196,6 +2292,8 @@ def offline_emergency_mode_view(request, session_id):
         return redirect("dashboard")
 
     attendance_session = _manageable_attendance_session(request.user, session_id)
+    if attendance_session.is_active and attendance_session.end_time > timezone.now():
+        _ensure_attendance_otp(attendance_session)
     students_in_section = _get_students_for_session(attendance_session)
 
     # Handle quick AJAX/form check-in from the page itself

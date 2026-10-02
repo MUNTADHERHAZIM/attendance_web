@@ -279,6 +279,34 @@ def test_offline_guest_queue_keeps_the_submitted_student_name_for_signed_in_user
     ).exists()
 
 
+def test_offline_otp_checkin_is_accepted_after_sync(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    attendance_session.quick_otp = "482619"
+    attendance_session.save(update_fields=["quick_otp"])
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "otp": "482619",
+            "session_id": attendance_session.id,
+            "student_name": "طالب عبر OTP دون اتصال",
+            "guest_checkin": True,
+            "device_id": "offline-otp-device",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["record"]["method"] == AttendanceRecord.Methods.OTP
+    profile = StudentProfile.objects.get(student_id__startswith="NEW-")
+    assert AttendanceRecord.objects.filter(
+        student=profile,
+        attendance_session=attendance_session,
+        method=AttendanceRecord.Methods.OTP,
+    ).exists()
+
+
 def test_same_device_can_register_multiple_students_and_same_name_is_idempotent(
     attendance_api_setup,
 ):
@@ -368,11 +396,130 @@ def test_offline_fallback_has_self_contained_checkin_controls(db):
     page = response.content.decode()
     assert 'id="offline-student-name"' in page
     assert 'id="offline-qr-token"' in page
+    assert 'id="offline-otp-code"' in page
+    assert 'id="offline-session-id"' in page
     assert "function saveOfflineCheckin()" in page
     assert "function startOfflineScanner()" in page
     assert "offline_attendance_queue" in page
     assert "cdn.tailwindcss.com" not in page
     assert 'href="/attendance/checkin/"' not in page
+
+
+def test_qr_rotation_does_not_invalidate_a_recent_qr_token(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    original_token = generate_qr_token(attendance_session, ttl_seconds=120)
+    original_salt = attendance_session.qr_salt
+    client = APIClient()
+    client.force_authenticate(user=attendance_session.session.teacher.user)
+
+    response = client.get(
+        f"/attendance/api/session/{attendance_session.id}/qr/?speed=120"
+    )
+
+    assert response.status_code == 200
+    attendance_session.refresh_from_db()
+    assert attendance_session.qr_salt == original_salt
+    verified_session, error = verify_qr_token(original_token)
+    assert verified_session == attendance_session
+    assert error is None
+
+
+def test_teacher_session_screen_generates_and_server_renders_missing_otp(
+    attendance_api_setup,
+):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    attendance_session.quick_otp = None
+    attendance_session.save(update_fields=["quick_otp"])
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.get(f"/attendance/session/{attendance_session.id}/")
+
+    assert response.status_code == 200
+    attendance_session.refresh_from_db()
+    assert attendance_session.quick_otp.isdigit()
+    assert len(attendance_session.quick_otp) == 6
+    assert f'data-quick-otp="{attendance_session.quick_otp}"' in response.content.decode()
+    assert attendance_session.quick_otp.encode() in response.content
+    assert b'x-text="quickOtp ||' in response.content
+
+
+def test_offline_emergency_screen_generates_missing_otp(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    attendance_session.quick_otp = None
+    attendance_session.save(update_fields=["quick_otp"])
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.get(
+        f"/attendance/session/{attendance_session.id}/offline/"
+    )
+
+    assert response.status_code == 200
+    attendance_session.refresh_from_db()
+    assert attendance_session.quick_otp.isdigit()
+    assert len(attendance_session.quick_otp) == 6
+    assert attendance_session.quick_otp.encode() in response.content
+
+
+def test_teacher_can_extend_close_and_reopen_attendance_window(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+    endpoint = f"/attendance/api/session/{attendance_session.id}/control/"
+
+    extend_response = client.post(
+        endpoint,
+        data='{"action":"extend","minutes":30}',
+        content_type="application/json",
+    )
+    assert extend_response.status_code == 200
+    assert extend_response.json()["is_active"] is True
+    attendance_session.refresh_from_db()
+    extended_end = attendance_session.end_time
+
+    close_response = client.post(
+        endpoint,
+        data='{"action":"close"}',
+        content_type="application/json",
+    )
+    assert close_response.status_code == 200
+    attendance_session.refresh_from_db()
+    assert attendance_session.is_active is False
+
+    reopen_response = client.post(
+        endpoint,
+        data='{"action":"reopen","minutes":15}',
+        content_type="application/json",
+    )
+    assert reopen_response.status_code == 200
+    attendance_session.refresh_from_db()
+    assert attendance_session.is_active is True
+    assert attendance_session.end_time > timezone.now()
+    assert attendance_session.end_time < extended_end
+
+
+def test_teacher_session_screen_shows_live_attendance_controls(attendance_api_setup):
+    from django.test import Client
+
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = Client()
+    client.force_login(attendance_session.session.teacher.user)
+
+    response = client.get(f"/attendance/session/{attendance_session.id}/")
+
+    assert response.status_code == 200
+    page = response.content.decode()
+    assert "إدارة وقت الحضور" in page
+    assert "تمديد الفترة" in page
+    assert "إغلاق الحضور الآن" in page
+    assert "control_attendance_session_view" not in page
 
 
 def test_teacher_live_list_shows_review_alert_for_new_student(attendance_api_setup):

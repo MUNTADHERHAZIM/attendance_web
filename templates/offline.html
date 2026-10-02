@@ -59,6 +59,7 @@
             border-radius: 18px;
             background: #0f172a;
         }
+        body > div > div:nth-child(3) svg { width: 40px; height: 40px; }
         body > div > div:nth-child(4) {
             display: inline-block;
             margin: 0 0 12px;
@@ -91,6 +92,12 @@
         #offline-checkin-title { margin-bottom: 8px; }
         section[aria-labelledby="offline-checkin-title"],
         section[aria-live="polite"] { text-align: right; }
+        .radar-wave, .radar-wave-delay {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(251, 191, 36, .4);
+            border-radius: 50%;
+        }
         section[aria-labelledby="offline-checkin-title"] > div.grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -100,7 +107,19 @@
         section[aria-labelledby="offline-checkin-title"] p,
         section[aria-live="polite"] p { font-size: 12px; color: #cbd5e1; }
         section { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(148, 163, 184, .25); }
-        #retry-btn { width: 100%; border: 0; background: #4f46e5; color: white; font-weight: 800; }
+        #retry-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 16px;
+            border: 0;
+            background: #4f46e5;
+            color: white;
+            font-weight: 800;
+        }
+        #retry-icon { width: 20px; height: 20px; flex: none; }
         #offline-camera-button, #offline-sync-button { background: #334155; color: white; }
         #offline-sync-button { width: 100%; }
         section[aria-labelledby="offline-checkin-title"] button:last-of-type { background: #4f46e5; color: white; }
@@ -177,6 +196,11 @@
             <textarea id="offline-qr-token" rows="2" dir="ltr" autocomplete="off"
                       placeholder="الصق هنا الرمز أو الرابط الموجود داخل QR"
                       class="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-3 text-sm text-white placeholder:text-slate-500"></textarea>
+            <label for="offline-otp-code" class="block text-xs font-bold text-slate-200">أو رمز الأستاذ السريع (OTP)</label>
+            <input id="offline-otp-code" type="text" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code"
+                   placeholder="أدخل رمز OTP المكوّن من 6 أرقام">
+            <label for="offline-session-id" class="block text-xs font-bold text-slate-200">رقم الجلسة (يُملأ تلقائياً من رابط QR)</label>
+            <input id="offline-session-id" type="number" min="1" inputmode="numeric" placeholder="رقم الجلسة">
             <div class="grid grid-cols-2 gap-2">
                 <button id="offline-camera-button" type="button" onclick="startOfflineScanner()"
                         class="rounded-xl border border-slate-600 bg-slate-700/70 px-3 py-3 text-xs font-bold text-white">
@@ -232,7 +256,12 @@
             if (!text) return '';
             try {
                 const url = new URL(text);
-                return url.searchParams.get('token') || text;
+                const token = url.searchParams.get('token') || '';
+                const sessionId = url.searchParams.get('session_id') || '';
+                if (sessionId && /^\d+$/.test(sessionId)) {
+                    document.getElementById('offline-session-id').value = sessionId;
+                }
+                return token || (text.startsWith('http') ? '' : text);
             } catch (_) {
                 const match = text.match(/[?&]token=([^&]+)/);
                 if (!match) return text;
@@ -320,21 +349,24 @@
             const feedback = document.getElementById('offline-checkin-feedback');
             const studentName = document.getElementById('offline-student-name').value.trim();
             const token = extractQrToken(document.getElementById('offline-qr-token').value);
+            const otp = document.getElementById('offline-otp-code').value.trim();
+            const sessionId = document.getElementById('offline-session-id').value.trim();
+            const useOtp = /^\d{6}$/.test(otp) && /^\d+$/.test(sessionId);
             if (!studentName) {
                 feedback.textContent = 'اكتب اسم الطالب أو رقمه الجامعي أولاً.';
                 document.getElementById('offline-student-name').focus();
                 return;
             }
-            if (!token) {
-                feedback.textContent = 'امسح رمز الأستاذ أو الصق الرمز قبل الحفظ.';
-                document.getElementById('offline-qr-token').focus();
+            if (!token && !useOtp) {
+                feedback.textContent = 'امسح QR أو أدخل رمز OTP ورقم الجلسة.';
+                document.getElementById('offline-otp-code').focus();
                 return;
             }
 
             try {
                 const queue = readOfflineQueue();
                 const alreadyQueued = queue.some(item =>
-                    item.token === token &&
+                    (token ? item.token === token : item.otp === otp && String(item.session_id) === sessionId) &&
                     item.student_name &&
                     item.student_name.trim().toLocaleLowerCase() === studentName.toLocaleLowerCase()
                 );
@@ -347,8 +379,7 @@
                     return;
                 }
 
-                queue.push({
-                    token: token,
+                const queuedRequest = {
                     student_name: studentName,
                     guest_checkin: true,
                     device_id: getOfflineDeviceId(),
@@ -356,15 +387,33 @@
                         ? crypto.randomUUID()
                         : 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2),
                     queued_at: new Date().toISOString()
-                });
+                };
+                if (useOtp) {
+                    queuedRequest.otp = otp;
+                    queuedRequest.session_id = Number(sessionId);
+                } else {
+                    queuedRequest.token = token;
+                }
+                queue.push(queuedRequest);
                 localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
                 refreshOfflineQueue();
                 document.getElementById('offline-qr-token').value = '';
+                document.getElementById('offline-otp-code').value = '';
                 feedback.textContent = 'حُفظ الطلب محلياً فقط؛ لم يُسجّل حضوراً مؤكداً بعد.';
             } catch (error) {
                 console.error('Could not save offline check-in:', error);
                 feedback.textContent = 'تعذر حفظ الطلب محلياً. تأكد من توفر مساحة في ذاكرة الجهاز.';
             }
+        }
+
+        const offlineParams = new URLSearchParams(window.location.search);
+        const pageSessionId = offlineParams.get('session_id');
+        const pageToken = offlineParams.get('token');
+        if (pageSessionId && /^\d+$/.test(pageSessionId)) {
+            document.getElementById('offline-session-id').value = pageSessionId;
+        }
+        if (pageToken) {
+            document.getElementById('offline-qr-token').value = pageToken;
         }
 
         function openCheckinForSync() {

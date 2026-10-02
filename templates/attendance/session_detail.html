@@ -8,10 +8,13 @@
      data-token="{{ initial_qr_token|default:''|escapejs }}"
      data-session-id="{{ attendance_session.id }}"
      data-is-frozen="{% if attendance_session.is_frozen_qr %}true{% else %}false{% endif %}"
+     data-session-active="{% if attendance_session.is_active %}true{% else %}false{% endif %}"
+     data-end-time="{{ attendance_session.end_time|date:'c' }}"
+     data-server-now="{% now 'c' %}"
      data-present-count="{{ present_count|default:0 }}"
      data-primary-ip="{{ primary_hotspot_ip|default:'127.0.0.1'|escapejs }}"
      data-server-port="{{ server_port|default:'8001'|escapejs }}"
-     data-quick-otp="{{ attendance_session.quick_otp|default:'849201'|escapejs }}"
+     data-quick-otp="{{ attendance_session.quick_otp|default:''|escapejs }}"
      data-csrf-token="{{ csrf_token }}"
      class="space-y-6 no-print">
 
@@ -28,6 +31,13 @@ function sessionDetailManager() {
         maxExpiresIn: parseInt(localStorage.getItem('qr_rotation_speed') || '30', 10),
         sessionId: parseInt(ds.sessionId || '0', 10),
         isFrozen: ds.isFrozen === 'true',
+        sessionActive: ds.sessionActive === 'true',
+        sessionEndTime: new Date(ds.endTime || '').getTime(),
+        serverTimeOffset: new Date(ds.serverNow || '').getTime() - Date.now(),
+        sessionTimeLabel: '',
+        controlMessage: '',
+        controlBusy: false,
+        controlMinutes: 30,
         qrSize: 'lg',
         layoutMode: localStorage.getItem('session_table_layout') || 'split',
 
@@ -223,6 +233,58 @@ function sessionDetailManager() {
             });
         },
 
+        updateSessionClock: function() {
+            if (!this.sessionActive) {
+                this.sessionTimeLabel = 'استقبال الحضور مغلق';
+                return;
+            }
+            var remaining = Math.max(0, this.sessionEndTime - (Date.now() + this.serverTimeOffset));
+            if (!remaining) {
+                this.sessionActive = false;
+                this.sessionTimeLabel = 'انتهت فترة الحضور';
+                return;
+            }
+            var totalSeconds = Math.floor(remaining / 1000);
+            var hours = Math.floor(totalSeconds / 3600);
+            var minutes = Math.floor((totalSeconds % 3600) / 60);
+            var seconds = totalSeconds % 60;
+            this.sessionTimeLabel = (hours ? hours + ' س ' : '') + minutes + ' د ' + seconds + ' ث';
+        },
+
+        controlSession: async function(action, minutes) {
+            if (this.controlBusy) return;
+            this.controlBusy = true;
+            this.controlMessage = 'جارٍ تحديث حالة الحضور...';
+            try {
+                var response = await fetch('/attendance/api/session/' + this.sessionId + '/control/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRFToken': this.csrfToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: action, minutes: minutes || 0 })
+                });
+                var data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'تعذر تحديث فترة الحضور.');
+                }
+                this.sessionActive = data.is_active;
+                this.sessionEndTime = new Date(data.end_time).getTime();
+                this.serverTimeOffset = new Date(data.server_now).getTime() - Date.now();
+                this.controlMessage = data.message + ' ينتهي الاستقبال: ' +
+                    new Date(data.end_time).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
+                if (action !== 'close') this.refreshToken();
+            } catch (error) {
+                this.controlMessage = navigator.onLine
+                    ? (error.message || 'تعذر تحديث حالة الحضور.')
+                    : 'لا يمكن تغيير حالة الجلسة دون اتصال بالخادم. سيبقى الوضع المحلي للحفظ المؤقت فقط.';
+            } finally {
+                this.controlBusy = false;
+                this.updateSessionClock();
+            }
+        },
+
         submitQuickOfflineCheckin: function() {
             var self = this;
             if (!self.quickOfflineQuery.trim()) return;
@@ -384,6 +446,8 @@ function sessionDetailManager() {
         init: function() {
             var self = this;
             window.__sessionManager = self;
+            self.updateSessionClock();
+            setInterval(function() { self.updateSessionClock(); }, 1000);
             self.refreshToken();
             setInterval(function() {
                 if (!self.isFrozen) {
@@ -650,6 +714,38 @@ window.addEventListener('keydown', function(e) {
         </div>
     </div>
 
+    <section class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-label="إدارة وقت الحضور">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-sm font-black text-slate-900">فترة استقبال الحضور</p>
+                <p class="mt-1 text-xs font-bold text-indigo-700">
+                    <span x-text="sessionActive ? 'ينتهي خلال ' + sessionTimeLabel : sessionTimeLabel"></span>
+                </p>
+                <p class="mt-1 text-xs text-slate-500">وقت الخادم هو المعتمد؛ الطلبات غير المتصلة لا تُؤكد إلا بعد مزامنتها والتحقق منها.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <select x-model.number="controlMinutes" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-bold">
+                    <option :value="5">5 دقائق</option>
+                    <option :value="15">15 دقيقة</option>
+                    <option :value="30">30 دقيقة</option>
+                    <option :value="60">ساعة</option>
+                    <option :value="120">ساعتان</option>
+                    <option :value="240">4 ساعات</option>
+                </select>
+                <button type="button" @click="controlSession(sessionActive ? 'extend' : 'reopen', controlMinutes)"
+                        :disabled="controlBusy"
+                        class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50"
+                        x-text="sessionActive ? 'تمديد الفترة' : 'فتح استقبال الحضور'"></button>
+                <button type="button" x-show="sessionActive" @click="controlSession('close', 0)"
+                        :disabled="controlBusy"
+                        class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">
+                    إغلاق الحضور الآن
+                </button>
+            </div>
+        </div>
+        <p x-show="controlMessage" x-text="controlMessage" role="status" class="mt-3 text-xs font-bold text-slate-700"></p>
+    </section>
+
     <!-- 🚀 Main Live Session Layout (Grid with Full-Width Toggle) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
@@ -726,7 +822,7 @@ window.addEventListener('keydown', function(e) {
                 {% else %}
 
                 <!-- QR Display Container with Zoom Transition -->
-                <div class="relative flex items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100/70 rounded-2xl border-2 border-slate-200/80 shadow-inner group">
+                <div x-show="sessionActive" class="relative flex items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100/70 rounded-2xl border-2 border-slate-200/80 shadow-inner group">
                     <template x-if="token">
                         <div class="relative transition-all duration-300 transform">
                             <!-- Dynamic image with custom size binding -->
@@ -756,7 +852,7 @@ window.addEventListener('keydown', function(e) {
                 </div>
 
                 <!-- QR Rotation Speed Controller Bar -->
-                <div class="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <div x-show="sessionActive" class="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                     <div class="flex items-center justify-between text-xs font-bold text-slate-600 mb-1">
                         <span class="flex items-center gap-1">
                             <span>⏱️</span>
@@ -774,7 +870,7 @@ window.addEventListener('keydown', function(e) {
                 </div>
 
                 <!-- Animated Countdown Progress Bar -->
-                <div class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                <div x-show="sessionActive" class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
                     <div class="flex justify-between items-center text-xs font-bold text-slate-600 px-1">
                         <span class="flex items-center gap-1.5" x-show="!isFrozen">
                             <span class="w-2 h-2 rounded-full bg-brand-500 animate-ping"></span>
@@ -800,7 +896,7 @@ window.addEventListener('keydown', function(e) {
                 </div>
 
                 <!-- Emergency OTP Card with High Contrast & Copy Button -->
-                <div class="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/60 rounded-xl border border-indigo-200 text-right w-full text-indigo-900 space-y-3">
+                <div x-show="sessionActive" class="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/60 rounded-xl border border-indigo-200 text-right w-full text-indigo-900 space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-black text-indigo-800 flex items-center gap-1">
                             <span>🔢</span> كود التحضير السريع (OTP للطوارئ)
@@ -810,9 +906,7 @@ window.addEventListener('keydown', function(e) {
 
                     <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200/80 shadow-xs">
                         <div class="flex-1 text-center">
-                            <span class="text-3xl font-black tracking-widest text-indigo-700 font-mono select-all" x-text="quickOtp">
-                                {{ attendance_session.quick_otp|default:"849201" }}
-                            </span>
+                            <span class="text-3xl font-black tracking-widest text-indigo-700 font-mono select-all" x-text="quickOtp"></span>
                         </div>
                         <button @click="copyOtp()" 
                                 class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
@@ -821,9 +915,12 @@ window.addEventListener('keydown', function(e) {
                             <span x-show="copiedOtp" class="text-emerald-600 font-black">✓ تم!</span>
                         </button>
                     </div>
+                    <p class="text-center text-[11px] font-bold text-indigo-800">
+                        رقم الجلسة للمزامنة دون اتصال: <span class="font-mono text-lg" dir="ltr">{{ attendance_session.id }}</span>
+                    </p>
 
                     <p class="text-[11px] text-indigo-700/90 font-medium leading-relaxed">
-                        للطلاب الذين يواجهون ضعفاً في الإنترنت أو تعذر في قراءة الكاميرا؛ يمكنهم إدخال هذا الرمز مباشرة في صفحة التحضير.
+                        أدخله في صفحة التحضير أو احفظه في طابور عدم الاتصال. يجب أن تبقى الجلسة مفتوحة حتى تصل الطلبات إلى الخادم؛ استخدم QR المثبت إذا تعذر الاتصال طويلاً.
                     </p>
                 </div>
                 {% endif %}
@@ -1188,8 +1285,9 @@ window.addEventListener('keydown', function(e) {
                     </div>
 
                     <div class="py-4 px-6 bg-slate-950 rounded-2xl border border-indigo-500/30 text-center">
-                        <span class="text-4xl sm:text-5xl font-black text-indigo-400 font-mono tracking-widest select-all">
-                            {{ attendance_session.quick_otp|default:"849201" }}
+                        <span class="text-4xl sm:text-5xl font-black text-indigo-400 font-mono tracking-widest select-all"
+                              x-text="quickOtp || 'غير متاح - أعد تحميل الصفحة'">
+                            {{ attendance_session.quick_otp|default:"غير متاح - أعد تحميل الصفحة" }}
                         </span>
                     </div>
 
