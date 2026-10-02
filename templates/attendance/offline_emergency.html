@@ -151,7 +151,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="min-w-0">
                         <p class="text-xs text-emerald-800 font-bold mb-0.5">رابط التحضير المحلي للطلاب في القاعة:</p>
-                        <p id="hotspot-url-text" class="font-mono text-emerald-700 font-black text-xs sm:text-sm break-all select-all text-left" dir="ltr">http://{{ primary_ip }}:{{ server_port }}/attendance/checkin/</p>
+                        <p id="hotspot-url-text" class="font-mono text-emerald-700 font-black text-xs sm:text-sm break-all select-all text-left" dir="ltr">http://{{ primary_ip }}:{{ server_port }}/attendance/checkin/?session_id={{ attendance_session.id }}{% if checkin_token %}&amp;token={{ checkin_token|urlencode }}{% endif %}</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <button type="button" 
@@ -173,7 +173,7 @@
                 <div id="hotspot-qr-panel" class="hidden pt-3 border-t border-slate-100 transition-all duration-300">
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-5 p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/70 text-center sm:text-right">
                         <div class="p-2 bg-white rounded-2xl border-2 border-emerald-300 shadow-md">
-                            <img src="/attendance/qr-image/?host={{ primary_ip }}:{{ server_port }}&size=10" 
+                            <img src="/attendance/qr-image/?host={{ primary_ip }}:{{ server_port }}&size=10&session_id={{ attendance_session.id }}&token={{ checkin_token|urlencode }}"
                                  alt="QR Code رابط التحضير المحلي"
                                  class="w-44 h-44 rounded-xl object-contain">
                         </div>

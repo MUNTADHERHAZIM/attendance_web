@@ -103,11 +103,13 @@ function sessionDetailManager() {
             } else {
                 url = window.location.origin + '/attendance/checkin/';
             }
-            return url + '?session_id=' + encodeURIComponent(this.sessionId);
+            return url + '?session_id=' + encodeURIComponent(this.sessionId) +
+                '&token=' + encodeURIComponent(this.token || '');
         },
 
         getCheckinQrUrl: function() {
-            var url = '/attendance/qr-image/?size=12&session_id=' + encodeURIComponent(this.sessionId);
+            var url = '/attendance/qr-image/?size=12&session_id=' + encodeURIComponent(this.sessionId) +
+                '&token=' + encodeURIComponent(this.token || '');
             var isLocalDomain = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
             if (isLocalDomain && this.isHotspotActive && this.selectedIp && this.selectedIp !== '127.0.0.1' && !this.selectedIp.startsWith('10.0.4.')) {
                 url += '&host=' + encodeURIComponent(this.selectedIp + ':' + this.serverPort);

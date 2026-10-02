@@ -278,6 +278,7 @@
             try {
                 let queue = this.readOfflineQueue();
                 const queuedPayload = Object.assign({}, payload, {
+                    offline_checkin: true,
                     queue_id: (window.crypto && crypto.randomUUID)
                         ? crypto.randomUUID()
                         : 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2),
@@ -301,28 +302,46 @@
             return queue;
         },
 
-        async syncOfflineQueue() {
+        async syncOfflineQueue(forceRetry = false) {
             if (this.isSyncingOfflineQueue || !navigator.onLine) return;
             this.isSyncingOfflineQueue = true;
             let queue = [];
+            let remaining = [];
             let syncedCount = 0;
+            let reviewCount = 0;
+            let firstReviewError = '';
             try {
                 queue = this.readOfflineQueue();
+                if (forceRetry) {
+                    queue = queue.map(item => {
+                        delete item.sync_status;
+                        delete item.sync_error;
+                        return item;
+                    });
+                    localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
+                }
                 this.offlineQueueCount = queue.length;
                 if (!queue.length) return;
                 this.offlineSyncMessage = 'جاري إرسال طلبات الحضور المحفوظة...';
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-                while (queue.length) {
-                    const item = queue[0];
+                for (let index = 0; index < queue.length; index += 1) {
+                    const item = queue[index];
+                    if (item.sync_status === 'needs_review') {
+                        remaining.push(item);
+                        reviewCount += 1;
+                        firstReviewError ||= item.sync_error || '';
+                        continue;
+                    }
                     let response;
                     try {
                         response = await fetch('/attendance/api/checkin/', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                            body: JSON.stringify(item)
+                            body: JSON.stringify(Object.assign({}, item, { offline_checkin: true }))
                         });
                     } catch (e) {
                         this.offlineSyncMessage = 'انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز.';
+                        remaining.push(item, ...queue.slice(index + 1));
                         this.scheduleOfflineRetry(15000);
                         break;
                     }
@@ -335,29 +354,38 @@
                     }
 
                     if (!response.ok) {
-                        this.offlineSyncMessage = response.status >= 500 || response.status === 429
-                            ? 'الخادم غير متاح مؤقتاً؛ بقيت الطلبات محفوظة وستُعاد المحاولة.'
-                            : 'رفض الخادم طلب حضور محفوظاً: ' + (data.error || 'قد يكون رمز QR انتهت صلاحيته أو أُغلقت الجلسة.') + ' بقي الطلب محفوظاً؛ أعد مسح الرمز الحالي أو راجع الأستاذ.';
                         if (response.status >= 500 || response.status === 429) {
+                            this.offlineSyncMessage = 'الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة.';
+                            remaining.push(item, ...queue.slice(index + 1));
                             this.scheduleOfflineRetry(response.status === 429 ? 31000 : 15000);
+                            break;
                         }
-                        break;
+                        item.sync_status = 'needs_review';
+                        item.sync_error = data.error || 'رفض الخادم هذا الطلب؛ راجع الأستاذ.';
+                        item.sync_failed_at = new Date().toISOString();
+                        remaining.push(item);
+                        reviewCount += 1;
+                        firstReviewError ||= item.sync_error;
+                        continue;
                     }
 
-                    queue.shift();
-                    localStorage.setItem('offline_attendance_queue', JSON.stringify(queue));
-                    this.offlineQueueCount = queue.length;
                     syncedCount += 1;
                 }
 
-                if (queue.length === 0) {
+                localStorage.setItem('offline_attendance_queue', JSON.stringify(remaining));
+                this.offlineQueueCount = remaining.length;
+                if (remaining.length === 0) {
                     this.offlineSyncMessage = syncedCount
-                        ? 'اكتملت المزامنة وسجّل الخادم طلبات الحضور المحفوظة.'
+                        ? `اكتملت المزامنة؛ أكد الخادم تسجيل ${syncedCount} طلب حضور.`
                         : '';
                     if (this.resultType === 'pending' && syncedCount) {
                         this.resultType = 'success';
                         this.resultMessage = 'أكد الخادم تسجيل الحضور بعد عودة الاتصال.';
                     }
+                } else if (reviewCount) {
+                    this.offlineSyncMessage = `تم تأكيد ${syncedCount} طلباً. بقي ${reviewCount} طلباً يحتاج مراجعة الأستاذ: ${firstReviewError}`;
+                } else if (!this.offlineSyncMessage) {
+                    this.offlineSyncMessage = `بقي ${remaining.length} طلباً محفوظاً ولم يؤكدها الخادم بعد.`;
                 }
             } catch (err) {
                 console.error('Offline attendance sync failed:', err);
@@ -530,9 +558,9 @@
     <div x-show="offlineQueueCount > 0 || offlineSyncMessage" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold space-y-2">
         <p x-show="offlineSyncMessage" x-text="offlineSyncMessage"></p>
         <p x-show="offlineQueueCount > 0" class="text-amber-800">الطلبات المحفوظة على هذا الجهاز: <span x-text="offlineQueueCount"></span></p>
-        <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue()" :disabled="isSyncingOfflineQueue"
+        <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue(true)" :disabled="isSyncingOfflineQueue"
             class="px-3 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
-            إعادة محاولة المزامنة
+            إعادة محاولة المزامنة / إعادة فحص المرفوض
         </button>
     </div>
 

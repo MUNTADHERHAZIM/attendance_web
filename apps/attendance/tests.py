@@ -389,6 +389,84 @@ def test_bad_qr_does_not_create_a_provisional_student(attendance_api_setup):
     assert not StudentProfile.objects.filter(student_id__startswith="NEW-").exists()
 
 
+def test_expired_signed_qr_can_sync_from_offline_queue_for_teacher_review(
+    attendance_api_setup,
+):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    expired_token = generate_qr_token(attendance_session, ttl_seconds=1)
+    time.sleep(1.1)
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": expired_token,
+            "student_name": "طالب انقطع اتصاله",
+            "offline_checkin": True,
+            "guest_checkin": True,
+            "device_id": "offline-expired-qr-device",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["requires_teacher_review"] is True
+    profile = StudentProfile.objects.get(student_id__startswith="NEW-")
+    record = AttendanceRecord.objects.get(
+        student=profile,
+        attendance_session=attendance_session,
+    )
+    assert "انقطاع الاتصال" in record.notes
+
+
+def test_offline_sync_accepts_signed_qr_invalidated_by_legacy_salt_rotation(
+    attendance_api_setup,
+):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    old_token = generate_qr_token(attendance_session, ttl_seconds=120)
+    attendance_session.qr_salt = uuid.uuid4()
+    attendance_session.save(update_fields=["qr_salt"])
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": old_token,
+            "student_name": "طالب من طابور قديم",
+            "offline_checkin": True,
+            "guest_checkin": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    profile = StudentProfile.objects.get(student_id__startswith="NEW-")
+    record = AttendanceRecord.objects.get(
+        student=profile,
+        attendance_session=attendance_session,
+    )
+    assert "يتطلب مراجعة الأستاذ" in record.notes
+
+
+def test_offline_mode_does_not_accept_an_invalid_qr_signature(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    client = APIClient()
+
+    response = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": "tampered",
+            "student_name": "اسم غير مدرج",
+            "offline_checkin": True,
+            "guest_checkin": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not StudentProfile.objects.filter(student_id__startswith="NEW-").exists()
+
+
 def test_offline_fallback_has_self_contained_checkin_controls(db):
     response = APIClient().get("/offline/")
 
@@ -403,6 +481,7 @@ def test_offline_fallback_has_self_contained_checkin_controls(db):
     assert "offline_attendance_queue" in page
     assert "cdn.tailwindcss.com" not in page
     assert 'href="/attendance/checkin/"' not in page
+    assert "offline_checkin: true" in page
 
 
 def test_qr_rotation_does_not_invalidate_a_recent_qr_token(attendance_api_setup):
@@ -464,6 +543,9 @@ def test_offline_emergency_screen_generates_missing_otp(attendance_api_setup):
     assert attendance_session.quick_otp.isdigit()
     assert len(attendance_session.quick_otp) == 6
     assert attendance_session.quick_otp.encode() in response.content
+    page = response.content.decode()
+    assert f"session_id={attendance_session.id}&amp;token=" in page
+    assert f"&session_id={attendance_session.id}&token=" in page
 
 
 def test_teacher_can_extend_close_and_reopen_attendance_window(attendance_api_setup):
@@ -519,6 +601,7 @@ def test_teacher_session_screen_shows_live_attendance_controls(attendance_api_se
     assert "إدارة وقت الحضور" in page
     assert "تمديد الفترة" in page
     assert "إغلاق الحضور الآن" in page
+    assert "encodeURIComponent(this.token || '')" in page
     assert "control_attendance_session_view" not in page
 
 

@@ -28,7 +28,12 @@ def generate_qr_token(attendance_session, ttl_seconds=None):
     return signer.sign(data)
 
 
-def verify_qr_token(token_str, max_age=FROZEN_QR_TOKEN_TTL):
+def verify_qr_token(
+    token_str,
+    max_age=FROZEN_QR_TOKEN_TTL,
+    allow_expired=False,
+    allow_rotated_salt=False,
+):
     """
     Verifies that:
     1. The signature is mathematically valid (uses settings.SECRET_KEY).
@@ -81,10 +86,17 @@ def verify_qr_token(token_str, max_age=FROZEN_QR_TOKEN_TTL):
         )
         if not 1 <= token_ttl <= max_ttl:
             return None, "توقيع الرمز غير صالح"
-        if not hmac.compare_digest(str(attendance_session.qr_salt), token_salt):
+        if (
+            not hmac.compare_digest(str(attendance_session.qr_salt), token_salt)
+            and not allow_rotated_salt
+        ):
             return None, "تم تجديد الرمز، يرجى مسح رمز QR الحالي"
 
-        signer.unsign(token_str, max_age=min(token_ttl, max_age))
+        try:
+            signer.unsign(token_str, max_age=min(token_ttl, max_age))
+        except SignatureExpired:
+            if not allow_expired:
+                raise
         return attendance_session, None
 
     except SignatureExpired:

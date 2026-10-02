@@ -535,6 +535,7 @@ class StudentCheckInView(APIView):
         token = request.data.get("token")
         otp = request.data.get("otp")
         session_id = request.data.get("session_id")
+        offline_checkin = request.data.get("offline_checkin") is True
         checkin_method = AttendanceRecord.Methods.QR
         if not token and not otp:
             return Response(
@@ -544,7 +545,11 @@ class StudentCheckInView(APIView):
 
         # 2. Token / OTP Verification
         if token:
-            attendance_session, error_msg = verify_qr_token(token)
+            attendance_session, error_msg = verify_qr_token(
+                token,
+                allow_expired=offline_checkin,
+                allow_rotated_salt=offline_checkin,
+            )
             if not attendance_session:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -584,7 +589,7 @@ class StudentCheckInView(APIView):
         # 4. Existing student, listed guest, or provisional guest awaiting teacher review.
         student_profile = None
         is_new_student = False
-        requires_teacher_review = False
+        requires_teacher_review = offline_checkin
         provisional_name = None
         force_guest_checkin = request.data.get("guest_checkin") is True
         if (
@@ -803,8 +808,14 @@ class StudentCheckInView(APIView):
         record_notes = None
         if is_new_student:
             record_notes = "طالب جديد غير موجود في قائمة الشعبة - يتطلب مراجعة الأستاذ."
+            if offline_checkin:
+                record_notes += " أُرسل الطلب بعد انقطاع الاتصال."
         elif requires_teacher_review:
-            record_notes = "طالب غير مسجل في هذه الشعبة - يتطلب مراجعة الأستاذ."
+            record_notes = (
+                "طلب حضور أُرسل بعد انقطاع الاتصال - يتطلب مراجعة الأستاذ."
+                if offline_checkin
+                else "طالب غير مسجل في هذه الشعبة - يتطلب مراجعة الأستاذ."
+            )
 
         with transaction.atomic():
             if provisional_name is not None:
@@ -2292,8 +2303,13 @@ def offline_emergency_mode_view(request, session_id):
         return redirect("dashboard")
 
     attendance_session = _manageable_attendance_session(request.user, session_id)
+    checkin_token = ""
     if attendance_session.is_active and attendance_session.end_time > timezone.now():
         _ensure_attendance_otp(attendance_session)
+        if not attendance_session.qr_salt:
+            attendance_session.qr_salt = uuid.uuid4()
+            attendance_session.save(update_fields=["qr_salt"])
+        checkin_token = generate_qr_token(attendance_session)
     students_in_section = _get_students_for_session(attendance_session)
 
     # Handle quick AJAX/form check-in from the page itself
@@ -2431,6 +2447,7 @@ def offline_emergency_mode_view(request, session_id):
         "local_ips": local_ips,
         "primary_ip": local_ips[0] if local_ips else "127.0.0.1",
         "server_port": server_port,
+        "checkin_token": checkin_token,
         "review_required_count": review_required_count,
     }
     return render(request, "attendance/offline_emergency.html", context)

@@ -382,6 +382,7 @@
                 const queuedRequest = {
                     student_name: studentName,
                     guest_checkin: true,
+                    offline_checkin: true,
                     device_id: getOfflineDeviceId(),
                     queue_id: window.crypto && crypto.randomUUID
                         ? crypto.randomUUID()

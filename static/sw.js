@@ -3,7 +3,7 @@
 // Ultra-resilient Offline Caching, Stale-While-Revalidate & Instant Sync
 // =====================================================================
 
-const SW_VERSION = "v3.6.0";
+const SW_VERSION = "v3.7.0";
 const PRECACHE_NAME = `smart-att-precache-${SW_VERSION}`;
 const RUNTIME_CACHE = `smart-att-runtime-${SW_VERSION}`;
 const STATIC_CACHE = `smart-att-static-${SW_VERSION}`;
@@ -155,6 +155,10 @@ self.addEventListener("fetch", (event) => {
                 })
                 .catch(async () => {
                     console.log(`[PWA SW] Network failed for ${url.pathname}. Attempting offline cache.`);
+                    if (url.pathname === "/attendance/checkin/") {
+                        const offlinePage = await caches.match("/offline/");
+                        if (offlinePage) return offlinePage;
+                    }
                     // Try to find cached version of this exact URL
                     const cachedPage = await caches.match(request);
                     if (cachedPage) {
