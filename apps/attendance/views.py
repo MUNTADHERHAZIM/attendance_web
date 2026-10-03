@@ -591,7 +591,7 @@ class StudentCheckInView(APIView):
         checkin_method = AttendanceRecord.Methods.QR
         if not token and not otp:
             return Response(
-                {"error": "يرجى مسح رمز الـ QR أو إدخال رمز التحضير السريع (OTP)."},
+                {"error": _("يرجى مسح رمز الـ QR أو إدخال رمز التحضير السريع (OTP).")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -684,7 +684,7 @@ class StudentCheckInView(APIView):
             student_profile = request.user.student_profile
             if student_profile.institution_id != class_section.department.institution_id:
                 return Response(
-                    {"error": "حسابك تابع لمؤسسة أخرى ولا يمكن تسجيله في هذه الجلسة."},
+                    {"error": _("حسابك تابع لمؤسسة أخرى ولا يمكن تسجيله في هذه الجلسة.")},
                     status=status.HTTP_403_FORBIDDEN,
                 )
             if not student_profile.sections.filter(id=class_section.id).exists():
@@ -694,7 +694,7 @@ class StudentCheckInView(APIView):
             if not student_query or not str(student_query).strip():
                 return Response(
                     {
-                        "error": "يرجى إدخال اسمك الكامل أو رقمك الجامعي لتثبيت حضورك في كشف الشعبة.",
+                        "error": _("يرجى إدخال اسمك الكامل أو رقمك الجامعي لتثبيت حضورك في كشف الشعبة."),
                         "requires_name": True
                     },
                     status=status.HTTP_400_BAD_REQUEST,
@@ -702,7 +702,7 @@ class StudentCheckInView(APIView):
             student_query = str(student_query).strip()
             if len(student_query) > 150:
                 return Response(
-                    {"error": "يجب ألا يتجاوز الاسم أو الرقم الجامعي 150 حرفاً."},
+                    {"error": _("يجب ألا يتجاوز الاسم أو الرقم الجامعي 150 حرفاً.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -806,7 +806,7 @@ class StudentCheckInView(APIView):
             except (TypeError, ValueError, OverflowError):
                 return Response(
                     {
-                        "error": (
+                        "error": _(
                             "تعذر التحقق من إحداثيات GPS ودقتها. فعّل الموقع وحاول مجدداً "
                             "أو استخدم رمز OTP الذي يقدمه الأستاذ."
                         )
@@ -824,7 +824,7 @@ class StudentCheckInView(APIView):
             ):
                 return Response(
                     {
-                        "error": (
+                        "error": _(
                             "إشارة GPS غير دقيقة بما يكفي للتحقق. حاول مجدداً في مكان مفتوح "
                             "أو استخدم رمز OTP الذي يقدمه الأستاذ."
                         )
@@ -837,7 +837,7 @@ class StudentCheckInView(APIView):
             allowed_radius = attendance_session.radius_meters or (institution.radius_meters if institution else 200) or 200
             if target_lat is None or target_lon is None:
                 return Response(
-                    {"error": "لم يحدد الأستاذ موقعاً صالحاً لهذه الجلسة."},
+                    {"error": _("لم يحدد الأستاذ موقعاً صالحاً لهذه الجلسة.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -848,12 +848,12 @@ class StudentCheckInView(APIView):
                 target_lon,
             )
             if distance is None or distance > allowed_radius:
-                distance_text = str(int(distance)) if distance is not None else "غير معروفة"
+                distance_text = str(int(distance)) if distance is not None else _("غير معروفة")
                 return Response(
                     {
                         "error": (
-                            f"أنت خارج نطاق المحاضرة. المسافة المحسوبة: {distance_text}م؛ "
-                            f"النطاق المسموح: {int(allowed_radius)}م."
+                            _("أنت خارج نطاق المحاضرة. المسافة المحسوبة: %sم؛ النطاق المسموح: %sم.")
+                            % (distance_text, int(allowed_radius))
                         )
                     },
                     status=status.HTTP_400_BAD_REQUEST,
@@ -866,8 +866,8 @@ class StudentCheckInView(APIView):
                 return Response(
                     {
                         "error": (
-                            f"يجب الاتصال بشبكة WiFi/Hotspot المحاضرة. "
-                            f"عنوان جهازك الحالي ({ip}) غير مسموح به."
+                            _("يجب الاتصال بشبكة WiFi/Hotspot المحاضرة. عنوان جهازك الحالي (%s) غير مسموح به.")
+                            % ip
                         )
                     },
                     status=status.HTTP_400_BAD_REQUEST,

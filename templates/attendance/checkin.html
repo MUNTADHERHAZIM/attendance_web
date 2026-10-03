@@ -336,7 +336,37 @@ const checkinI18n = {
             }
             this.loading = false;
             this.scanning = false;
+            this.applyCheckinResult(response, data);
+        },
 
+        localizeError(msg) {
+            if (!msg) return msg;
+            if (document.documentElement.lang !== 'en') return msg;
+            const map = {
+                'معرف طلب المزامنة غير صالح؛ بقي الطلب محفوظاً على الجهاز.': 'Invalid sync request ID; request remained saved on device.',
+                'معرف طلب المزامنة مستخدم لطلب مختلف.': 'Sync request identifier is already used for a different request.',
+                'حسابك تابع لمؤسسة أخرى ولا يمكن تسجيله في هذه الجلسة.': 'Your account belongs to another institution and cannot be registered in this session.',
+                'توقيع الرمز غير صالح': 'Invalid QR code signature',
+                'رمز التحضير غير صالح': 'Invalid attendance code',
+                'انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)': 'Code expired (please scan the newly rotated code)',
+                'رمز التحضير السريع (OTP) غير صحيح أو انتهى.': 'Quick OTP code is incorrect or expired.',
+                'رمز التحضير السريع OTP غير صحيح أو انتهى.': 'Quick OTP code is incorrect or expired.',
+                'تم تجديد الرمز، يرجى مسح رمز QR الحالي': 'Code rotated, please scan the current QR code',
+                'جلسة التحضير غير موجودة أو غير نشطة': 'Attendance session does not exist or is inactive',
+                'أوقف الأستاذ استقبال الحضور لهذه المحاضرة. احتفظ بطلبك واطلب منه فتح الجلسة لمزامنته.': 'The instructor has stopped accepting attendance for this lecture. Keep your request and ask them to reopen the session to sync.',
+                'يرجى مسح رمز الـ QR أو إدخال رمز التحضير السريع (OTP).': 'Please scan the QR code or enter the quick OTP code.',
+                'يرجى إدخال اسمك الكامل أو رقمك الجامعي لتثبيت حضورك في كشف الشعبة.': 'Please enter your full name or university ID to register your attendance.',
+                'يجب ألا يتجاوز الاسم أو الرقم الجامعي 150 حرفاً.': 'Name or university ID must not exceed 150 characters.',
+                'وصل الطلب إلى قائمة مراجعة الأستاذ، لكنه لم يُعتمد حضوراً لأن رمز الحضور لم يمكن التحقق منه.': 'Request reached the instructor review list, but has not been approved as attendance because the code could not be verified.',
+                'رمز الحضور بانتظار مراجعة الأستاذ': 'Attendance code is awaiting instructor review',
+                'معرّف جلسة التحضير مطلوب مع رمز OTP.': 'Attendance session ID is required with OTP code.',
+                'معرّف جلسة التحضير غير صالح.': 'Invalid attendance session ID.',
+                'لم يحدد الأستاذ موقعاً صالحاً لهذه الجلسة.': 'Instructor has not set a valid location for this session.'
+            };
+            return map[msg] || msg;
+        },
+
+        applyCheckinResult(response, data) {
             if (response.ok) {
                 this.resultType = data.requires_teacher_review || data.is_new_student
                     ? 'pending'
@@ -344,7 +374,7 @@ const checkinI18n = {
                 this.resultMessage = data.message || checkinI18n.successFallback;
             } else {
                 this.resultType = 'error';
-                this.resultMessage = data.error || checkinI18n.failedFallback;
+                this.resultMessage = this.localizeError(data.error) || checkinI18n.failedFallback;
             }
         },
 
@@ -383,7 +413,7 @@ const checkinI18n = {
                 this.offlineQueueItems = queue.map(item => ({
                     name: item.student_name || checkinI18n.unknownStudent,
                     state: item.sync_status === 'needs_review'
-                        ? (item.sync_error || checkinI18n.needsTeacherReview)
+                        ? this.localizeError(item.sync_error || checkinI18n.needsTeacherReview)
                         : checkinI18n.savedWaitingSync
                 }));
             } catch (err) {
