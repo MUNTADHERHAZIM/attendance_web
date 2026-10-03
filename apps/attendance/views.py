@@ -2198,7 +2198,9 @@ def create_custom_session_view(request, timetable_id=None):
         end_dt = start_dt + timezone.timedelta(minutes=duration_minutes)
 
         # Resolve or create department
-        department = institution.departments.first() if institution else Department.objects.first()
+        department = teacher_profile.department if teacher_profile and teacher_profile.department else (
+            institution.departments.first() if institution else Department.objects.first()
+        )
         if not department and institution:
             department = Department.objects.create(institution=institution, name="قسم علوم الحاسوب", code="CS")
 
@@ -2221,10 +2223,7 @@ def create_custom_session_view(request, timetable_id=None):
             )
 
         if not course:
-            course = Course.objects.filter(department__institution=institution).first()
-
-        if not course:
-            messages.error(request, "يرجى تحديد أو إدخال اسم مادة صالحة.")
+            messages.error(request, "يرجى تحديد أو إدخال اسم مادة صالحة للمحاضرة.")
             return redirect("attendance:create_custom_session")
 
         # Resolve or create ClassSection
@@ -2235,23 +2234,21 @@ def create_custom_session_view(request, timetable_id=None):
                 department__institution=institution,
             ).first()
 
-        if not class_section and new_section_name:
-            class_section, _ = ClassSection.objects.get_or_create(
-                name=new_section_name,
-                department=department,
-                defaults={"level": "المستوى العام"}
-            )
-
-        if not class_section:
-            class_section = ClassSection.objects.filter(department__institution=institution).first()
-            if not class_section and department:
-                class_section = ClassSection.objects.create(
-                    department=department, name="الشعبة العامة أ", level="المرحلة الجامعية"
-                )
-
         shift = request.POST.get("shift", "").strip().upper()
         if shift not in ["MORNING", "EVENING"]:
             shift = class_section.shift if class_section and class_section.shift else "MORNING"
+
+        if not class_section and new_section_name:
+            section_level = request.POST.get("new_section_level", "المرحلة الأولى").strip() or "المرحلة الأولى"
+            class_section, _ = ClassSection.objects.get_or_create(
+                name=new_section_name,
+                department=department,
+                defaults={"level": section_level, "shift": shift}
+            )
+
+        if not class_section:
+            messages.error(request, "يرجى تحديد شعبة دراسية أو كتابة اسم شعبة/مرحلة جديدة.")
+            return redirect("attendance:create_custom_session")
 
         # Check Academic & Schedule Conflicts (الأستاذ، الطلاب، القاعة، الدوام)
         from apps.academics.conflicts import check_session_conflict
@@ -2346,10 +2343,17 @@ def create_custom_session_view(request, timetable_id=None):
         return redirect("attendance:session_detail_web", session_id=attendance_session.id)
 
     # GET: populate the form with defaults
-    courses = Course.objects.filter(department__institution=institution).order_by("name")
-    sections = ClassSection.objects.filter(
-        department__institution=institution
-    ).order_by("shift", "level", "name")
+    if request.user.is_teacher() and teacher_profile:
+        # Show teacher's existing courses and sections so other teachers' data doesn't mix
+        teacher_course_ids = Session.objects.filter(teacher=teacher_profile).values_list("course_id", flat=True).distinct()
+        teacher_section_ids = Session.objects.filter(teacher=teacher_profile).values_list("class_section_id", flat=True).distinct()
+        courses = Course.objects.filter(id__in=teacher_course_ids).order_by("name")
+        sections = ClassSection.objects.filter(id__in=teacher_section_ids).order_by("shift", "level", "name")
+    else:
+        courses = Course.objects.filter(department__institution=institution).order_by("name")
+        sections = ClassSection.objects.filter(
+            department__institution=institution
+        ).order_by("shift", "level", "name")
 
     # Determine default day of week and current dates
     now = timezone.now()

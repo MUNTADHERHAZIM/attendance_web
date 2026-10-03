@@ -451,15 +451,17 @@ def teacher_students_view(request):
             teacher=teacher_profile
         ).values_list("class_section_id", flat=True).distinct()
         my_sections = ClassSection.objects.filter(id__in=section_ids)
-        if not my_sections.exists():
-            my_sections = _manageable_sections(request.user)
     else:
         my_sections = _manageable_sections(request.user)
 
     # Filter by section
     selected_section_id = request.GET.get("section_id", "")
     shift_filter = request.GET.get("shift", "").strip().upper()
-    students_qs = StudentProfile.objects.filter(sections__in=my_sections).distinct().select_related("user")
+    students_qs = (
+        StudentProfile.objects.filter(sections__in=my_sections).distinct().select_related("user")
+        if my_sections.exists()
+        else StudentProfile.objects.none()
+    )
 
     if selected_section_id and selected_section_id.isdigit():
         students_qs = students_qs.filter(sections__id=int(selected_section_id))
@@ -479,13 +481,19 @@ def teacher_students_view(request):
         )
 
     # Shift counts
-    morning_count = StudentProfile.objects.filter(sections__in=my_sections, study_shift="MORNING").distinct().count()
-    evening_count = StudentProfile.objects.filter(sections__in=my_sections, study_shift="EVENING").distinct().count()
+    morning_count = StudentProfile.objects.filter(sections__in=my_sections, study_shift="MORNING").distinct().count() if my_sections.exists() else 0
+    evening_count = StudentProfile.objects.filter(sections__in=my_sections, study_shift="EVENING").distinct().count() if my_sections.exists() else 0
 
     # Build student cards with attendance stats
     students_list = []
     for std in students_qs.order_by("user__first_name"):
-        records = AttendanceRecord.objects.filter(student=std)
+        if request.user.is_teacher() and teacher_profile:
+            records = AttendanceRecord.objects.filter(
+                student=std,
+                attendance_session__session__teacher=teacher_profile
+            )
+        else:
+            records = AttendanceRecord.objects.filter(student=std)
         tot = records.count()
         pres = records.filter(status__in=["PRESENT", "LATE"]).count()
         absent = records.filter(status="ABSENT").count()

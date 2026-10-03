@@ -188,31 +188,27 @@ def dashboard_view(request):
             "session__course", "session__class_section"
         ).order_by("date", "start_time")
 
-        # 3. Courses: Taught in timetable OR owned in department/institution
+        # 3. Courses: Taught by teacher
         course_ids = list(sessions.values_list("course_id", flat=True).distinct())
-        dept_courses = Course.objects.filter(department__institution=teacher_profile.institution)
-        if teacher_profile.department:
-            dept_courses = Course.objects.filter(department=teacher_profile.department)
-        
-        my_courses = Course.objects.filter(Q(id__in=course_ids) | Q(id__in=dept_courses.values_list("id", flat=True))).distinct()
+        my_courses = Course.objects.filter(id__in=course_ids).distinct()
 
-        # 4. Sections: Taught in timetable OR owned in department/institution
+        # 4. Sections: Taught by teacher
         section_ids = list(sessions.values_list("class_section_id", flat=True).distinct())
-        dept_sections = ClassSection.objects.filter(department__institution=teacher_profile.institution)
-        if teacher_profile.department:
-            dept_sections = ClassSection.objects.filter(department=teacher_profile.department)
-
-        my_sections = ClassSection.objects.filter(Q(id__in=section_ids) | Q(id__in=dept_sections.values_list("id", flat=True))).distinct()
+        my_sections = ClassSection.objects.filter(id__in=section_ids).distinct()
 
         # 5. Students: Enrolled in teacher's sections strictly within their university
-        students_qs = StudentProfile.objects.filter(
-            institution=teacher_profile.institution,
-            sections__in=my_sections
-        ).distinct()
+        students_qs = (
+            StudentProfile.objects.filter(
+                institution=teacher_profile.institution,
+                sections__in=my_sections
+            ).distinct()
+            if my_sections.exists()
+            else StudentProfile.objects.none()
+        )
         
         total_students_count = students_qs.count()
-        morning_students_count = students_qs.filter(study_shift="MORNING").count()
-        evening_students_count = students_qs.filter(study_shift="EVENING").count()
+        morning_students_count = students_qs.filter(study_shift="MORNING").count() if my_sections.exists() else 0
+        evening_students_count = students_qs.filter(study_shift="EVENING").count() if my_sections.exists() else 0
 
         # 6. Today's Attendance Stats
         today_sessions = AttendanceSession.objects.filter(

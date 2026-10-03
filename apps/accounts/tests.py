@@ -303,3 +303,88 @@ def test_teacher_can_import_pasted_names_with_generated_student_ids():
     }
     assert all(student.student_id.startswith("AUTO-") for student in imported)
     assert all(not student.user.has_usable_password() for student in imported)
+
+
+@pytest.mark.django_db
+def test_teacher_data_isolation_between_different_teachers():
+    institution = Institution.objects.create(name="Isolation Test University")
+    department = Department.objects.create(institution=institution, name="Computer Dept")
+    from apps.academics.models import Course, Session
+
+    # Teacher 1 setup
+    teacher1_user = User.objects.create_user(
+        username="teacher_alpha",
+        password="strong-test-password",
+        role=User.Roles.TEACHER,
+    )
+    teacher1_profile = TeacherProfile.objects.create(
+        user=teacher1_user,
+        teacher_id="T-ALPHA",
+        institution=institution,
+        department=department,
+    )
+    sec1 = ClassSection.objects.create(department=department, name="Section Alpha", level="المرحلة الأولى", shift="MORNING")
+    course1 = Course.objects.create(department=department, name="Algorithms", code="ALG101")
+    Session.objects.create(
+        teacher=teacher1_profile,
+        course=course1,
+        class_section=sec1,
+        day_of_week=0,
+        start_time="09:00",
+        end_time="10:00",
+        shift="MORNING",
+    )
+
+    std1_user = User.objects.create_user(username="student_alpha", first_name="Ali", last_name="Ahmed", role=User.Roles.STUDENT)
+    std1 = StudentProfile.objects.create(user=std1_user, student_id="STD-001", institution=institution, study_shift="MORNING")
+    std1.sections.add(sec1)
+
+    # Teacher 2 setup (Brand new teacher)
+    teacher2_user = User.objects.create_user(
+        username="teacher_beta",
+        password="strong-test-password",
+        role=User.Roles.TEACHER,
+    )
+    TeacherProfile.objects.create(
+        user=teacher2_user,
+        teacher_id="T-BETA",
+        institution=institution,
+        department=department,
+    )
+
+    client2 = Client()
+    client2.force_login(teacher2_user)
+
+    # 1. Teacher 2 visits student management screen -> MUST see 0 students and 0 sections
+    resp = client2.get("/accounts/teacher/students/")
+    assert resp.status_code == 200
+    assert resp.context["total_count"] == 0
+    assert len(resp.context["students_list"]) == 0
+    assert resp.context["my_sections"].count() == 0
+
+    # 2. Teacher 2 visits create custom session GET -> MUST only see their own courses/sections (empty for new teacher)
+    resp_create_get = client2.get("/attendance/session/create-custom/")
+    assert resp_create_get.status_code == 200
+    assert resp_create_get.context["courses"].count() == 0
+    assert resp_create_get.context["sections"].count() == 0
+
+    # 3. Teacher 2 creates a new custom session with new course and section
+    resp_create_post = client2.post(
+        "/attendance/session/create-custom/",
+        {
+            "new_course_name": "Database Systems",
+            "new_section_name": "Section Beta",
+            "shift": "MORNING",
+            "duration_minutes": "60",
+            "room": "Room 204",
+        },
+    )
+    assert resp_create_post.status_code == 302
+    from apps.attendance.models import AttendanceSession
+    new_att_sess = AttendanceSession.objects.filter(session__teacher__user=teacher2_user).first()
+    assert new_att_sess is not None
+    assert new_att_sess.session.course.name == "Database Systems"
+    assert new_att_sess.session.class_section.name == "Section Beta"
+
+    # The new section must start with 0 students
+    assert new_att_sess.session.class_section.students.count() == 0
