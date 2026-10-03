@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}📶 وضع الطوارئ الذكي — {{ attendance_session.session.course.name }} — بدون إنترنت{% endblock %}
+{% block title %}📶 {% trans "وضع الطوارئ الذكي" %} — {{ attendance_session.session.course.name }} — {% trans "بدون إنترنت" %}{% endblock %}
 
 {% block content %}
 <div id="emergency-root" class="space-y-6">
@@ -13,7 +14,7 @@
         <div class="flex items-center gap-3.5">
             <a href="/attendance/session/{{ attendance_session.id }}/"
                class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-all border border-slate-200 shrink-0"
-               title="العودة لشاشة الجلسة الرئيسية">
+               title="{% trans 'العودة لشاشة الجلسة الرئيسية' %}">
                 <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                 </svg>
@@ -22,14 +23,14 @@
                 <div class="flex items-center gap-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-200">
                         <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        📶 وضع الطوارئ الفوري (بدون إنترنت)
+                        📶 {% trans "وضع الطوارئ الفوري (بدون إنترنت)" %}
                     </span>
-                    <span class="text-xs text-slate-400 font-medium">حفظ محلي فوري</span>
+                    <span class="text-xs text-slate-400 font-medium">{% trans "حفظ محلي فوري" %}</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
                     {{ attendance_session.session.course.name }}
                     <span class="text-slate-400 font-mono text-sm font-normal">({{ attendance_session.session.course.code }})</span>
-                    <span class="text-sm text-indigo-600 font-bold mr-2">| شعبة: {{ attendance_session.session.class_section.name }}</span>
+                    <span class="text-sm text-indigo-600 font-bold mr-2">| {% trans "شعبة:" %} {{ attendance_session.session.class_section.name }}</span>
                 </h1>
             </div>
         </div>
@@ -40,17 +41,17 @@
                     onclick="EmergencyManager.bulkPresent()"
                     id="btn-bulk-present"
                     class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all active:scale-95">
-                <span>⚡ تحضير الكل</span>
+                <span>⚡ {% trans "تحضير الكل" %}</span>
             </button>
             <button type="button" 
                     onclick="EmergencyManager.bulkAbsent()"
                     class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all active:scale-95">
-                <span>✕ تصفير الكل</span>
+                <span>✕ {% trans "تصفير الكل" %}</span>
             </button>
             <button type="button" 
                     onclick="window.print()"
                     class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all">
-                <span>🖨️ طباعة كشف</span>
+                <span>🖨️ {% trans "طباعة كشف" %}</span>
             </button>
         </div>
     </div>
@@ -63,7 +64,7 @@
         <!-- Total Students -->
         <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-400">إجمالي طلاب الشعبة</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "إجمالي طلاب الشعبة" %}</p>
                 <p id="kpi-total" class="text-3xl font-black text-slate-900 mt-1">{{ total_count }}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl font-bold">👥</div>
@@ -72,7 +73,7 @@
         <!-- Present -->
         <div class="bg-emerald-50/60 border border-emerald-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-emerald-800">الحاضرون الآن</p>
+                <p class="text-xs font-bold text-emerald-800">{% trans "الحاضرون الآن" %}</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span id="kpi-present" class="text-3xl font-black text-emerald-700">{{ present_count }}</span>
                     <span id="kpi-rate-badge" class="text-xs text-emerald-600 font-bold">({{ attendance_rate }}%)</span>
@@ -84,7 +85,7 @@
         <!-- Absent -->
         <div class="bg-rose-50/60 border border-rose-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-rose-800">الغائبون</p>
+                <p class="text-xs font-bold text-rose-800">{% trans "الغائبون" %}</p>
                 <p id="kpi-absent" class="text-3xl font-black text-rose-700 mt-1">{{ absent_count }}</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl font-black">✕</div>
@@ -93,7 +94,7 @@
         <!-- Attendance Rate -->
         <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold text-slate-400">نسبة الحضور الفورية</p>
+                <p class="text-xs font-bold text-slate-400">{% trans "نسبة الحضور الفورية" %}</p>
                 <p id="kpi-rate-text" class="text-xl font-black text-indigo-600">{{ attendance_rate }}%</p>
             </div>
             <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mt-3">
@@ -115,8 +116,8 @@
                 <div class="flex items-center gap-2.5">
                     <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg border border-amber-200">🚀</div>
                     <div>
-                        <h3 class="text-sm font-black text-amber-900">إعداد شبكة القاعة المحلية (Hotspot)</h3>
-                        <p class="text-xs text-amber-700 font-medium">يتيح للطلاب مسح QR أو فتح الرابط بدون أي اتصال خارجي بالإنترنت</p>
+                        <h3 class="text-sm font-black text-amber-900">{% trans "إعداد شبكة القاعة المحلية (Hotspot)" %}</h3>
+                        <p class="text-xs text-amber-700 font-medium">{% trans "يتيح للطلاب مسح QR أو فتح الرابط بدون أي اتصال خارجي بالإنترنت" %}</p>
                     </div>
                 </div>
             </div>
@@ -126,23 +127,23 @@
                 <div class="p-3 bg-white/95 rounded-xl border border-amber-200/80 shadow-2xs">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center">1</span>
-                        <p class="text-xs font-black text-slate-900">فعّل الهوت سبوت</p>
+                        <p class="text-xs font-black text-slate-900">{% trans "فعّل الهوت سبوت" %}</p>
                     </div>
-                    <p class="text-[11px] text-slate-500">من هاتفك أو لابتوبك بالقاعة</p>
+                    <p class="text-[11px] text-slate-500">{% trans "من هاتفك أو لابتوبك بالقاعة" %}</p>
                 </div>
                 <div class="p-3 bg-white/95 rounded-xl border border-amber-200/80 shadow-2xs">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center">2</span>
-                        <p class="text-xs font-black text-slate-900">يتصل الطلاب بشبكتك</p>
+                        <p class="text-xs font-black text-slate-900">{% trans "يتصل الطلاب بشبكتك" %}</p>
                     </div>
-                    <p class="text-[11px] text-slate-500">لا يحتاج أي رصيد أو إنترنت</p>
+                    <p class="text-[11px] text-slate-500">{% trans "لا يحتاج أي رصيد أو إنترنت" %}</p>
                 </div>
                 <div class="p-3 bg-white/95 rounded-xl border border-amber-200/80 shadow-2xs">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center">3</span>
-                        <p class="text-xs font-black text-slate-900">يفتحون التحضير</p>
+                        <p class="text-xs font-black text-slate-900">{% trans "يفتحون التحضير" %}</p>
                     </div>
-                    <p class="text-[11px] text-slate-500">ويسجلون حضورهم فوراً</p>
+                    <p class="text-[11px] text-slate-500">{% trans "ويسجلون حضورهم فوراً" %}</p>
                 </div>
             </div>
 
@@ -150,7 +151,7 @@
             <div class="p-4 bg-white rounded-2xl border border-emerald-200/90 shadow-2xs space-y-3">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="min-w-0">
-                        <p class="text-xs text-emerald-800 font-bold mb-0.5">رابط التحضير المحلي للطلاب في القاعة:</p>
+                        <p class="text-xs text-emerald-800 font-bold mb-0.5">{% trans "رابط التحضير المحلي للطلاب في القاعة:" %}</p>
                         <p id="hotspot-url-text" class="font-mono text-emerald-700 font-black text-xs sm:text-sm break-all select-all text-left" dir="ltr">http://{{ primary_ip }}:{{ server_port }}/attendance/checkin/?session_id={{ attendance_session.id }}{% if checkin_token %}&amp;token={{ checkin_token|urlencode }}{% endif %}</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -159,12 +160,12 @@
                                 id="btn-toggle-qr"
                                 class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black border border-indigo-200 transition-all active:scale-95 flex items-center gap-1.5 shadow-2xs">
                             <span id="btn-qr-icon">📱</span>
-                            <span id="btn-qr-text">إظهار باركود (QR)</span>
+                            <span id="btn-qr-text">{% trans "إظهار باركود (QR)" %}</span>
                         </button>
                         <button type="button" 
                                 onclick="EmergencyManager.copyText(document.getElementById('hotspot-url-text').innerText.trim())"
                                 class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200 transition-all active:scale-95 flex items-center gap-1.5 shadow-2xs">
-                            <span>📋 نسخ</span>
+                            <span>📋 {% trans "نسخ" %}</span>
                         </button>
                     </div>
                 </div>
@@ -174,16 +175,16 @@
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-5 p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/70 text-center sm:text-right">
                         <div class="p-2 bg-white rounded-2xl border-2 border-emerald-300 shadow-md">
                             <img src="/attendance/qr-image/?host={{ primary_ip }}:{{ server_port }}&size=10&session_id={{ attendance_session.id }}&token={{ checkin_token|urlencode }}"
-                                 alt="QR Code رابط التحضير المحلي"
+                                 alt="{% trans 'QR Code رابط التحضير المحلي' %}"
                                  class="w-44 h-44 rounded-xl object-contain">
                         </div>
                         <div class="space-y-2 max-w-sm">
                             <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800">
-                                <span>📷 مسح فوري بالكاميرا</span>
+                                <span>📷 {% trans "مسح فوري بالكاميرا" %}</span>
                             </div>
-                            <h4 class="text-sm font-black text-slate-900">امسح الباركود لفتح صفحة التحضير مباشرة</h4>
+                            <h4 class="text-sm font-black text-slate-900">{% trans "امسح الباركود لفتح صفحة التحضير مباشرة" %}</h4>
                             <p class="text-xs text-slate-500 leading-relaxed">
-                                يفتح الطلاب كاميرا الهاتف ويوجهونها نحو هذا الباركود ليتم فتح صفحة تسجيل الحضور فوراً دون الحاجة لكتابة الرابط يدوياً.
+                                {% trans "يفتح الطلاب كاميرا الهاتف ويوجهونها نحو هذا الباركود ليتم فتح صفحة تسجيل الحضور فوراً دون الحاجة لكتابة الرابط يدوياً." %}
                             </p>
                         </div>
                     </div>
@@ -197,8 +198,8 @@
                 <div class="flex items-center gap-2.5 mb-3">
                     <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg border border-indigo-200">🔢</div>
                     <div>
-                        <h3 class="text-sm font-black text-indigo-950">رمز الطوارئ (OTP)</h3>
-                        <p class="text-[11px] text-indigo-600 font-medium">اكتبه على السبورة — للطلاب بدون كاميرا</p>
+                        <h3 class="text-sm font-black text-indigo-950">{% trans "رمز الطوارئ (OTP)" %}</h3>
+                        <p class="text-[11px] text-indigo-600 font-medium">{% trans "اكتبه على السبورة — للطلاب بدون كاميرا" %}</p>
                     </div>
                 </div>
                 <div class="py-4 px-3 bg-white rounded-2xl border border-indigo-200 text-center mb-2 shadow-sm">
@@ -206,12 +207,12 @@
                         {{ attendance_session.quick_otp|default:"------" }}
                     </span>
                 </div>
-                <p class="text-[11px] text-slate-500 text-center font-medium">الطلاب يكتبون هذا الرمز في صفحة الحضور فوراً</p>
+                <p class="text-[11px] text-slate-500 text-center font-medium">{% trans "الطلاب يكتبون هذا الرمز في صفحة الحضور فوراً" %}</p>
             </div>
             <button type="button" 
                     onclick="EmergencyManager.copyText('{{ attendance_session.quick_otp|default:'' }}')"
                     class="mt-4 w-full py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
-                <span>📋 نسخ رمز OTP</span>
+                <span>📋 {% trans "نسخ رمز OTP" %}</span>
             </button>
         </div>
     </div>
@@ -226,8 +227,8 @@
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg">📋</div>
                 <div>
-                    <h2 class="text-base font-black text-slate-900">سجل الحضور الفوري بنقرة واحدة</h2>
-                    <p class="text-xs text-slate-500">انقر على الحالة بجانب كل طالب — الحفظ فوري ومحلي 100%</p>
+                    <h2 class="text-base font-black text-slate-900">{% trans "سجل الحضور الفوري بنقرة واحدة" %}</h2>
+                    <p class="text-xs text-slate-500">{% trans "انقر على الحالة بجانب كل طالب — الحفظ فوري ومحلي 100%" %}</p>
                 </div>
             </div>
 
@@ -235,16 +236,16 @@
                 <!-- Status Filter Tabs -->
                 <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold" id="filter-tabs-container">
                     <button type="button" onclick="EmergencyManager.filterByStatus('ALL', this)" class="filter-tab active-tab px-3 py-1.5 rounded-lg bg-white text-indigo-700 shadow-xs font-black transition-all">
-                        الكل (<span id="count-tab-all">{{ total_count }}</span>)
+                        {% trans "الكل" %} (<span id="count-tab-all">{{ total_count }}</span>)
                     </button>
                     <button type="button" onclick="EmergencyManager.filterByStatus('PRESENT', this)" class="filter-tab px-3 py-1.5 rounded-lg text-emerald-700 hover:text-emerald-900 transition-all font-bold">
-                        حاضر (<span id="count-tab-present">{{ present_count }}</span>)
+                        {% trans "حاضر" %} (<span id="count-tab-present">{{ present_count }}</span>)
                     </button>
                     <button type="button" onclick="EmergencyManager.filterByStatus('ABSENT', this)" class="filter-tab px-3 py-1.5 rounded-lg text-rose-700 hover:text-rose-900 transition-all font-bold">
-                        غائب (<span id="count-tab-absent">{{ absent_count }}</span>)
+                        {% trans "غائب" %} (<span id="count-tab-absent">{{ absent_count }}</span>)
                     </button>
                     <button type="button" onclick="EmergencyManager.filterByStatus('LATE', this)" class="filter-tab px-3 py-1.5 rounded-lg text-amber-700 hover:text-amber-900 transition-all font-bold">
-                        متأخر (<span id="count-tab-late">{{ late_count }}</span>)
+                        {% trans "متأخر" %} (<span id="count-tab-late">{{ late_count }}</span>)
                     </button>
                 </div>
 
@@ -254,7 +255,7 @@
                     <input type="text" 
                            id="student-search-input"
                            oninput="EmergencyManager.filterList()"
-                           placeholder="بحث بالاسم أو الرقم..."
+                           placeholder="{% trans 'بحث بالاسم أو الرقم...' %}"
                            class="pl-4 pr-9 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 w-48 sm:w-56 transition-colors">
                 </div>
             </div>
@@ -291,7 +292,7 @@
                             </p>
                             <p class="text-[11px] text-slate-400 font-mono truncate mt-0.5">
                                 {{ item.profile.student_id|default:"—" }}
-                                {% if item.profile.study_shift == 'MORNING' %}<span class="text-amber-600 font-sans" title="دراسة صباحية">☀️ صباحي</span>{% elif item.profile.study_shift == 'EVENING' %}<span class="text-indigo-600 font-sans" title="دراسة مسائية">🌙 مسائي</span>{% endif %}
+                                {% if item.profile.study_shift == 'MORNING' %}<span class="text-amber-600 font-sans" title="{% trans 'دراسة صباحية' %}">☀️ {% trans "صباحي" %}</span>{% elif item.profile.study_shift == 'EVENING' %}<span class="text-indigo-600 font-sans" title="{% trans 'دراسة مسائية' %}">🌙 {% trans "مسائي" %}</span>{% endif %}
                             </p>
                         </div>
                     </div>
@@ -303,7 +304,7 @@
                                      {% elif item.status == 'LATE' %}bg-amber-100 text-amber-800 border border-amber-200
                                      {% elif item.status == 'EXCUSED' %}bg-sky-100 text-sky-800 border border-sky-200
                                      {% else %}bg-rose-100 text-rose-800 border border-rose-200{% endif %}">
-                            {% if item.status == 'PRESENT' %}✓ حاضر{% elif item.status == 'LATE' %}⏳ متأخر{% elif item.status == 'EXCUSED' %}📝 بعذر{% else %}✕ غائب{% endif %}
+                            {% if item.status == 'PRESENT' %}✓ {% trans "حاضر" %}{% elif item.status == 'LATE' %}⏳ {% trans "متأخر" %}{% elif item.status == 'EXCUSED' %}📝 {% trans "بعذر" %}{% else %}✕ {% trans "غائب" %}{% endif %}
                         </span>
                     </div>
 
@@ -316,7 +317,7 @@
                                 data-target-status="PRESENT"
                                 class="card-btn py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border
                                        {% if item.status == 'PRESENT' %}bg-emerald-600 text-white border-emerald-600 font-black shadow-xs{% else %}bg-slate-50 text-emerald-700 border-slate-200 hover:bg-emerald-50{% endif %}">
-                            ✓ حاضر
+                            ✓ {% trans "حاضر" %}
                         </button>
 
                         <!-- 2. LATE -->
@@ -325,7 +326,7 @@
                                 data-target-status="LATE"
                                 class="card-btn py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border
                                        {% if item.status == 'LATE' %}bg-amber-500 text-white border-amber-500 font-black shadow-xs{% else %}bg-slate-50 text-amber-700 border-slate-200 hover:bg-amber-50{% endif %}">
-                            ⏳ متأخر
+                            ⏳ {% trans "متأخر" %}
                         </button>
 
                         <!-- 3. ABSENT -->
@@ -334,7 +335,7 @@
                                 data-target-status="ABSENT"
                                 class="card-btn py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border
                                        {% if item.status == 'ABSENT' %}bg-rose-600 text-white border-rose-600 font-black shadow-xs{% else %}bg-slate-50 text-rose-700 border-slate-200 hover:bg-rose-50{% endif %}">
-                            ✕ غائب
+                            ✕ {% trans "غائب" %}
                         </button>
 
                         <!-- 4. EXCUSED -->
@@ -343,7 +344,7 @@
                                 data-target-status="EXCUSED"
                                 class="card-btn py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border
                                        {% if item.status == 'EXCUSED' %}bg-sky-600 text-white border-sky-600 font-black shadow-xs{% else %}bg-slate-50 text-sky-700 border-slate-200 hover:bg-sky-50{% endif %}">
-                            📝 بعذر
+                            📝 {% trans "بعذر" %}
                         </button>
                     </div>
                 </div>
@@ -352,7 +353,7 @@
             {% else %}
             <div class="py-16 text-center text-slate-400">
                 <div class="text-4xl mb-2">👥</div>
-                <p class="font-bold text-slate-500 text-sm">لا يوجد طلاب مسجلين في هذه الشعبة الدراسية</p>
+                <p class="font-bold text-slate-500 text-sm">{% trans "لا يوجد طلاب مسجلين في هذه الشعبة الدراسية" %}</p>
             </div>
             {% endif %}
         </div>
@@ -361,9 +362,9 @@
         <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500 no-print">
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>النظام يعمل في وضع عدم الاتصال المحلي — يتم حفظ كل نقرة فورياً في قاعدة البيانات</span>
+                <span>{% trans "النظام يعمل في وضع عدم الاتصال المحلي — يتم حفظ كل نقرة فورياً في قاعدة البيانات" %}</span>
             </span>
-            <a href="/attendance/session/{{ attendance_session.id }}/" class="text-indigo-600 hover:text-indigo-800 font-bold">← العودة للجلسة الرئيسية</a>
+            <a href="/attendance/session/{{ attendance_session.id }}/" class="text-indigo-600 hover:text-indigo-800 font-bold">← {% trans "العودة للجلسة الرئيسية" %}</a>
         </div>
     </div>
 </div>
@@ -374,7 +375,7 @@
 <div id="emergency-toast" 
      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] pointer-events-none transition-all duration-300 opacity-0 translate-y-4 no-print">
     <div id="emergency-toast-inner" class="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-black bg-emerald-600 text-white border border-emerald-500">
-        <span id="emergency-toast-msg">تم التسجيل بنجاح</span>
+        <span id="emergency-toast-msg">{% trans "تم التسجيل بنجاح" %}</span>
     </div>
 </div>
 
@@ -383,19 +384,19 @@
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <div class="hidden print-only p-8 bg-white text-slate-900">
     <div class="text-center border-b pb-4 mb-6 space-y-1">
-        <h1 class="text-2xl font-black">كشف الحضور الرسمي — وضع الطوارئ</h1>
-        <p class="font-bold">المادة: {{ attendance_session.session.course.name }} ({{ attendance_session.session.course.code }}) | الشعبة: {{ attendance_session.session.class_section.name }}</p>
-        <p class="text-sm text-slate-500">التاريخ: {{ attendance_session.date }} | الأستاذ: {{ attendance_session.session.teacher.user.get_full_name|default:request.user.get_full_name }}</p>
-        <p class="text-xs text-slate-400">جامعة بغداد — المطور: MUNTADHER HAZIM | 07724978301</p>
+        <h1 class="text-2xl font-black">{% trans "كشف الحضور الرسمي — وضع الطوارئ" %}</h1>
+        <p class="font-bold">{% trans "المادة:" %} {{ attendance_session.session.course.name }} ({{ attendance_session.session.course.code }}) | {% trans "الشعبة:" %} {{ attendance_session.session.class_section.name }}</p>
+        <p class="text-sm text-slate-500">{% trans "التاريخ:" %} {{ attendance_session.date }} | {% trans "الأستاذ:" %} {{ attendance_session.session.teacher.user.get_full_name|default:request.user.get_full_name }}</p>
+        <p class="text-xs text-slate-400">{% trans "جامعة بغداد — نظام الحضور الذكي" %}</p>
     </div>
     <table class="w-full border-collapse border border-slate-300 text-sm">
         <thead>
             <tr class="bg-slate-100 font-black">
                 <th class="border border-slate-300 p-2 text-right w-8">#</th>
-                <th class="border border-slate-300 p-2 text-right">الرقم الجامعي</th>
-                <th class="border border-slate-300 p-2 text-right">اسم الطالب</th>
-                <th class="border border-slate-300 p-2 text-center w-24">الحالة</th>
-                <th class="border border-slate-300 p-2 text-center w-24">توقيع الطالب</th>
+                <th class="border border-slate-300 p-2 text-right">{% trans "الرقم الجامعي" %}</th>
+                <th class="border border-slate-300 p-2 text-right">{% trans "اسم الطالب" %}</th>
+                <th class="border border-slate-300 p-2 text-center w-24">{% trans "الحالة" %}</th>
+                <th class="border border-slate-300 p-2 text-center w-24">{% trans "توقيع الطالب" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -411,8 +412,8 @@
         </tbody>
         <tfoot>
             <tr class="bg-slate-100 font-black">
-                <td colspan="2" class="border border-slate-300 p-2 text-right">إجمالي الطلاب: {{ total_count }}</td>
-                <td colspan="3" class="border border-slate-300 p-2 text-right">حاضر: {{ present_count }} | غائب: {{ absent_count }} | متأخر: {{ late_count }}</td>
+                <td colspan="2" class="border border-slate-300 p-2 text-right">{% trans "إجمالي الطلاب:" %} {{ total_count }}</td>
+                <td colspan="3" class="border border-slate-300 p-2 text-right">{% trans "حاضر:" %} {{ present_count }} | {% trans "غائب:" %} {{ absent_count }} | {% trans "متأخر:" %} {{ late_count }}</td>
             </tr>
         </tfoot>
     </table>
@@ -430,7 +431,7 @@ window.EmergencyManager = (function() {
 
     const statusConfig = {
         'PRESENT': {
-            label: '✓ حاضر',
+            label: '✓ {% trans "حاضر"|escapejs %}',
             cardBg: 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-200 is-present',
             badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
             avatarClass: 'bg-emerald-600 text-white',
@@ -438,7 +439,7 @@ window.EmergencyManager = (function() {
             btnInactive: 'bg-slate-50 text-emerald-700 border-slate-200 hover:bg-emerald-50 font-bold'
         },
         'LATE': {
-            label: '⏳ متأخر',
+            label: '⏳ {% trans "متأخر"|escapejs %}',
             cardBg: 'bg-amber-50/40 border-amber-300 ring-1 ring-amber-200 is-late',
             badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200',
             avatarClass: 'bg-amber-500 text-white',
@@ -446,7 +447,7 @@ window.EmergencyManager = (function() {
             btnInactive: 'bg-slate-50 text-amber-700 border-slate-200 hover:bg-amber-50 font-bold'
         },
         'ABSENT': {
-            label: '✕ غائب',
+            label: '✕ {% trans "غائب"|escapejs %}',
             cardBg: 'bg-white border-slate-200 is-absent',
             badgeClass: 'bg-rose-100 text-rose-800 border border-rose-200',
             avatarClass: 'bg-slate-100 text-slate-700 border border-slate-200',
@@ -454,7 +455,7 @@ window.EmergencyManager = (function() {
             btnInactive: 'bg-slate-50 text-rose-700 border-slate-200 hover:bg-rose-50 font-bold'
         },
         'EXCUSED': {
-            label: '📝 بعذر',
+            label: '📝 {% trans "بعذر"|escapejs %}',
             cardBg: 'bg-sky-50/40 border-sky-300 ring-1 ring-sky-200 is-excused',
             badgeClass: 'bg-sky-100 text-sky-800 border border-sky-200',
             avatarClass: 'bg-sky-600 text-white',
@@ -577,7 +578,7 @@ window.EmergencyManager = (function() {
         applyCardVisualState(card, status);
         recalculateKPIs();
         playAudio(status === 'PRESENT' ? 880 : 520);
-        showToast(`✓ تم تحديث الحالة: ${statusConfig[status].label}`);
+        showToast(`✓ {% trans "تم تحديث الحالة:"|escapejs %} ${statusConfig[status].label}`);
 
         const formData = new FormData();
         formData.append('action', 'update_student');
@@ -595,7 +596,7 @@ window.EmergencyManager = (function() {
             if (!data.success) {
                 applyCardVisualState(card, previousStatus);
                 recalculateKPIs();
-                showToast('❌ تعذر الحفظ على الخادم', 'error');
+                showToast('❌ {% trans "تعذر الحفظ على الخادم"|escapejs %}', 'error');
             }
         } catch (err) {
             console.error('Offline update error:', err);
@@ -603,7 +604,7 @@ window.EmergencyManager = (function() {
     }
 
     async function bulkPresent() {
-        if (!confirm('هل تريد بالتأكيد تسجيل جميع طلاب الشعبة كـ (حاضرين) دفعة واحدة؟')) return;
+        if (!confirm('{% trans "هل تريد بالتأكيد تسجيل جميع طلاب الشعبة كـ (حاضرين) دفعة واحدة؟"|escapejs %}')) return;
         
         const btn = document.getElementById('btn-bulk-present');
         if (btn) btn.disabled = true;
@@ -612,7 +613,7 @@ window.EmergencyManager = (function() {
         allCards.forEach(card => applyCardVisualState(card, 'PRESENT'));
         recalculateKPIs();
         playAudio(920);
-        showToast('⚡ جاري حفظ حضور الكل...');
+        showToast('⚡ {% trans "جاري حفظ حضور الكل..."|escapejs %}');
 
         const fd = new FormData();
         fd.append('action', 'bulk_present');
@@ -622,17 +623,17 @@ window.EmergencyManager = (function() {
             const res = await fetch(window.location.href, { method: 'POST', body: fd });
             const data = await res.json();
             if (data.success) {
-                showToast(data.message || '✓ تم تحضير الكل بنجاح');
+                showToast(data.message || '✓ {% trans "تم تحضير الكل بنجاح"|escapejs %}');
             }
         } catch(e) {
-            showToast('✓ تم التحضير محلياً بنجاح');
+            showToast('✓ {% trans "تم التحضير محلياً بنجاح"|escapejs %}');
         }
 
         if (btn) btn.disabled = false;
     }
 
     function bulkAbsent() {
-        if (!confirm('هل تريد إعادة تعيين الكل إلى غائبين؟')) return;
+        if (!confirm('{% trans "هل تريد إعادة تعيين الكل إلى غائبين؟"|escapejs %}')) return;
         const allCards = document.querySelectorAll('.student-card');
         allCards.forEach(card => {
             const pid = card.getAttribute('data-profile-id');
@@ -682,7 +683,7 @@ window.EmergencyManager = (function() {
     function copyText(text) {
         if (!text) return;
         if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => showToast('📋 تم النسخ بنجاح!'));
+            navigator.clipboard.writeText(text).then(() => showToast('📋 {% trans "تم النسخ بنجاح!"|escapejs %}'));
         } else {
             const input = document.createElement('textarea');
             input.value = text;
@@ -690,7 +691,7 @@ window.EmergencyManager = (function() {
             input.select();
             document.execCommand('copy');
             document.body.removeChild(input);
-            showToast('📋 تم النسخ بنجاح!');
+            showToast('📋 {% trans "تم النسخ بنجاح!"|escapejs %}');
         }
     }
 
@@ -703,12 +704,12 @@ window.EmergencyManager = (function() {
         if (panel.classList.contains('hidden')) {
             panel.classList.remove('hidden');
             if (icon) icon.textContent = '✕';
-            if (text) text.textContent = 'إخفاء الباركود';
+            if (text) text.textContent = '{% trans "إخفاء الباركود"|escapejs %}';
             playAudio(750);
         } else {
             panel.classList.add('hidden');
             if (icon) icon.textContent = '📱';
-            if (text) text.textContent = 'إظهار باركود (QR)';
+            if (text) text.textContent = '{% trans "إظهار باركود (QR)"|escapejs %}';
         }
     }
 
@@ -733,3 +734,4 @@ window.EmergencyManager = (function() {
 }
 </style>
 {% endblock %}
+

@@ -1,20 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.translation import gettext_lazy as _
 import uuid
 
 
 class User(AbstractUser):
     class Roles(models.TextChoices):
-        SUPER_ADMIN = "SUPER_ADMIN", "مدير النظام"
-        INSTITUTION_ADMIN = "INSTITUTION_ADMIN", "مدير المؤسسة"
-        TEACHER = "TEACHER", "معلم / مشرف"
-        STUDENT = "STUDENT", "طالب"
+        SUPER_ADMIN = "SUPER_ADMIN", _("مدير النظام")
+        INSTITUTION_ADMIN = "INSTITUTION_ADMIN", _("مدير المؤسسة")
+        TEACHER = "TEACHER", _("معلم / مشرف")
+        STUDENT = "STUDENT", _("طالب")
 
     role = models.CharField(
         max_length=20,
         choices=Roles.choices,
         default=Roles.SUPER_ADMIN,
-        verbose_name="الدور"
+        verbose_name=_("الدور")
     )
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="رقم الهاتف")
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True, verbose_name="الصورة الشخصية")

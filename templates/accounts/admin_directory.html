@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}دليل وإدارة الحسابات والشعب - نظام الحضور الذكي{% endblock %}
+{% block title %}{% trans "دليل وإدارة الحسابات والشعب - نظام الحضور الذكي" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="{ 
@@ -14,32 +15,18 @@
     }
 }">
 
-    <!-- Alert Messages -->
-    {% if messages %}
-        <div class="space-y-2">
-            {% for message in messages %}
-                <div class="p-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
-                    <div class="flex items-center gap-2">
-                        <span>{% if message.tags == 'success' %}✅{% else %}ℹ️{% endif %}</span>
-                        <span>{{ message }}</span>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
     <!-- Top Header -->
     <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <div class="flex items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-brand-100 text-brand-800">
-                    👑 مركز إدارة الحسابات والصلاحيات
+                    👑 {% trans "مركز إدارة الحسابات والصلاحيات" %}
                 </span>
-                <span class="text-xs text-slate-400 font-medium">بحث وتصفية متعددة المستويات</span>
+                <span class="text-xs text-slate-400 font-medium">{% trans "بحث وتصفية متعددة المستويات" %}</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">دليل الحسابات والشعب والطلاب</h1>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">{% trans "دليل الحسابات والشعب والطلاب" %}</h1>
             <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                تصفية الطلاب حسب المؤسسة، المرحلة، الشعبة، نوع الدراسة، ومعرفة حالة كل حساب مع إمكانية التفعيل والتعطيل فوراً.
+                {% trans "تصفية الطلاب حسب المؤسسة، المرحلة، الشعبة، نوع الدراسة، ومعرفة حالة كل حساب مع إمكانية التفعيل والتعطيل فوراً." %}
             </p>
         </div>
         
@@ -47,13 +34,13 @@
             <a href="{% url 'reports:admin_import_web' %}" 
                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors">
                 <span>📥</span>
-                <span>استيراد طلاب من Excel</span>
+                <span>{% trans "استيراد طلاب من Excel" %}</span>
             </a>
             <a href="/admin/accounts/user/" 
                target="_blank"
                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                 <span>⚙️</span>
-                <span>لوحة Django Admin</span>
+                <span>{% trans "لوحة Django Admin" %}</span>
                 <span class="text-slate-400">↗</span>
             </a>
         </div>
@@ -63,37 +50,37 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <!-- 1. Total -->
         <div class="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-2xs">
-            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">إجمالي الحسابات</p>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{% trans "إجمالي الحسابات" %}</p>
             <h3 class="text-2xl font-black text-slate-900 mt-1">{{ stats.total_users }}</h3>
-            <span class="text-[10px] text-slate-400 font-semibold">مسجلين بالنظام</span>
+            <span class="text-[10px] text-slate-400 font-semibold">{% trans "مسجلين بالنظام" %}</span>
         </div>
 
         <!-- 2. Teachers -->
         <div class="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-2xs">
-            <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">الكادر التدريسي</p>
+            <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">{% trans "الكادر التدريسي" %}</p>
             <h3 class="text-2xl font-black text-emerald-700 mt-1">{{ stats.total_teachers }}</h3>
-            <span class="text-[10px] text-slate-400 font-semibold">أستاذ / مشرف</span>
+            <span class="text-[10px] text-slate-400 font-semibold">{% trans "أستاذ / مشرف" %}</span>
         </div>
 
         <!-- 3. Students -->
         <div class="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-2xs">
-            <p class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">إجمالي الطلاب</p>
+            <p class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">{% trans "إجمالي الطلاب" %}</p>
             <h3 class="text-2xl font-black text-indigo-700 mt-1">{{ stats.total_students }}</h3>
-            <span class="text-[10px] text-slate-400 font-semibold">طالب مسجل</span>
+            <span class="text-[10px] text-slate-400 font-semibold">{% trans "طالب مسجل" %}</span>
         </div>
 
         <!-- 4. Active -->
         <div class="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-2xs">
-            <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">الحسابات النشطة</p>
+            <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">{% trans "الحسابات النشطة" %}</p>
             <h3 class="text-2xl font-black text-emerald-600 mt-1">{{ stats.total_active }}</h3>
-            <span class="text-[10px] text-emerald-600 font-bold">🟢 مفعلة بالكامل</span>
+            <span class="text-[10px] text-emerald-600 font-bold">🟢 {% trans "مفعلة بالكامل" %}</span>
         </div>
 
         <!-- 5. Inactive -->
         <div class="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-2xs col-span-2 sm:col-span-1">
-            <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider">الحسابات المعطلة</p>
+            <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider">{% trans "الحسابات المعطلة" %}</p>
             <h3 class="text-2xl font-black text-rose-600 mt-1">{{ stats.total_inactive }}</h3>
-            <span class="text-[10px] text-rose-500 font-bold">🔴 غير مفعلة</span>
+            <span class="text-[10px] text-rose-500 font-bold">🔴 {% trans "غير مفعلة" %}</span>
         </div>
     </div>
 
@@ -102,16 +89,15 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2">
                 <span class="text-lg">🔍</span>
-                <h3 class="text-xs sm:text-sm font-black text-slate-900">خيارات التصفية والفلاتر الذكية</h3>
+                <h3 class="text-xs sm:text-sm font-black text-slate-900">{% trans "خيارات التصفية والفلاتر الذكية" %}</h3>
             </div>
             <span class="text-xs font-mono font-bold text-brand-600">
-                نتائج التصفية: {{ stats.filtered_count }} حساب
+                {% trans "نتائج التصفية:" %} {{ stats.filtered_count }} {% trans "حساب" %}
             </span>
         </div>
 
         <form method="GET" action="{% url 'accounts:admin_users_directory' %}" class="space-y-4">
             
-            <!-- Row 1: Dropdown Filters -->
             <!-- Row 1: 6 Custom Luxury Dropdowns in 3-col grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 
@@ -119,9 +105,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ inst_filter }}', 
-                    label: '{% for inst in institutions %}{% if inst_filter == inst.id|stringformat:'s' %}{{ inst.name|escapejs }}{% endif %}{% endfor %}' || 'جميع المؤسسات والجامعات' 
+                    label: '{% for inst in institutions %}{% if inst_filter == inst.id|stringformat:'s' %}{{ inst.name|escapejs }}{% endif %}{% endfor %}' || '{% trans "جميع المؤسسات والجامعات"|escapejs %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">المؤسسة / الجامعة:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "المؤسسة / الجامعة:" %}</label>
                     <input type="hidden" name="institution_id" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -141,16 +127,16 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = ''; label = 'جميع المؤسسات والجامعات'; open = false" 
+                        <div @click="value = ''; label = '{% trans "جميع المؤسسات والجامعات"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>جميع المؤسسات والجامعات</span>
+                            <span>{% trans "جميع المؤسسات والجامعات" %}</span>
                             <span x-show="value === ''" class="text-brand-600">✓</span>
                         </div>
                         {% for inst in institutions %}
                             <div @click="value = '{{ inst.id }}'; label = '{{ inst.name|escapejs }}'; open = false" 
-                                 class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
-                                 :class="value === '{{ inst.id }}' ? 'bg-brand-50 text-brand-700 font-black' : ''">
+                                  class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                                  :class="value === '{{ inst.id }}' ? 'bg-brand-50 text-brand-700 font-black' : ''">
                                 <span class="truncate">{{ inst.name }}</span>
                                 <span x-show="value === '{{ inst.id }}'" class="text-brand-600">✓</span>
                             </div>
@@ -162,9 +148,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ role_filter }}', 
-                    label: '{% if role_filter == 'TEACHER' %}👨‍🏫 الكادر التدريسي فقط{% elif role_filter == 'STUDENT' %}🎓 الطلاب فقط{% elif role_filter == 'ADMIN' %}👑 مدراء النظام فقط{% else %}الكل (جميع الأدوار والحسابات){% endif %}' 
+                    label: '{% if role_filter == 'TEACHER' %}{% trans "👨‍🏫 الكادر التدريسي فقط"|escapejs %}{% elif role_filter == 'STUDENT' %}{% trans "🎓 الطلاب فقط"|escapejs %}{% elif role_filter == 'ADMIN' %}{% trans "👑 مدراء النظام فقط"|escapejs %}{% else %}{% trans "الكل (جميع الأدوار والحسابات)"|escapejs %}{% endif %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الحساب (الدور الأكاديمي):</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "نوع الحساب (الدور الأكاديمي):" %}</label>
                     <input type="hidden" name="role" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -184,28 +170,28 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = 'ALL'; label = 'الكل (جميع الأدوار والحسابات)'; open = false" 
+                        <div @click="value = 'ALL'; label = '{% trans "الكل (جميع الأدوار والحسابات)"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'ALL' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>الكل (جميع الأدوار والحسابات)</span>
+                            <span>{% trans "الكل (جميع الأدوار والحسابات)" %}</span>
                             <span x-show="value === 'ALL'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'TEACHER'; label = '👨‍🏫 الكادر التدريسي فقط'; open = false" 
+                        <div @click="value = 'TEACHER'; label = '{% trans "👨‍🏫 الكادر التدريسي فقط"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'TEACHER' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>👨‍🏫 الكادر التدريسي فقط</span>
+                            <span>{% trans "👨‍🏫 الكادر التدريسي فقط" %}</span>
                             <span x-show="value === 'TEACHER'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'STUDENT'; label = '🎓 الطلاب فقط'; open = false" 
+                        <div @click="value = 'STUDENT'; label = '{% trans "🎓 الطلاب فقط"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'STUDENT' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>🎓 الطلاب فقط</span>
+                            <span>{% trans "🎓 الطلاب فقط" %}</span>
                             <span x-show="value === 'STUDENT'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'ADMIN'; label = '👑 مدراء النظام فقط'; open = false" 
+                        <div @click="value = 'ADMIN'; label = '{% trans "👑 مدراء النظام فقط"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'ADMIN' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>👑 مدراء النظام فقط</span>
+                            <span>{% trans "👑 مدراء النظام فقط" %}</span>
                             <span x-show="value === 'ADMIN'" class="text-brand-600">✓</span>
                         </div>
                     </div>
@@ -215,9 +201,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ level_filter }}', 
-                    label: '{{ level_filter }}' || 'جميع المراحل الدراسية' 
+                    label: '{{ level_filter }}' || '{% trans "جميع المراحل الدراسية"|escapejs %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">المرحلة الدراسية:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "المرحلة الدراسية:" %}</label>
                     <input type="hidden" name="level" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -237,10 +223,10 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = ''; label = 'جميع المراحل الدراسية'; open = false" 
+                        <div @click="value = ''; label = '{% trans "جميع المراحل الدراسية"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>جميع المراحل الدراسية</span>
+                            <span>{% trans "جميع المراحل الدراسية" %}</span>
                             <span x-show="value === ''" class="text-brand-600">✓</span>
                         </div>
                         {% for lvl in levels %}
@@ -258,9 +244,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ sec_filter }}', 
-                    label: '{% for sec in sections %}{% if sec_filter == sec.id|stringformat:'s' %}{{ sec.name|escapejs }} ({{ sec.level|default:''|escapejs }}){% endif %}{% endfor %}' || 'جميع الشعب والفصول' 
+                    label: '{% for sec in sections %}{% if sec_filter == sec.id|stringformat:'s' %}{{ sec.name|escapejs }} ({{ sec.level|default:''|escapejs }}){% endif %}{% endfor %}' || '{% trans "جميع الشعب والفصول"|escapejs %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">الشعبة الدراسية:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "الشعبة الدراسية:" %}</label>
                     <input type="hidden" name="section_id" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -280,10 +266,10 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = ''; label = 'جميع الشعب والفصول'; open = false" 
+                        <div @click="value = ''; label = '{% trans "جميع الشعب والفصول"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === '' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>جميع الشعب والفصول</span>
+                            <span>{% trans "جميع الشعب والفصول" %}</span>
                             <span x-show="value === ''" class="text-brand-600">✓</span>
                         </div>
                         {% for sec in sections %}
@@ -301,9 +287,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ shift_filter }}', 
-                    label: '{% if shift_filter == 'MORNING' %}☀️ دراسة صباحية{% elif shift_filter == 'EVENING' %}🌙 دراسة مسائية{% else %}الكل (صباحي ومسائي){% endif %}' 
+                    label: '{% if shift_filter == 'MORNING' %}{% trans "☀️ دراسة صباحية"|escapejs %}{% elif shift_filter == 'EVENING' %}{% trans "🌙 دراسة مسائية"|escapejs %}{% else %}{% trans "الكل (صباحي ومسائي)"|escapejs %}{% endif %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الدراسة:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "نوع الدراسة:" %}</label>
                     <input type="hidden" name="shift" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -323,22 +309,22 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = 'ALL'; label = 'الكل (صباحي ومسائي)'; open = false" 
+                        <div @click="value = 'ALL'; label = '{% trans "الكل (صباحي ومسائي)"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'ALL' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>الكل (صباحي ومسائي)</span>
+                            <span>{% trans "الكل (صباحي ومسائي)" %}</span>
                             <span x-show="value === 'ALL'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'MORNING'; label = '☀️ دراسة صباحية'; open = false" 
+                        <div @click="value = 'MORNING'; label = '{% trans "☀️ دراسة صباحية"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'MORNING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>☀️ دراسة صباحية</span>
+                            <span>{% trans "☀️ دراسة صباحية" %}</span>
                             <span x-show="value === 'MORNING'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'EVENING'; label = '🌙 دراسة مسائية'; open = false" 
+                        <div @click="value = 'EVENING'; label = '{% trans "🌙 دراسة مسائية"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'EVENING' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>🌙 دراسة مسائية</span>
+                            <span>{% trans "🌙 دراسة مسائية" %}</span>
                             <span x-show="value === 'EVENING'" class="text-brand-600">✓</span>
                         </div>
                     </div>
@@ -348,9 +334,9 @@
                 <div x-data="{ 
                     open: false, 
                     value: '{{ status_filter }}', 
-                    label: '{% if status_filter == 'ACTIVE' %}🟢 الحسابات النشطة فقط{% elif status_filter == 'INACTIVE' %}🔴 الحسابات المعطلة فقط{% else %}جميع الحالات (النشطة والمعطلة){% endif %}' 
+                    label: '{% if status_filter == 'ACTIVE' %}{% trans "🟢 الحسابات النشطة فقط"|escapejs %}{% elif status_filter == 'INACTIVE' %}{% trans "🔴 الحسابات المعطلة فقط"|escapejs %}{% else %}{% trans "جميع الحالات (النشطة والمعطلة)"|escapejs %}{% endif %}' 
                 }" class="relative">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">حالة الحساب:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">{% trans "حالة الحساب:" %}</label>
                     <input type="hidden" name="status" :value="value">
                     <button type="button" 
                             @click="open = !open" 
@@ -370,22 +356,22 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-98"
                          class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                        <div @click="value = 'ALL'; label = 'جميع الحالات (النشطة والمعطلة)'; open = false" 
+                        <div @click="value = 'ALL'; label = '{% trans "جميع الحالات (النشطة والمعطلة)"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'ALL' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>جميع الحالات (النشطة والمعطلة)</span>
+                            <span>{% trans "جميع الحالات (النشطة والمعطلة)" %}</span>
                             <span x-show="value === 'ALL'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'ACTIVE'; label = '🟢 الحسابات النشطة فقط'; open = false" 
+                        <div @click="value = 'ACTIVE'; label = '{% trans "🟢 الحسابات النشطة فقط"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'ACTIVE' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>🟢 الحسابات النشطة فقط</span>
+                            <span>{% trans "🟢 الحسابات النشطة فقط" %}</span>
                             <span x-show="value === 'ACTIVE'" class="text-brand-600">✓</span>
                         </div>
-                        <div @click="value = 'INACTIVE'; label = '🔴 الحسابات المعطلة فقط'; open = false" 
+                        <div @click="value = 'INACTIVE'; label = '{% trans "🔴 الحسابات المعطلة فقط"|escapejs %}'; open = false" 
                              class="px-3 py-2 rounded-xl hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
                              :class="value === 'INACTIVE' ? 'bg-brand-50 text-brand-700 font-black' : ''">
-                            <span>🔴 الحسابات المعطلة فقط</span>
+                            <span>{% trans "🔴 الحسابات المعطلة فقط" %}</span>
                             <span x-show="value === 'INACTIVE'" class="text-brand-600">✓</span>
                         </div>
                     </div>
@@ -399,7 +385,7 @@
                     <input type="text" 
                            name="q" 
                            value="{{ q }}" 
-                           placeholder="بحث بالاسم الكامل، اسم المستخدم، البريد، الرقم الجامعي، أو الهاتف..." 
+                           placeholder="{% trans 'بحث بالاسم الكامل، اسم المستخدم، البريد، الرقم الجامعي، أو الهاتف...' %}" 
                            class="w-full pl-4 pr-10 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden transition-all">
                     <span class="absolute right-3.5 top-3 text-slate-400">🔍</span>
                 </div>
@@ -407,11 +393,11 @@
                 <div class="flex items-center gap-2">
                     <button type="submit" 
                             class="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-brand-600 hover:bg-brand-700 shadow-xs transition-colors shrink-0">
-                        تطبيق الفلاتر ⚡
+                        {% trans "تطبيق الفلاتر" %} ⚡
                     </button>
                     <a href="{% url 'accounts:admin_users_directory' %}" 
                        class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors shrink-0">
-                        إعادة ضبط
+                        {% trans "إعادة ضبط" %}
                     </a>
                 </div>
             </div>
@@ -425,13 +411,13 @@
             <table class="min-w-full divide-y divide-slate-100 text-right">
                 <thead>
                     <tr class="bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
-                        <th class="py-3.5 px-4 text-right min-w-[220px]">المستخدم والمعلومات</th>
-                        <th class="py-3.5 px-3 text-center min-w-[110px]">الدور</th>
-                        <th class="py-3.5 px-3 text-right min-w-[170px]">المؤسسة / الكلية</th>
-                        <th class="py-3.5 px-3 text-center min-w-[150px]">الشعبة والمرحلة</th>
-                        <th class="py-3.5 px-3 text-center min-w-[90px]">الدراسة</th>
-                        <th class="py-3.5 px-3 text-center min-w-[100px]">الحالة</th>
-                        <th class="py-3.5 px-4 text-center min-w-[160px]">الإجراءات الفورية</th>
+                        <th class="py-3.5 px-4 text-right min-w-[220px]">{% trans "المستخدم والمعلومات" %}</th>
+                        <th class="py-3.5 px-3 text-center min-w-[110px]">{% trans "الدور" %}</th>
+                        <th class="py-3.5 px-3 text-right min-w-[170px]">{% trans "المؤسسة / الكلية" %}</th>
+                        <th class="py-3.5 px-3 text-center min-w-[150px]">{% trans "الشعبة والمرحلة" %}</th>
+                        <th class="py-3.5 px-3 text-center min-w-[90px]">{% trans "الدراسة" %}</th>
+                        <th class="py-3.5 px-3 text-center min-w-[100px]">{% trans "الحالة" %}</th>
+                        <th class="py-3.5 px-4 text-center min-w-[160px]">{% trans "الإجراءات الفورية" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white text-xs sm:text-sm font-medium">
@@ -459,15 +445,15 @@
                             <td class="py-3.5 px-3 whitespace-nowrap text-center">
                                 {% if u.is_super_admin %}
                                     <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                        👑 مدير نظام
+                                        👑 {% trans "مدير نظام" %}
                                     </span>
                                 {% elif u.is_teacher %}
                                     <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        👨‍🏫 تدريسي
+                                        👨‍🏫 {% trans "تدريسي" %}
                                     </span>
                                 {% elif u.is_student %}
                                     <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                        🎓 طالب ({{ u.student_profile.student_id|default:"-" }})
+                                        🎓 {% trans "طالب" %} ({{ u.student_profile.student_id|default:"-" }})
                                     </span>
                                 {% else %}
                                     <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
@@ -484,7 +470,7 @@
                                     {% elif u.teacher_profile %}
                                         {{ u.teacher_profile.institution.name }}
                                     {% else %}
-                                        جامعة بغداد
+                                        {% trans "جامعة بغداد" %}
                                     {% endif %}
                                 </span>
                             </td>
@@ -511,11 +497,11 @@
                                 {% if u.student_profile %}
                                     {% if u.student_profile.study_shift == 'MORNING' %}
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700">
-                                            ☀️ صباحي
+                                            ☀️ {% trans "صباحي" %}
                                         </span>
                                     {% else %}
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700">
-                                            🌙 مسائي
+                                            🌙 {% trans "مسائي" %}
                                         </span>
                                     {% endif %}
                                 {% else %}
@@ -528,12 +514,12 @@
                                 {% if u.is_active %}
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        <span>فعّال</span>
+                                        <span>{% trans "فعّال" %}</span>
                                     </span>
                                 {% else %}
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                        <span>معطّل</span>
+                                        <span>{% trans "معطّل" %}</span>
                                     </span>
                                 {% endif %}
                             </td>
@@ -548,24 +534,24 @@
                                         <input type="hidden" name="action" value="toggle_active">
                                         <input type="hidden" name="target_user_id" value="{{ u.id }}">
                                         <button type="submit" 
-                                                title="{% if u.is_active %}تعطيل الحساب{% else %}تفعيل الحساب{% endif %}"
+                                                title="{% if u.is_active %}{% trans "تعطيل الحساب" %}{% else %}{% trans "تفعيل الحساب" %}{% endif %}"
                                                 class="px-2.5 py-1 text-xs font-bold rounded-lg border transition-all {% if u.is_active %}bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100{% else %}bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100{% endif %}">
-                                            {% if u.is_active %}🔴 تعطيل{% else %}🟢 تفعيل{% endif %}
+                                            {% if u.is_active %}🔴 {% trans "تعطيل" %}{% else %}🟢 {% trans "تفعيل" %}{% endif %}
                                         </button>
                                     </form>
 
                                     <!-- Quick Password Reset Button -->
                                     <button type="button" 
                                             @click="openResetModal({ id: '{{ u.id }}', name: '{{ u.get_full_name|default:u.username|escapejs }}' })"
-                                            title="إعادة تعيين كلمة المرور فوراً"
+                                            title="{% trans 'إعادة تعيين كلمة المرور فوراً' %}"
                                             class="px-2 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors">
-                                        🔑 كلمة السر
+                                        🔑 {% trans "كلمة السر" %}
                                     </button>
 
                                     <!-- Edit in Django Admin -->
                                     <a href="/admin/accounts/user/{{ u.id }}/change/" 
                                        target="_blank" 
-                                       title="تعديل في لوحة الإدارة"
+                                       title="{% trans 'تعديل في لوحة الإدارة' %}"
                                        class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
                                         ↗
                                     </a>
@@ -579,8 +565,8 @@
                             <td colspan="7" class="py-14 text-center text-slate-400">
                                 <div class="space-y-2">
                                     <span class="text-3xl block">🔍</span>
-                                    <p class="font-bold text-slate-700 text-sm">لم يتم العثور على أي حسابات تطابق خيارات الفلترة المحددة.</p>
-                                    <p class="text-xs text-slate-400">جرب تغيير شروط الفلتر أو الضغط على "إعادة ضبط".</p>
+                                    <p class="font-bold text-slate-700 text-sm">{% trans "لم يتم العثور على أي حسابات تطابق خيارات الفلترة المحددة." %}</p>
+                                    <p class="text-xs text-slate-400">{% trans "جرب تغيير شروط الفلتر أو الضغط على 'إعادة ضبط'." %}</p>
                                 </div>
                             </td>
                         </tr>
@@ -595,7 +581,7 @@
         <div class="flex items-center justify-center min-h-screen p-4">
             <div @click.away="resetModalOpen = false" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <h3 class="text-base font-black text-slate-900">إعادة تعيين كلمة المرور</h3>
+                    <h3 class="text-base font-black text-slate-900">{% trans "إعادة تعيين كلمة المرور" %}</h3>
                     <button @click="resetModalOpen = false" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
                 </div>
 
@@ -605,12 +591,12 @@
                     <input type="hidden" name="target_user_id" :value="selectedUser ? selectedUser.id : ''">
 
                     <p class="text-xs text-slate-600">
-                        سيتم تغيير كلمة المرور فوراً للمستخدم: 
+                        {% trans "سيتم تغيير كلمة المرور فوراً للمستخدم:" %} 
                         <strong class="text-brand-600" x-text="selectedUser ? selectedUser.name : ''"></strong>
                     </p>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور الجديدة:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "كلمة المرور الجديدة:" %}</label>
                         <input type="text" 
                                name="new_password" 
                                x-model="newPassword" 
@@ -620,10 +606,10 @@
 
                     <div class="flex justify-end gap-2 pt-2">
                         <button type="button" @click="resetModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-                            إلغاء
+                            {% trans "إلغاء" %}
                         </button>
                         <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-colors">
-                            تأكيد الحفظ
+                            {% trans "تأكيد الحفظ" %}
                         </button>
                     </div>
                 </form>
@@ -633,3 +619,4 @@
 
 </div>
 {% endblock %}
+

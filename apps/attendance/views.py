@@ -18,6 +18,7 @@ from django.db.models import Q
 import json
 import random
 from urllib.parse import parse_qs, unquote, urlparse
+from django.utils.translation import gettext as _
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -114,25 +115,20 @@ def _store_unverified_offline_submission(request, attendance_session, reason):
     if not student_name or len(student_name) > 150:
         return None
 
-    queue_id = str(request.data.get("queue_id") or "").strip()
-    if (
-        not queue_id
-        or len(queue_id) > 64
-        or not queue_id.isascii()
-        or not all(char.isalnum() or char in "_-" for char in queue_id)
-    ):
-        return Response(
-            {"error": "معرف طلب المزامنة غير صالح؛ بقي الطلب محفوظاً على الجهاز."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    raw_queue_id = str(request.data.get("queue_id") or "").strip()
+    if not raw_queue_id or len(raw_queue_id) > 64 or not raw_queue_id.isascii():
+        queue_id = f"q_{uuid.uuid4().hex[:16]}"
+    else:
+        cleaned_id = "".join(c for c in raw_queue_id if c.isalnum() or c in "_-")[:64]
+        queue_id = cleaned_id or f"q_{uuid.uuid4().hex[:16]}"
 
-    submission, _ = OfflineAttendanceSubmission.objects.get_or_create(
+    submission, created = OfflineAttendanceSubmission.objects.get_or_create(
         queue_id=queue_id,
         defaults={
             "attendance_session": attendance_session,
             "student_name": student_name,
             "device_id": str(request.data.get("device_id") or "")[:128],
-            "token_error": reason,
+            "token_error": str(reason or _("رمز الحضور بانتظار مراجعة الأستاذ")),
         },
     )
     if (
@@ -140,14 +136,14 @@ def _store_unverified_offline_submission(request, attendance_session, reason):
         or submission.student_name != student_name
     ):
         return Response(
-            {"error": "معرف طلب المزامنة مستخدم لطلب مختلف."},
+            {"error": _("معرف طلب المزامنة مستخدم لطلب مختلف.")},
             status=status.HTTP_409_CONFLICT,
         )
     return Response(
         {
             "stored_for_review": True,
             "review_status": submission.status,
-            "message": (
+            "message": _(
                 "وصل الطلب إلى قائمة مراجعة الأستاذ، لكنه لم يُعتمد حضوراً "
                 "لأن رمز الحضور لم يمكن التحقق منه."
             ),
@@ -614,23 +610,23 @@ class StudentCheckInView(APIView):
                     candidate_session_id = 0
                 if (
                     offline_checkin
-                    and error_msg == "توقيع الرمز غير صالح"
                     and 0 < candidate_session_id <= 9223372036854775807
                 ):
                     candidate_session = AttendanceSession.objects.filter(
                         id=candidate_session_id
                     ).first()
-                    review_response = _store_unverified_offline_submission(
-                        request, candidate_session, error_msg
-                    )
-                    if review_response:
-                        return review_response
-                return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+                    if candidate_session:
+                        review_response = _store_unverified_offline_submission(
+                            request, candidate_session, error_msg or _("توقيع الرمز غير صالح")
+                        )
+                        if review_response:
+                            return review_response
+                return Response({"error": error_msg or _("رمز التحضير غير صالح")}, status=status.HTTP_400_BAD_REQUEST)
         else:
             otp_clean = str(otp).strip() if otp else ""
             if not session_id:
                 return Response(
-                    {"error": "معرّف جلسة التحضير مطلوب مع رمز OTP."},
+                    {"error": _("معرّف جلسة التحضير مطلوب مع رمز OTP.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
@@ -638,7 +634,7 @@ class StudentCheckInView(APIView):
                     session_id = int(session_id)
                 except (TypeError, ValueError, OverflowError):
                     return Response(
-                        {"error": "معرّف جلسة التحضير غير صالح."},
+                        {"error": _("معرّف جلسة التحضير غير صالح.")},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 attendance_session = get_object_or_404(AttendanceSession, id=session_id)
@@ -646,18 +642,18 @@ class StudentCheckInView(APIView):
                     review_response = _store_unverified_offline_submission(
                         request,
                         attendance_session,
-                        "رمز التحضير السريع OTP غير صحيح أو انتهى.",
+                        _("رمز التحضير السريع OTP غير صحيح أو انتهى."),
                     )
                     if review_response:
                         return review_response
-                    return Response({"error": "رمز التحضير السريع (OTP) غير صحيح أو انتهى."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": _("رمز التحضير السريع (OTP) غير صحيح أو انتهى.")}, status=status.HTTP_400_BAD_REQUEST)
             checkin_method = AttendanceRecord.Methods.OTP
 
         # 3. Never extend an expired session as a side effect of a student check-in.
         if not attendance_session.is_active:
             return Response(
                 {
-                    "error": "أوقف الأستاذ استقبال الحضور لهذه المحاضرة. احتفظ بطلبك واطلب منه فتح الجلسة لمزامنته.",
+                    "error": _("أوقف الأستاذ استقبال الحضور لهذه المحاضرة. احتفظ بطلبك واطلب منه فتح الجلسة لمزامنته."),
                     "session_closed": True,
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -666,7 +662,7 @@ class StudentCheckInView(APIView):
             end_label = timezone.localtime(attendance_session.end_time).strftime("%H:%M")
             return Response(
                 {
-                    "error": f"انتهت فترة الحضور عند الساعة {end_label}. احتفظ بطلبك واطلب من الأستاذ تمديد الفترة لمزامنته.",
+                    "error": _("انتهت فترة الحضور عند الساعة %s. احتفظ بطلبك واطلب من الأستاذ تمديد الفترة لمزامنته.") % end_label,
                     "session_expired": True,
                 },
                 status=status.HTTP_400_BAD_REQUEST,

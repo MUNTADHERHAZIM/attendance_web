@@ -19,7 +19,7 @@
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                         ✏️ {% trans "وضع التعديل" %}
                     </span>
-                    <span class="text-xs font-mono font-bold text-slate-400">جلسة رقم #{{ att_session.id }}</span>
+                    <span class="text-xs font-mono font-bold text-slate-400">{% trans "جلسة رقم" %} #{{ att_session.id }}</span>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">
                     {% trans "تعديل بيانات وتفاصيل المحاضرة" %}
@@ -64,7 +64,7 @@
                                name="course_code" 
                                value="{{ session_obj.course.code }}" 
                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                               placeholder="مثال: CS301">
+                               placeholder="{% trans 'مثال: CS301' %}">
                     </div>
 
                     <div>

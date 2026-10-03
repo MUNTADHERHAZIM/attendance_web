@@ -539,19 +539,22 @@ def manifest_view(request):
         }
 
     manifest.update({
+        "id": "/",
         "start_url": "/",
         "scope": "/",
         "display": "standalone",
-        "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+        "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
         "orientation": "portrait-primary",
         "background_color": "#0f172a",
         "theme_color": "#4f46e5",
+        "prefer_related_applications": False,
         "categories": ["education", "productivity", "utilities"],
         "icons": [
             {
                 "src": f"/static/images/pwa/icon-{size}.png",
                 "sizes": f"{size}x{size}",
                 "type": "image/png",
+                "purpose": "any",
             }
             for size in (72, 96, 128, 144, 152, 192, 384, 512)
         ] + [
@@ -562,9 +565,17 @@ def manifest_view(request):
                 "purpose": "maskable",
             }
             for size in (192, 512)
+        ] + [
+            {
+                "src": "/static/images/pwa/icon-512x512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable",
+            }
         ],
     })
-    response = JsonResponse(manifest)
+    response = JsonResponse(manifest, json_dumps_params={"ensure_ascii": False})
+    response["Content-Type"] = "application/manifest+json; charset=utf-8"
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response["Vary"] = "Cookie"
+    response["Vary"] = "Cookie, Accept-Language"
     return response

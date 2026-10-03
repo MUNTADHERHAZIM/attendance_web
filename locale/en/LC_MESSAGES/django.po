@@ -1,8 +1,9 @@
+#
 msgid ""
 msgstr ""
+"Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "نظام الحضور الذكي"
@@ -29,7 +30,6 @@ msgstr "Sign in"
 msgid "القائمة الرئيسية"
 msgstr "Main menu"
 
-
 msgid "لوحة التحكم"
 msgstr "Dashboard"
 
@@ -43,7 +43,7 @@ msgid "بدء جلسة تحضير طارئة"
 msgstr "Start an ad hoc attendance session"
 
 msgid "سجلات حضور الطلاب"
-msgstr "Student attendance records"
+msgstr "Student Attendance Records"
 
 msgid "شاشة مسح QR (تجربة)"
 msgstr "QR check-in (preview)"
@@ -97,7 +97,8 @@ msgid "أدخل بياناتك لتسجيل الدخول إلى حسابك"
 msgstr "Enter your details to sign in to your account"
 
 msgid "اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من بياناتك وحاول مجدداً."
-msgstr "The username or password is incorrect. Check your details and try again."
+msgstr ""
+"The username or password is incorrect. Check your details and try again."
 
 msgid "اسم المستخدم أو البريد الإلكتروني *"
 msgstr "Username or email *"
@@ -214,7 +215,7 @@ msgid "الرئيسية"
 msgstr "Home"
 
 msgid "تثبيت التطبيق"
-msgstr "Install app"
+msgstr "Install App"
 
 msgid "سجلي الشخصي"
 msgstr "My attendance"
@@ -223,7 +224,7 @@ msgid "خادم محلي متصل"
 msgstr "Local server connected"
 
 msgid "المطور:"
-msgstr "Developed by:"
+msgstr "Developer:"
 
 msgid "إغلاق"
 msgstr "Close"
@@ -258,8 +259,11 @@ msgstr "Sign in"
 msgid "تثبيت تطبيق الحضور الذكي"
 msgstr "Install the Smart Attendance app"
 
-msgid "ثبّت التطبيق على جهازك للوصول السريع، مسح رموز QR بلمسة واحدة، والعمل دون اتصال بالإنترنت!"
-msgstr "Install the app for quick access, one-tap QR scanning, and offline use."
+msgid ""
+"ثبّت التطبيق على جهازك للوصول السريع، مسح رموز QR بلمسة واحدة، والعمل دون "
+"اتصال بالإنترنت!"
+msgstr ""
+"Install the app for quick access, one-tap QR scanning, and offline use."
 
 msgid "تثبيت التطبيق الآن"
 msgstr "Install now"
@@ -270,7 +274,9 @@ msgstr "Later"
 msgid "تثبيت التطبيق على جهاز iOS"
 msgstr "Install the app on iOS"
 
-msgid "لتشغيل نظام الحضور الذكي كتطبيق أصلي، اتبع الخطوات البسيطة التالية في متصفح Safari:"
+msgid ""
+"لتشغيل نظام الحضور الذكي كتطبيق أصلي، اتبع الخطوات البسيطة التالية في متصفح "
+"Safari:"
 msgstr "To use Smart Attendance as an app, follow these steps in Safari:"
 
 msgid "اضغط على زر المشاركة"
@@ -315,11 +321,15 @@ msgstr "Critical academic attendance warning!"
 msgid "نظام الحضور والغياب الذكي للمؤسسات التعليمية"
 msgstr "Smart attendance management for educational institutions"
 
-msgid "نسبة حضورك الإجمالية تقل عن 80%، يرجى تقديم الأعذار لإدارة الكلية لتفادي الحرمان التلقائي."
-msgstr "Your overall attendance is below 80%. Submit any absence justifications to your college administration to avoid automatic exclusion."
+msgid ""
+"نسبة حضورك الإجمالية تقل عن 80%، يرجى تقديم الأعذار لإدارة الكلية لتفادي "
+"الحرمان التلقائي."
+msgstr ""
+"Your overall attendance is below 80%. Submit any absence justifications to "
+"your college administration to avoid automatic exclusion."
 
 msgid "سجل حضوري الأخير"
-msgstr "Recent attendance"
+msgstr "My Recent Attendance Log"
 
 msgid "المادة"
 msgstr "Course"
@@ -328,7 +338,7 @@ msgid "التاريخ"
 msgstr "Date"
 
 msgid "وقت تسجيل الحضور"
-msgstr "Check-in time"
+msgstr "Check-in Timestamp"
 
 msgid "الحالة"
 msgstr "Status"
@@ -337,7 +347,7 @@ msgid "الطريقة"
 msgstr "Method"
 
 msgid "لا يوجد أي سجلات حضور مسجلة لك حالياً."
-msgstr "You have no attendance records yet."
+msgstr "You have no attendance records registered currently."
 
 msgid "إدارة الحضور"
 msgstr "Attendance management"
@@ -345,8 +355,12 @@ msgstr "Attendance management"
 msgid "بذكاء وبساطة"
 msgstr "Smarter and simpler"
 
-msgid "سجّل حضور طلابك عبر QR ديناميكي أو WiFi أو RFID — يعمل حتى بدون إنترنت مع مزامنة تلقائية عند عودة الاتصال."
-msgstr "Track attendance with dynamic QR codes, Wi-Fi, or RFID. Work offline and sync automatically when the connection returns."
+msgid ""
+"سجّل حضور طلابك عبر QR ديناميكي أو WiFi أو RFID — يعمل حتى بدون إنترنت مع "
+"مزامنة تلقائية عند عودة الاتصال."
+msgstr ""
+"Track attendance with dynamic QR codes, Wi-Fi, or RFID. Work offline and "
+"sync automatically when the connection returns."
 
 msgid "صلاحية QR الديناميكي"
 msgstr "Dynamic QR validity"
@@ -413,7 +427,7 @@ msgid "امتحان / كويز"
 msgstr "Exam / quiz"
 
 msgid "الشعبة / المرحلة"
-msgstr "Section / level"
+msgstr "Section / Level"
 
 msgid "تم تثبيت إحداثيات موقعك الحالي للقاعة بنجاح!"
 msgstr "The current location was successfully set for this classroom."
@@ -427,8 +441,11 @@ msgstr "Session time: from"
 msgid "حتى"
 msgstr "until"
 
-msgid "سينتهي كود الـ QR وإمكانية التحضير تلقائياً فور بلوغ وقت الانتهاء المحدد"
-msgstr "The QR code and check-in will automatically expire at the specified end time."
+msgid ""
+"سينتهي كود الـ QR وإمكانية التحضير تلقائياً فور بلوغ وقت الانتهاء المحدد"
+msgstr ""
+"The QR code and check-in will automatically expire at the specified end "
+"time."
 
 msgid "المدة:"
 msgstr "Duration:"
@@ -518,7 +535,7 @@ msgid "أمس"
 msgstr "Yesterday"
 
 msgid "جميع المواد الدراسية"
-msgstr "All courses"
+msgstr "All Courses"
 
 msgid "جميع الشعب"
 msgstr "All sections"
@@ -532,8 +549,12 @@ msgstr "Section"
 msgid "غير مصرح بالدخول"
 msgstr "Access denied"
 
-msgid "ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة أو البيانات. يرجى مراجعة إدارة النظام إذا كنت تعتقد أن هذا خطأ."
-msgstr "You do not have sufficient permission to access this page or data. Please contact the system administrator if you believe this is an error."
+msgid ""
+"ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة أو البيانات. يرجى مراجعة "
+"إدارة النظام إذا كنت تعتقد أن هذا خطأ."
+msgstr ""
+"You do not have sufficient permission to access this page or data. Please "
+"contact the system administrator if you believe this is an error."
 
 msgid "العودة للوحة التحكم"
 msgstr "Return to dashboard"
@@ -557,7 +578,9 @@ msgid "لماذا ظهرت هذه الصفحة؟"
 msgstr "Why am I seeing this page?"
 
 msgid "هذا إجراء أمني قياسي في النظام لمنع تزوير الطلبات، ويحدث غالباً عند:"
-msgstr "This is a standard security measure to prevent forged requests. It usually happens when:"
+msgstr ""
+"This is a standard security measure to prevent forged requests. It usually "
+"happens when:"
 
 msgid "تسجيل الدخول في نافذة أخرى بينما كانت هذه الصفحة مفتوحة."
 msgstr "You sign in in another window while this page is open."
@@ -566,7 +589,8 @@ msgid "استخدام زر الرجوع للخلف (Back) وإعادة إرسا�
 msgstr "You use the Back button and resubmit an old form."
 
 msgid "مرور وقت طويل على فتح الصفحة قبل الضغط على زر الإرسال."
-msgstr "Too much time passes between opening the page and submitting the form."
+msgstr ""
+"Too much time passes between opening the page and submitting the form."
 
 msgid "تحديث الصفحة والمحاولة مجدداً"
 msgstr "Refresh the page and try again"
@@ -580,20 +604,28 @@ msgstr "University of Baghdad - Smart Attendance System"
 msgid "الصفحة غير موجودة"
 msgstr "Page not found"
 
-msgid "عذراً، الرابط الذي تحاول الوصول إليه غير موجود أو تم نقله. يرجى التحقق من صحة الرابط أو العودة إلى لوحة التحكم."
-msgstr "Sorry, the link you followed does not exist or has moved. Check the URL or return to the dashboard."
+msgid ""
+"عذراً، الرابط الذي تحاول الوصول إليه غير موجود أو تم نقله. يرجى التحقق من "
+"صحة الرابط أو العودة إلى لوحة التحكم."
+msgstr ""
+"Sorry, the link you followed does not exist or has moved. Check the URL or "
+"return to the dashboard."
 
 msgid "خطأ غير متوقع في الخادم"
 msgstr "Unexpected server error"
 
-msgid "حدث خطأ داخلي أثناء معالجة طلبك في النظام. تم تسجيل تفاصيل الخطأ تلقائياً للتحقق منها. يرجى إعادة المحاولة لاحقاً."
-msgstr "An internal error occurred while processing your request. The details have been logged for investigation. Please try again later."
+msgid ""
+"حدث خطأ داخلي أثناء معالجة طلبك في النظام. تم تسجيل تفاصيل الخطأ تلقائياً "
+"للتحقق منها. يرجى إعادة المحاولة لاحقاً."
+msgstr ""
+"An internal error occurred while processing your request. The details have "
+"been logged for investigation. Please try again later."
 
 msgid "تحديث الصفحة ومحاولة مجددة"
 msgstr "Refresh the page and try again"
 
 msgid "لوحة إدارة نظام الحضور الذكي"
-msgstr "Smart Attendance Admin"
+msgstr "Smart Attendance System Administration"
 
 msgid "العراق"
 msgstr "Iraq"
@@ -640,8 +672,13 @@ msgstr "For students without a camera or with a weak internet connection:"
 msgid "أدخل كود الـ OTP في شاشة تسجيل الحضور"
 msgstr "Enter the OTP on the check-in screen."
 
-msgid "⚠️ هذا رمز ثابت طويل العمر؛ لا تشاركه خارج القاعة، واستخدم التدوير الديناميكي متى أمكن. فحص GPS ومؤشرات الجهاز قابلة للتزييف."
-msgstr "⚠️ This is a long-lived static code; do not share it outside the classroom. Use rotating codes when possible. GPS checks and device signals can be spoofed."
+msgid ""
+"⚠️ هذا رمز ثابت طويل العمر؛ لا تشاركه خارج القاعة، واستخدم التدوير "
+"الديناميكي متى أمكن. فحص GPS ومؤشرات الجهاز قابلة للتزييف."
+msgstr ""
+"⚠️ This is a long-lived static code; do not share it outside the classroom. "
+"Use rotating codes when possible. GPS checks and device signals can be "
+"spoofed."
 
 msgid "نظام الحضور الذكي الأكاديمي"
 msgstr "Academic Smart Attendance System"
@@ -667,8 +704,12 @@ msgstr "You are working offline."
 msgid "انقطع الاتصال بالشبكة"
 msgstr "Network connection lost"
 
-msgid "يمكنك حفظ طلب الحضور على هذا الجهاز دون اتصال. لن يُعتمد الحضور إلا بعد عودة الاتصال والتحقق منه بواسطة الخادم."
-msgstr "You can save an attendance request on this device while offline. Attendance is not confirmed until the connection returns and the server verifies it."
+msgid ""
+"يمكنك حفظ طلب الحضور على هذا الجهاز دون اتصال. لن يُعتمد الحضور إلا بعد عودة"
+" الاتصال والتحقق منه بواسطة الخادم."
+msgstr ""
+"You can save an attendance request on this device while offline. Attendance "
+"is not confirmed until the connection returns and the server verifies it."
 
 msgid "إعادة فحص الاتصال"
 msgstr "Check connection again"
@@ -676,8 +717,15 @@ msgstr "Check connection again"
 msgid "تسجيل حضور دون اتصال"
 msgstr "Record attendance offline"
 
-msgid "امسح رمز الأستاذ أو الصقه، ثم احفظ الطلب على هذا الجهاز. سيظل الطلب غير مؤكد حتى يصل إلى الخادم ويقبله. قد تنتهي صلاحية QR المتجدد قبل المزامنة؛ اطلب من الأستاذ استخدام QR الثابت للمحاضرة."
-msgstr "Scan or paste the instructor's code, then save the request on this device. It remains unconfirmed until the server receives and accepts it. A rotating QR code may expire before synchronization; ask the instructor to use the session's static QR code."
+msgid ""
+"امسح رمز الأستاذ أو الصقه، ثم احفظ الطلب على هذا الجهاز. سيظل الطلب غير مؤكد"
+" حتى يصل إلى الخادم ويقبله. قد تنتهي صلاحية QR المتجدد قبل المزامنة؛ اطلب من"
+" الأستاذ استخدام QR الثابت للمحاضرة."
+msgstr ""
+"Scan or paste the instructor's code, then save the request on this device. "
+"It remains unconfirmed until the server receives and accepts it. A rotating "
+"QR code may expire before synchronization; ask the instructor to use the "
+"session's static QR code."
 
 msgid "اسم الطالب الكامل أو الرقم الجامعي"
 msgstr "Student full name or university ID"
@@ -715,8 +763,13 @@ msgstr "Requests saved on this device:"
 msgid "إعادة المحاولة عند عودة الاتصال"
 msgstr "Retry when connection returns"
 
-msgid "هذه الطلبات محفوظة على هذا الجهاز فقط، ولا يراها الأستاذ قبل مزامنتها. أعد فتح هذا المتصفح عند عودة الاتصال."
-msgstr "These requests are saved only on this device and are not visible to the instructor until synchronized. Reopen this browser when the connection returns."
+msgid ""
+"هذه الطلبات محفوظة على هذا الجهاز فقط، ولا يراها الأستاذ قبل مزامنتها. أعد "
+"فتح هذا المتصفح عند عودة الاتصال."
+msgstr ""
+"These requests are saved only on this device and are not visible to the "
+"instructor until synchronized. Reopen this browser when the connection "
+"returns."
 
 msgid "لا توجد طلبات معلقة على هذا الجهاز."
 msgstr "There are no pending requests on this device."
@@ -733,8 +786,11 @@ msgstr "Waiting to sync"
 msgid "تعذر قراءة الطلبات المحلية. لم يتم حذف أي بيانات."
 msgstr "Could not read local requests. No data was deleted."
 
-msgid "المسح بالكاميرا غير مدعوم في هذا المتصفح. الصق رابط QR أو رمزه في الحقل."
-msgstr "Camera scanning is not supported in this browser. Paste the QR link or code into the field."
+msgid ""
+"المسح بالكاميرا غير مدعوم في هذا المتصفح. الصق رابط QR أو رمزه في الحقل."
+msgstr ""
+"Camera scanning is not supported in this browser. Paste the QR link or code "
+"into the field."
 
 msgid "تعذر فتح الكاميرا. استخدم حقل لصق رمز QR."
 msgstr "Could not open the camera. Paste the QR code into the field."
@@ -746,7 +802,9 @@ msgid "تمت قراءة الرمز. أدخل اسم الطالب ثم احفظ 
 msgstr "Code scanned. Enter the student's name, then save the request."
 
 msgid "لم تعمل الكاميرا. تحقق من الإذن أو الصق رمز QR يدوياً."
-msgstr "The camera did not start. Check its permission or paste the QR code manually."
+msgstr ""
+"The camera did not start. Check its permission or paste the QR code "
+"manually."
 
 msgid "اكتب اسم الطالب أو رقمه الجامعي أولاً."
 msgstr "Enter the student's name or university ID first."
@@ -757,20 +815,29 @@ msgstr "Scan a QR code, or enter the OTP and session ID."
 msgid "هذا الطالب وهذا الرمز محفوظان مسبقاً على الجهاز."
 msgstr "This student and code have already been saved on this device."
 
-msgid "وصلت الطلبات المحفوظة إلى الحد الآمن (500). اتصل بالشبكة لمزامنتها أولاً."
-msgstr "The safe limit of 500 saved requests has been reached. Connect to the network and sync them first."
+msgid ""
+"وصلت الطلبات المحفوظة إلى الحد الآمن (500). اتصل بالشبكة لمزامنتها أولاً."
+msgstr ""
+"The safe limit of 500 saved requests has been reached. Connect to the "
+"network and sync them first."
 
 msgid "حُفظ الطلب محلياً فقط؛ لم يُسجّل حضوراً مؤكداً بعد."
-msgstr "The request was saved on this device only; attendance is not confirmed yet."
+msgstr ""
+"The request was saved on this device only; attendance is not confirmed yet."
 
 msgid "تعذر حفظ الطلب محلياً. تأكد من توفر مساحة في ذاكرة الجهاز."
-msgstr "Could not save the request locally. Check that the device has enough storage space."
+msgstr ""
+"Could not save the request locally. Check that the device has enough storage"
+" space."
 
 msgid "لا يوجد اتصال حالياً. ستبقى الطلبات محفوظة على الجهاز."
-msgstr "There is no connection right now. Requests will remain saved on this device."
+msgstr ""
+"There is no connection right now. Requests will remain saved on this device."
 
 msgid "جاري فتح شاشة المزامنة الآمنة؛ ستبقى الطلبات محفوظة حتى يؤكدها الخادم."
-msgstr "Opening secure synchronization. Requests will remain saved until the server confirms them."
+msgstr ""
+"Opening secure synchronization. Requests will remain saved until the server "
+"confirms them."
 
 msgid "جاري الفحص..."
 msgstr "Checking..."
@@ -787,11 +854,16 @@ msgstr "❌ The server is currently unreachable. Check your network connection."
 msgid "⚡ عادت الشبكة للعمل! جاري إعادة التحميل..."
 msgstr "⚡ The network is back. Reloading..."
 
-msgid "لديك طلبات حضور محفوظة على هذا الجهاز. ابقَ في الصفحة أو أعد فتح الموقع عند عودة الإنترنت."
-msgstr "You have attendance requests saved on this device. Stay on this page or reopen the site when you are back online."
+msgid ""
+"لديك طلبات حضور محفوظة على هذا الجهاز. ابقَ في الصفحة أو أعد فتح الموقع عند "
+"عودة الإنترنت."
+msgstr ""
+"You have attendance requests saved on this device. Stay on this page or "
+"reopen the site when you are back online."
 
 msgid "تعذر الاتصال بالخادم. أعد المحاولة عند توفر الشبكة."
-msgstr "Could not connect to the server. Try again when the network is available."
+msgstr ""
+"Could not connect to the server. Try again when the network is available."
 
 msgid "تم تسجيل الحضور على الخادم."
 msgstr "Attendance was recorded on the server."
@@ -803,34 +875,47 @@ msgid "رفض الخادم هذا الطلب؛ راجع الأستاذ."
 msgstr "The server rejected this request. Contact the instructor."
 
 msgid "انقطع الاتصال أثناء المزامنة؛ بقيت الطلبات محفوظة على هذا الجهاز."
-msgstr "The connection was lost during synchronization. Requests remain saved on this device."
+msgstr ""
+"The connection was lost during synchronization. Requests remain saved on "
+"this device."
 
-msgid "الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة."
-msgstr "The server is busy or temporarily unavailable. This request and the remaining requests are still saved."
+msgid ""
+"الخادم مشغول أو غير متاح مؤقتاً؛ بقيت الطلبات الحالية وما بعدها محفوظة."
+msgstr ""
+"The server is busy or temporarily unavailable. This request and the "
+"remaining requests are still saved."
 
 msgid "وصل طلبك للأستاذ للمراجعة، ولم يُسجل حضوراً مؤكداً بعد."
-msgstr "Your request was sent to the instructor for review; attendance is not confirmed yet."
+msgstr ""
+"Your request was sent to the instructor for review; attendance is not "
+"confirmed yet."
 
 msgid "أكد الخادم تسجيل الحضور بعد عودة الاتصال."
 msgstr "The server confirmed your attendance after the connection returned."
 
 msgid "بقيت طلبات محفوظة ولم يؤكدها الخادم بعد."
-msgstr "Some requests remain saved and have not yet been confirmed by the server."
+msgstr ""
+"Some requests remain saved and have not yet been confirmed by the server."
 
 msgid "تعذرت قراءة الطلبات المحفوظة أو مزامنتها؛ لم نحذف بيانات الجهاز."
-msgstr "Could not read or synchronize the saved requests. No device data was deleted."
+msgstr ""
+"Could not read or synchronize the saved requests. No device data was "
+"deleted."
 
 msgid "أكد الخادم %s طلباً."
 msgstr "The server confirmed %s attendance request(s)."
 
 msgid "أُرسل %s طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد."
-msgstr "%s request(s) were sent to the instructor for review; attendance is not confirmed yet."
+msgstr ""
+"%s request(s) were sent to the instructor for review; attendance is not "
+"confirmed yet."
 
 msgid "بقي %s طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: %s"
 msgstr "%s request(s) remain on this device and need instructor review: %s"
 
 msgid "بقي %s طلباً محفوظاً ولم يؤكدها الخادم بعد."
-msgstr "%s request(s) remain saved and have not yet been confirmed by the server."
+msgstr ""
+"%s request(s) remain saved and have not yet been confirmed by the server."
 
 msgid "وضع عدم الاتصال"
 msgstr "Offline mode"
@@ -883,8 +968,12 @@ msgstr "Enter the verification code provided by your administrator"
 msgid "تم حفظ الكود محلياً، سيظهر تلقائياً في المرة القادمة"
 msgstr "The code is saved on this device and will be filled in next time"
 
-msgid "مخصص لأعضاء هيئة التدريس؛ يحدده مدير النظام من لوحة الإدارة ويمكن تغييره في أي وقت."
-msgstr "For faculty only. The system administrator manages this code and can change it at any time."
+msgid ""
+"مخصص لأعضاء هيئة التدريس؛ يحدده مدير النظام من لوحة الإدارة ويمكن تغييره في "
+"أي وقت."
+msgstr ""
+"For faculty only. The system administrator manages this code and can change "
+"it at any time."
 
 msgid "8 أحرف على الأقل"
 msgstr "At least 8 characters"
@@ -908,7 +997,8 @@ msgid "جارٍ الإرسال…"
 msgstr "Submitting…"
 
 msgid "معلوماتك محمية ولن تُشارَك مع أي طرف ثالث"
-msgstr "Your information is protected and will not be shared with third parties"
+msgstr ""
+"Your information is protected and will not be shared with third parties"
 
 msgid "متابعة الأبناء - نظام الحضور الذكي"
 msgstr "Ward attendance - Smart Attendance System"
@@ -917,19 +1007,25 @@ msgid "متابعة حضور أبنائكم"
 msgstr "Monitor your children's attendance"
 
 msgid "تجدون أدناه تفاصيل ونسب حضور وغياب أبنائكم المسجلين في النظام."
-msgstr "Below are the attendance details and rates for your children registered in the system."
+msgstr ""
+"Below are the attendance details and rates for your children registered in "
+"the system."
 
 msgid "نسبة الحضور"
 msgstr "Attendance rate"
 
 msgid "أيام الغياب"
-msgstr "Days absent"
+msgstr "Absence Days"
 
 msgid "أيام"
 msgstr "days"
 
-msgid "تنبيه: الطالب متأخر دراسياً ومعرض للحرمان الأكاديمي لتجاوز الغياب المسموح به."
-msgstr "Warning: This student is at risk of academic exclusion for exceeding the allowed number of absences."
+msgid ""
+"تنبيه: الطالب متأخر دراسياً ومعرض للحرمان الأكاديمي لتجاوز الغياب المسموح "
+"به."
+msgstr ""
+"Warning: This student is at risk of academic exclusion for exceeding the "
+"allowed number of absences."
 
 msgid "سجل الغياب والحضور الأخير"
 msgstr "Recent attendance and absence"
@@ -937,8 +1033,12 @@ msgstr "Recent attendance and absence"
 msgid "لا يوجد سجلات حضور مسجلة حالياً."
 msgstr "There are no attendance records yet."
 
-msgid "لم يتم العثور على أي أبناء مرتبطين بحسابكم. يرجى التواصل مع الدعم الفني للمؤسسة لربط الحساب."
-msgstr "No children are linked to your account. Contact your institution's support team to link an account."
+msgid ""
+"لم يتم العثور على أي أبناء مرتبطين بحسابكم. يرجى التواصل مع الدعم الفني "
+"للمؤسسة لربط الحساب."
+msgstr ""
+"No children are linked to your account. Contact your institution's support "
+"team to link an account."
 
 msgid "لوحة الإدارة الشاملة - نظام الحضور الذكي"
 msgstr "Administration overview - Smart Attendance System"
@@ -1081,8 +1181,13 @@ msgstr "Smart Arabic name matching"
 msgid "مثال: فاطمة علي حسن أو 20261055"
 msgstr "For example: Fatima Ali Hassan or 20261055"
 
-msgid "💡 يتعرف النظام على الأسماء بدقة ويتجاهل الفروقات الإملائية تلقائياً مثل التاء المربوطة والهاء (فاطمة = فاطمه) والألف والهمزات (أحمد = احمد) وحركات التشكيل."
-msgstr "💡 The system matches Arabic names while ignoring common spelling variations, such as ة/ه, hamza forms, and diacritics."
+msgid ""
+"💡 يتعرف النظام على الأسماء بدقة ويتجاهل الفروقات الإملائية تلقائياً مثل "
+"التاء المربوطة والهاء (فاطمة = فاطمه) والألف والهمزات (أحمد = احمد) وحركات "
+"التشكيل."
+msgstr ""
+"💡 The system matches Arabic names while ignoring common spelling variations,"
+" such as ة/ه, hamza forms, and diacritics."
 
 msgid "📷 مسح الـ QR"
 msgstr "📷 Scan QR"
@@ -1102,7 +1207,9 @@ msgstr "Confirm check-in now"
 msgid "جاري مطابقة الاسم والموقع..."
 msgstr "Verifying your name and location..."
 
-msgid "💡 أدخل كود التحضير السريع (6 أرقام) المعروض على شاشة الأستاذ لتسجيل الحضور فورياً."
+msgid ""
+"💡 أدخل كود التحضير السريع (6 أرقام) المعروض على شاشة الأستاذ لتسجيل الحضور "
+"فورياً."
 msgstr "💡 Enter the six-digit code displayed by your instructor to check in."
 
 msgid "رمز التحضير السريع (OTP) *"
@@ -1127,16 +1234,18 @@ msgid "إعادة المحاولة"
 msgstr "Try again"
 
 msgid "طلبات هذا الجهاز فقط (لا يراها الأستاذ قبل إرسالها للخادم):"
-msgstr "Requests stored on this device only (your instructor cannot see them until they are sent to the server):"
+msgstr ""
+"Requests stored on this device only (your instructor cannot see them until "
+"they are sent to the server):"
 
 msgid "إعادة محاولة المزامنة / إعادة فحص المرفوض"
 msgstr "Retry sync / recheck rejected requests"
 
 msgid "معلم / مشرف"
-msgstr "Teacher / Instructor"
+msgstr "Teacher / Supervisor"
 
 msgid "مدير المؤسسة"
-msgstr "Institution administrator"
+msgstr "Institution Administrator"
 
 msgid "مدير النظام"
 msgstr "System administrator"
@@ -1145,7 +1254,8 @@ msgid "الملف الشخصي وإعدادات الحساب"
 msgstr "Profile and account settings"
 
 msgid "عرض وتحديث بياناتك الشخصية، اسم الجامعة، ومعلومات الاعتماد الأكاديمي"
-msgstr "View and update your personal details, institution, and academic information"
+msgstr ""
+"View and update your personal details, institution, and academic information"
 
 msgid "تاريخ الانضمام"
 msgstr "Date joined"
@@ -1163,7 +1273,7 @@ msgid "الجامعة / الكلية:"
 msgstr "Institution:"
 
 msgid "نوع الدراسة:"
-msgstr "Study shift:"
+msgstr "Study Shift:"
 
 msgid "تاريخ الميلاد:"
 msgstr "Date of birth:"
@@ -1220,7 +1330,8 @@ msgid "مثال: جامعة العراق - كلية الهندسة"
 msgstr "For example: University of Iraq - College of Engineering"
 
 msgid "سيتم تسجيل هذه الجامعة وربط حسابك بها مباشرة عند الحفظ."
-msgstr "This institution will be added and linked to your account when you save."
+msgstr ""
+"This institution will be added and linked to your account when you save."
 
 msgid "الرقم الجامعي / الطلابي *"
 msgstr "Student ID *"
@@ -1229,10 +1340,10 @@ msgid "مثال: 20261042"
 msgstr "For example: 20261042"
 
 msgid "نوع الدراسة (الدوام)"
-msgstr "Study shift"
+msgstr "Study Shift (Attendance)"
 
 msgid "تاريخ الميلاد"
-msgstr "Date of birth"
+msgstr "Birth Date"
 
 msgid "الرقم الوظيفي / الأكاديمي"
 msgstr "Staff / academic ID"
@@ -1277,28 +1388,32 @@ msgid "وضع التعديل"
 msgstr "Edit mode"
 
 msgid "تعديل بيانات وتفاصيل المحاضرة"
-msgstr "Edit class information and details"
+msgstr "Edit Lecture Details & Parameters"
 
-msgid "يمكنك تعديل اسم المادة، الشعبة، نوع الدراسة (صباحي/مسائي)، التوقيت، القاعة، ورمز الـ OTP بكل سهولة."
-msgstr "Update the course, section, study shift, schedule, room, and OTP code."
+msgid ""
+"يمكنك تعديل اسم المادة، الشعبة، نوع الدراسة (صباحي/مسائي)، التوقيت، القاعة، "
+"ورمز الـ OTP بكل سهولة."
+msgstr ""
+"Easily edit course name, section, study shift (morning/evening), schedule, "
+"classroom, and OTP code."
 
 msgid "إلغاء والعودة"
-msgstr "Cancel and return"
+msgstr "Cancel & Return"
 
 msgid "المادة والشعبة الدراسية"
 msgstr "Course and section"
 
 msgid "اسم المادة الدراسية *"
-msgstr "Course name *"
+msgstr "Course Name *"
 
 msgid "مثال: الذكاء الاصطناعي التوليدي"
 msgstr "For example: Generative AI"
 
 msgid "رمز المادة (Code)"
-msgstr "Course code"
+msgstr "Course Code"
 
 msgid "اسم الشعبة / الفصل *"
-msgstr "Section name *"
+msgstr "Section / Class Name *"
 
 msgid "مثال: شعبة أ"
 msgstr "For example: Section A"
@@ -1316,10 +1431,10 @@ msgid "نوع الدراسة (الدوام) *"
 msgstr "Study shift *"
 
 msgid "تاريخ المحاضرة *"
-msgstr "Class date *"
+msgstr "Lecture Date *"
 
 msgid "القاعة / المختبر"
-msgstr "Room / lab"
+msgstr "Classroom / Lab"
 
 msgid "مثال: القاعة الذكية - مختبر الحاسوب 2"
 msgstr "For example: Smart Room - Computer Lab 2"
@@ -1358,7 +1473,7 @@ msgid "كود التحضير السريع (OTP المكون من 6 أرقام)"
 msgstr "Quick attendance code (6-digit OTP)"
 
 msgid "مثال: 849201"
-msgstr "For example: 849201"
+msgstr "e.g. 849201"
 
 msgid "الجلسة نشطة ومفتوحة لاستقبال حضور الطلاب"
 msgstr "Session is active and open for student check-in"
@@ -1375,8 +1490,12 @@ msgstr "Save changes"
 msgid "طلبات الهاتف غير المتحقق منها"
 msgstr "Unverified phone submissions"
 
-msgid "هذه الطلبات وصلت من جهاز الطالب لكن تعذر التحقق من QR أو OTP. لا تُحتسب حضوراً إلا بعد موافقتك."
-msgstr "These requests arrived from student devices, but their QR or OTP could not be verified. They will not count as attendance until you approve them."
+msgid ""
+"هذه الطلبات وصلت من جهاز الطالب لكن تعذر التحقق من QR أو OTP. لا تُحتسب "
+"حضوراً إلا بعد موافقتك."
+msgstr ""
+"These requests arrived from student devices, but their QR or OTP could not "
+"be verified. They will not count as attendance until you approve them."
 
 msgid "بانتظارك"
 msgstr "awaiting review"
@@ -1418,19 +1537,19 @@ msgid "اسم الطالب والمعلومات"
 msgstr "Student name and details"
 
 msgid "الرقم الجامعي"
-msgstr "Student ID"
+msgstr "University ID"
 
 msgid "نوع الدراسة"
 msgstr "Study shift"
 
 msgid "حالة الحضور"
-msgstr "Attendance status"
+msgstr "Attendance Status"
 
 msgid "وقت التسجيل"
-msgstr "Check-in time"
+msgstr "Check-in Time"
 
 msgid "طريقة التحضير"
-msgstr "Check-in method"
+msgstr "Method"
 
 msgid "تعديل يدوي فوري"
 msgstr "Quick manual update"
@@ -1510,8 +1629,12 @@ msgstr "Approve and add to section"
 msgid "لا يوجد طلاب مسجلون في هذه الشعبة الدراسية حالياً."
 msgstr "There are no students enrolled in this section yet."
 
-msgid "يمكنك إضافة طلاب إلى الشعبة الدراسية من خلال صفحة \"طلابي والشعب\" أو استيراد ملف إكسل."
-msgstr "Add students from the \"My Students and Sections\" page or import them from an Excel file."
+msgid ""
+"يمكنك إضافة طلاب إلى الشعبة الدراسية من خلال صفحة \"طلابي والشعب\" أو "
+"استيراد ملف إكسل."
+msgstr ""
+"Add students from the \"My Students and Sections\" page or import them from "
+"an Excel file."
 
 msgid "إضافة طلاب للشعبة"
 msgstr "Add students to section"
@@ -1534,7 +1657,6 @@ msgstr "Instructor:"
 msgid "بدء تحضير لمحاضرة طارئة"
 msgstr "Start an ad hoc attendance session"
 
-
 msgid "الفصل الدراسي / الشعبة"
 msgstr "Term / section"
 
@@ -1554,7 +1676,9 @@ msgid "تفعيل التحضير"
 msgstr "Start attendance"
 
 msgid "جدول المحاضرات فارغ. يرجى مراجعة إدارة الكلية لإضافة الحصص."
-msgstr "Your class schedule is empty. Contact your college administrator to add classes."
+msgstr ""
+"Your class schedule is empty. Contact your college administrator to add "
+"classes."
 
 msgid "المعلم"
 msgstr "Instructor"
@@ -1562,8 +1686,13 @@ msgstr "Instructor"
 msgid "اليوم"
 msgstr "Today"
 
-msgid "تنبيه للأستاذ: يوجد {{ count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة."
-msgstr "Instructor notice: There are {{ count }} attendance records for new or unregistered students in this section. Review the names and add approved students to the roster."
+msgid ""
+"تنبيه للأستاذ: يوجد {{ count }} سجل حضور لطلاب جدد أو غير مسجلين في هذه "
+"الشعبة. راجع الأسماء وأضف الطلاب المعتمدين إلى القائمة."
+msgstr ""
+"Instructor notice: There are {{ count }} attendance records for new or "
+"unregistered students in this section. Review the names and add approved "
+"students to the roster."
 
 msgid "جهاز مشترك مع {{ count }} طالب"
 msgid_plural "جهاز مشترك مع {{ count }} طلاب"
@@ -1616,10 +1745,10 @@ msgid "مسح الكل"
 msgstr "Delete all"
 
 msgid "العملية"
-msgstr "Action"
+msgstr "Operation"
 
 msgid "الوقت والتاريخ"
-msgstr "Date and time"
+msgstr "Date & Time"
 
 msgid "التفاصيل"
 msgstr "Details"
@@ -1664,22 +1793,28 @@ msgid "بطاقة RFID:"
 msgstr "RFID card:"
 
 msgid "سجل حضور وغياب الطالب المفصل"
-msgstr "Detailed student attendance record"
+msgstr "Student Detailed Attendance & Absence Log"
 
 msgid "طريقة الحضور"
-msgstr "Check-in method"
+msgstr "Check-in Method"
 
 msgid "ملاحظات ومبررات"
 msgstr "Notes and justifications"
 
 msgid "لا توجد أي سجلات حضور مسجلة للطالب في النظام."
-msgstr "No attendance records have been recorded for this student."
+msgstr "No attendance records registered for this student in the system."
 
-msgid "أدخل بريدك الإلكتروني المرتبط بحسابك وسنرسل لك رابط إعادة تعيين كلمة المرور فوراً."
-msgstr "Enter the email address associated with your account and we will send you a password reset link."
+msgid ""
+"أدخل بريدك الإلكتروني المرتبط بحسابك وسنرسل لك رابط إعادة تعيين كلمة المرور "
+"فوراً."
+msgstr ""
+"Enter the email address associated with your account and we will send you a "
+"password reset link."
 
 msgid "سيصلك بريد إلكتروني خلال دقائق. تحقق من مجلد Spam إذا لم تجده."
-msgstr "You should receive an email shortly. Check your spam folder if it does not arrive."
+msgstr ""
+"You should receive an email shortly. Check your spam folder if it does not "
+"arrive."
 
 msgid "إرسال رابط الاستعادة"
 msgstr "Send reset link"
@@ -1786,8 +1921,12 @@ msgstr "Academic risk and early-warning radar"
 msgid "استشعار فوري"
 msgstr "Live monitoring"
 
-msgid "رصد استباقي للطلبة المهددين بالحرمان الأكاديمي مع دعم الإنذار المباشر عبر WhatsApp ومقارنة الالتزام بين الدراستين"
-msgstr "Proactively identify students at risk of academic disqualification, send WhatsApp alerts, and compare attendance across shifts."
+msgid ""
+"رصد استباقي للطلبة المهددين بالحرمان الأكاديمي مع دعم الإنذار المباشر عبر "
+"WhatsApp ومقارنة الالتزام بين الدراستين"
+msgstr ""
+"Proactively identify students at risk of academic disqualification, send "
+"WhatsApp alerts, and compare attendance across shifts."
 
 msgid "حرمان وشيك:"
 msgstr "At risk of disqualification:"
@@ -1820,13 +1959,15 @@ msgid "أعلى نسبة حضور وانتظام في قاعات المحاضر�
 msgstr "The highest attendance and consistency across classes"
 
 msgid "الطلاب الأكثر غياباً المهددون بالحرمان (أعلى أولويات المتابعة)"
-msgstr "Students with the most absences and at risk of disqualification (highest follow-up priority)"
+msgstr ""
+"Students with the most absences and at risk of disqualification (highest "
+"follow-up priority)"
 
 msgid "إجمالي الحالات المرصودة:"
 msgstr "Total flagged cases:"
 
 msgid "اسم الطالب"
-msgstr "Student name"
+msgstr "Student Name"
 
 msgid "الدراسة"
 msgstr "Study shift"
@@ -1835,7 +1976,7 @@ msgid "مرات الغياب"
 msgstr "Absences"
 
 msgid "نسبة الغياب"
-msgstr "Absence rate"
+msgstr "Absence Rate"
 
 msgid "مستوى الخطورة"
 msgstr "Risk level"
@@ -1856,7 +1997,9 @@ msgid "بدون رقم هاتف"
 msgstr "No phone number"
 
 msgid "رادار الأمان: جميع الطلاب ملتزمون ونسب الغياب ضمن الحدود الطبيعية!"
-msgstr "All students are in good standing and absence rates are within the normal range."
+msgstr ""
+"All students are in good standing and absence rates are within the normal "
+"range."
 
 msgid "لا يوجد أي طالب تجاوز حد الإنذار الأكاديمي حتى الآن."
 msgstr "No student has exceeded the academic warning threshold."
@@ -1903,11 +2046,19 @@ msgstr "PM"
 msgid "ص"
 msgstr "AM"
 
-msgid "حدد المادة والشعبة، وحدد موعد ووقت المحاضرة بدقة مع تفعيل حواجز الأمان وفحص منع التضارب بين الأساتذة والطلاب"
-msgstr "Choose a course and section, set the class date and time, and configure security controls and schedule-conflict checks."
+msgid ""
+"حدد المادة والشعبة، وحدد موعد ووقت المحاضرة بدقة مع تفعيل حواجز الأمان وفحص "
+"منع التضارب بين الأساتذة والطلاب"
+msgstr ""
+"Choose a course and section, set the class date and time, and configure "
+"security controls and schedule-conflict checks."
 
-msgid "فصل صارم بين طلاب الدراسة الصباحية والمسائية لمنع تضارب الجداول والقاعات وسجلات الحضور"
-msgstr "Morning and evening students are kept separate to prevent schedule, room, and attendance conflicts."
+msgid ""
+"فصل صارم بين طلاب الدراسة الصباحية والمسائية لمنع تضارب الجداول والقاعات "
+"وسجلات الحضور"
+msgstr ""
+"Morning and evening students are kept separate to prevent schedule, room, "
+"and attendance conflicts."
 
 msgid "دوام نهاري"
 msgstr "Morning schedule"
@@ -1933,11 +2084,20 @@ msgstr "A blocking schedule or academic conflict was found"
 msgid "تنبيه جدول المحاضرة"
 msgstr "Schedule notice"
 
-msgid "نظام منع التضارب نشط: تم إيقاف زر البدء مؤقتاً لحماية جدول الأستاذ والشعبة. يرجى تغيير الوقت أو الشعبة للمتابعة."
-msgstr "Conflict protection is active. Starting is temporarily disabled to protect the instructor and section schedules. Change the time or section to continue."
+msgid ""
+"نظام منع التضارب نشط: تم إيقاف زر البدء مؤقتاً لحماية جدول الأستاذ والشعبة. "
+"يرجى تغيير الوقت أو الشعبة للمتابعة."
+msgstr ""
+"Conflict protection is active. Starting is temporarily disabled to protect "
+"the instructor and section schedules. Change the time or section to "
+"continue."
 
-msgid "لا يوجد أي تضارب: جدول الأستاذ، شعبة الطلاب، والقاعة متوفرة ومؤكدة بالكامل لهذا الموعد."
-msgstr "No conflicts found. The instructor schedule, student section, and room are available for this time."
+msgid ""
+"لا يوجد أي تضارب: جدول الأستاذ، شعبة الطلاب، والقاعة متوفرة ومؤكدة بالكامل "
+"لهذا الموعد."
+msgstr ""
+"No conflicts found. The instructor schedule, student section, and room are "
+"available for this time."
 
 msgid "جاهز للإطلاق"
 msgstr "Ready to start"
@@ -2033,7 +2193,9 @@ msgid "إلزام التحقق من التواجد الجغرافي داخل ا�
 msgstr "Require location verification on campus (GPS geofence)"
 
 msgid "يشترط وجود الطالب فعلياً داخل القاعة أو الحرم الجامعي بمسافة محددة"
-msgstr "Students must be physically within the specified distance of the classroom or campus."
+msgstr ""
+"Students must be physically within the specified distance of the classroom "
+"or campus."
 
 msgid "نطاق السماح الجغرافي:"
 msgstr "Allowed geofence radius:"
@@ -2057,7 +2219,9 @@ msgid "إلزام الاتصال بشبكة WiFi القاعة أو الـ Hotspo
 msgstr "Require connection to the classroom Wi-Fi or hotspot"
 
 msgid "يشترط اتصال هاتف الطالب بالـ WiFi المعين داخل القاعة لتأكيد التواجد"
-msgstr "Students must connect to the designated classroom Wi-Fi to verify their presence."
+msgstr ""
+"Students must connect to the designated classroom Wi-Fi to verify their "
+"presence."
 
 msgid "اسم شبكة الـ WiFi المسموحة (SSID)"
 msgstr "Allowed Wi-Fi network name (SSID)"
@@ -2207,7 +2371,7 @@ msgid "كامل الفصل الدراسي"
 msgstr "Entire term"
 
 msgid "أو تاريخ محدد:"
-msgstr "Or select a date:"
+msgstr "Or specific date:"
 
 msgid "ابحث باسم الطالب أو رقمه الجامعي..."
 msgstr "Search by student name or ID..."
@@ -2237,10 +2401,10 @@ msgid "لوحة تحكم الأستاذ المستقلة"
 msgstr "Instructor dashboard"
 
 msgid "دراسة صباحية"
-msgstr "Morning shift"
+msgstr "Morning Study"
 
 msgid "دراسة مسائية"
-msgstr "Evening shift"
+msgstr "Evening Study"
 
 msgid "عام"
 msgstr "General"
@@ -2279,7 +2443,7 @@ msgid "رفع ملف Excel / CSV"
 msgstr "Upload an Excel / CSV file"
 
 msgid "لصق الأسماء نصياً"
-msgstr "Paste names as text"
+msgstr "Paste Names as Text"
 
 msgid "الشعبة المراد إلحاق الطلاب بها"
 msgstr "Section to enroll students in"
@@ -2288,7 +2452,9 @@ msgid "لا توجد شعب سابقة - اضغط على (إنشاء شعبة ج
 msgstr "No existing sections. Use Create a new section above."
 
 msgid "سيتم إنشاء هذه الشعبة فوراً وإلحاق الطلاب المستوردين بها:"
-msgstr "This section will be created now, and the imported students will be enrolled in it:"
+msgstr ""
+"This section will be created now, and the imported students will be enrolled"
+" in it:"
 
 msgid "مثال: شعبة ب أو Group B"
 msgstr "For example: Section B or Group B"
@@ -2296,20 +2462,30 @@ msgstr "For example: Section B or Group B"
 msgid "ملف Excel أو CSV"
 msgstr "Excel or CSV file"
 
-msgid "يجب أن يحتوي الملف على عمود باسم (الاسم) وعمود باسم (الرقم الجامعي)، واختيارياً (الهاتف)."
-msgstr "The file must include columns for name and student ID, and may optionally include phone."
+msgid ""
+"يجب أن يحتوي الملف على عمود باسم (الاسم) وعمود باسم (الرقم الجامعي)، "
+"واختيارياً (الهاتف)."
+msgstr ""
+"The file must include columns for name and student ID, and may optionally "
+"include phone."
 
 msgid "الصق قائمة أسماء الطلاب هنا (كل طالب في سطر مستقل)"
 msgstr "Paste the student list here, with one student on each line"
 
-msgid "مثال: كلار جير علي الساعدي، مصطفى حسين كاظم الكعبي، يوسف أحمد جاسم البصري"
+msgid ""
+"مثال: كلار جير علي الساعدي، مصطفى حسين كاظم الكعبي، يوسف أحمد جاسم البصري"
 msgstr "For example: Alex Smith, Sam Jones, and Taylor Brown"
 
-msgid "سيُنشأ حساب ورقم جامعي تلقائياً لكل اسم جديد. الأسماء المسجلة مسبقاً في الشعبة نفسها ستُتجاوز لتفادي التكرار؛ راجع الأسماء المتشابهة بعد الاستيراد."
-msgstr "A new account and student ID will be created for each new name. Existing students in this section will be skipped to prevent duplicates; review similar names after importing."
+msgid ""
+"سيُنشأ حساب ورقم جامعي تلقائياً لكل اسم جديد. الأسماء المسجلة مسبقاً في "
+"الشعبة نفسها ستُتجاوز لتفادي التكرار؛ راجع الأسماء المتشابهة بعد الاستيراد."
+msgstr ""
+"A new account and student ID will be created for each new name. Existing "
+"students in this section will be skipped to prevent duplicates; review "
+"similar names after importing."
 
 msgid "إنشاء شعبة دراسية جديدة"
-msgstr "Create a new class section"
+msgstr "Create New Class Section"
 
 msgid "اسم الشعبة / المجموعة"
 msgstr "Section / group name"
@@ -2344,8 +2520,12 @@ msgstr "Section and course"
 msgid "لا توجد جلسات تحضير منعقدة في هذا التاريخ"
 msgstr "No attendance sessions were held on this date"
 
-msgid "لم يتم تسجيل أي محاضرة في هذا اليوم بعد. يمكنك اختيار تاريخ آخر، أو مراجعة إجمالي الفصل الدراسي، أو بدء جلسة تحضير ذكية الآن."
-msgstr "No classes have been recorded for this day. Choose another date, review the term summary, or start a smart attendance session."
+msgid ""
+"لم يتم تسجيل أي محاضرة في هذا اليوم بعد. يمكنك اختيار تاريخ آخر، أو مراجعة "
+"إجمالي الفصل الدراسي، أو بدء جلسة تحضير ذكية الآن."
+msgstr ""
+"No classes have been recorded for this day. Choose another date, review the "
+"term summary, or start a smart attendance session."
 
 msgid "عرض إجمالي الفصل الدراسي"
 msgstr "View term summary"
@@ -2360,7 +2540,9 @@ msgid "كشف الحضور والغياب والموقف الأكاديمي لك
 msgstr "Attendance, absences, and academic standing by student"
 
 msgid "وفق ضوابط ونظام المقررات لجامعة بغداد (نسبة الحرمان 15%)"
-msgstr "Based on the University of Baghdad course rules (15% disqualification threshold)"
+msgstr ""
+"Based on the University of Baghdad course rules (15% disqualification "
+"threshold)"
 
 msgid "اسم الطالب الكامل"
 msgstr "Student full name"
@@ -2408,7 +2590,8 @@ msgid "جلسة"
 msgstr "sessions"
 
 msgid "جمهورية العراق - وزارة التعليم العالي والبحث العلمي"
-msgstr "Republic of Iraq - Ministry of Higher Education and Scientific Research"
+msgstr ""
+"Republic of Iraq - Ministry of Higher Education and Scientific Research"
 
 msgid "تقرير وسجل الحضور والغيابات الأكاديمي لمواد الأستاذ"
 msgstr "Instructor course attendance and absence report"
@@ -2444,22 +2627,30 @@ msgid "المتصفح لا يدعم تحديد الموقع"
 msgstr "This browser does not support location services."
 
 msgid "موقعك محدد بدقة ±%sم"
-msgstr "Your location is accurate to ±%s m."
+msgstr "Your location is accurate to ±%sm"
 
 msgid "تحديد الموقع متوسط ±%sم"
-msgstr "Location accuracy is moderate: ±%s m."
+msgstr "Location accuracy is moderate ±%sm"
 
 msgid "⚠️ إشارة GPS ضعيفة ±%sم — حسّن الإشارة أو استخدم OTP"
-msgstr "⚠️ GPS signal is weak (±%s m). Improve the signal or use OTP."
+msgstr "⚠️ Weak GPS accuracy ±%sm — improve signal or use OTP"
 
 msgid "⚠️ تعذر الحصول على الموقع — فعّل GPS أو استخدم OTP"
-msgstr "⚠️ Could not get your location. Enable GPS or use OTP."
+msgstr "⚠️ Location unavailable — enable GPS or use OTP"
 
-msgid "تعذر تشغيل الكاميرا: يرجى إعطاء صلاحية الكاميرا للمتصفح، أو استخدم خيار كود التحضير السريع (OTP)."
-msgstr "Could not start the camera. Allow camera access in your browser, or use the one-time attendance code (OTP)."
+msgid ""
+"تعذر تشغيل الكاميرا: يرجى إعطاء صلاحية الكاميرا للمتصفح، أو استخدم خيار كود "
+"التحضير السريع (OTP)."
+msgstr ""
+"Could not start the camera. Allow camera access in your browser, or use the "
+"one-time attendance code (OTP)."
 
-msgid "تم مسح الرمز بنجاح! يرجى إدخال اسمك الكامل أو رقمك الجامعي بالأسفل لتثبيت الحضور."
-msgstr "QR code scanned. Enter your full name or university ID below to submit your attendance."
+msgid ""
+"تم مسح الرمز بنجاح! يرجى إدخال اسمك الكامل أو رقمك الجامعي بالأسفل لتثبيت "
+"الحضور."
+msgstr ""
+"QR code scanned. Enter your full name or university ID below to submit your "
+"attendance."
 
 msgid "يرجى كتابة اسمك الكامل أو رقمك الجامعي لتثبيت الحضور"
 msgstr "Enter your full name or university ID to submit your attendance."
@@ -2467,11 +2658,22 @@ msgstr "Enter your full name or university ID to submit your attendance."
 msgid "يرجى إدخال كود التحضير المكون من 6 أرقام"
 msgstr "Enter the 6-digit attendance code."
 
-msgid "تعذر الوصول إلى الخادم. حُفظ الطلب على هذا الجهاز، لكنه لم يُسجّل حضوراً بعد. ستتم محاولة إرساله عند عودة الاتصال؛ وقد يتطلب رمز QR المنتهي إعادة المسح."
-msgstr "The server could not be reached. Your request was saved on this device, but attendance is not confirmed yet. It will be retried when you reconnect; an expired QR code may need to be scanned again."
+msgid ""
+"تعذر الوصول إلى الخادم. حُفظ الطلب على هذا الجهاز، لكنه لم يُسجّل حضوراً "
+"بعد. ستتم محاولة إرساله عند عودة الاتصال؛ وقد يتطلب رمز QR المنتهي إعادة "
+"المسح."
+msgstr ""
+"The server could not be reached. Your request was saved on this device, but "
+"attendance is not confirmed yet. It will be retried when you reconnect; an "
+"expired QR code may need to be scanned again."
 
-msgid "تعذر الاتصال ولم يتمكن الجهاز من حفظ الطلب محلياً. لا تغلق الصفحة؛ اتصل بشبكة القاعة أو أبلغ الأستاذ لتسجيل حضورك يدوياً."
-msgstr "Could not connect, and this device could not save your request locally. Keep this page open; connect to the classroom network or ask your instructor to record your attendance manually."
+msgid ""
+"تعذر الاتصال ولم يتمكن الجهاز من حفظ الطلب محلياً. لا تغلق الصفحة؛ اتصل "
+"بشبكة القاعة أو أبلغ الأستاذ لتسجيل حضورك يدوياً."
+msgstr ""
+"Could not connect, and this device could not save your request locally. Keep"
+" this page open; connect to the classroom network or ask your instructor to "
+"record your attendance manually."
 
 msgid "تم تسجيل الحضور بنجاح!"
 msgstr "Attendance recorded successfully!"
@@ -2480,7 +2682,9 @@ msgid "فشلت عملية التحضير."
 msgstr "Attendance submission failed."
 
 msgid "يوجد طلب حضور محفوظ محلياً ولم يؤكده الخادم بعد."
-msgstr "An attendance request is saved on this device but has not yet been confirmed by the server."
+msgstr ""
+"An attendance request is saved on this device but has not yet been confirmed"
+" by the server."
 
 msgid "يحتاج مراجعة الأستاذ"
 msgstr "Requires instructor review"
@@ -2495,16 +2699,21 @@ msgid "جاري إرسال طلبات الحضور المحفوظة..."
 msgstr "Sending saved attendance requests..."
 
 msgid "جاري التحقق من الموقع..."
-msgstr "Checking your location..."
+msgstr "Checking location..."
 
 msgid "أكد الخادم تسجيل %s طلب حضور"
 msgstr "The server confirmed %s attendance request(s)."
 
 msgid "أُرسل %s طلب إلى الأستاذ للمراجعة، ولم يُعتمد حضوراً بعد"
-msgstr "%s request(s) were sent to the instructor for review; attendance is not confirmed yet."
+msgstr ""
+"%s request(s) were sent to the instructor for review; attendance is not "
+"confirmed yet."
 
-msgid "أكد الخادم %s طلباً. بقي %s طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: %s"
-msgstr "The server confirmed %s request(s). %s request(s) remain on this device and require instructor review: %s"
+msgid ""
+"أكد الخادم %s طلباً. بقي %s طلباً على هذا الجهاز يحتاج مراجعة الأستاذ: %s"
+msgstr ""
+"The server confirmed %s request(s). %s request(s) remain on this device and "
+"require instructor review: %s"
 
 msgid "جلسة تحضير:"
 msgstr "Attendance session:"
@@ -2602,8 +2811,12 @@ msgstr "Attendance window"
 msgid "ينتهي خلال "
 msgstr "Ends in "
 
-msgid "وقت الخادم هو المعتمد؛ الطلبات غير المتصلة لا تُؤكد إلا بعد مزامنتها والتحقق منها."
-msgstr "Server time is authoritative. Offline requests are not confirmed until they are synced and verified."
+msgid ""
+"وقت الخادم هو المعتمد؛ الطلبات غير المتصلة لا تُؤكد إلا بعد مزامنتها والتحقق"
+" منها."
+msgstr ""
+"Server time is authoritative. Offline requests are not confirmed until they "
+"are synced and verified."
 
 msgid "5 دقائق"
 msgstr "5 minutes"
@@ -2699,7 +2912,9 @@ msgid "حل استثنائي"
 msgstr "Exceptional option"
 
 msgid "أدخل الرقم الجامعي أو اسم الطالب لتحضيره بضغطة واحدة دون الحاجة لهاتفه"
-msgstr "Enter the student's university ID or name to record attendance without their phone."
+msgstr ""
+"Enter the student's university ID or name to record attendance without their"
+" phone."
 
 msgid "الرقم الجامعي أو اسم الطالب..."
 msgstr "University ID or student name..."
@@ -2732,7 +2947,9 @@ msgid "إزالة الجدد من الشعبة"
 msgstr "Remove new students from section"
 
 msgid "جامعة بغداد - كلية علوم الحاسوب وتكنولوجيا المعلومات"
-msgstr "University of Baghdad - College of Computer Science and Information Technology"
+msgstr ""
+"University of Baghdad - College of Computer Science and Information "
+"Technology"
 
 msgid "جدول المحاضرات الأسبوعي"
 msgstr "Weekly lecture schedule"
@@ -2815,8 +3032,12 @@ msgstr "Could not update the attendance window."
 msgid " ينتهي الاستقبال: "
 msgstr " Attendance closes at: "
 
-msgid "لا يمكن تغيير حالة الجلسة دون اتصال بالخادم. سيبقى الوضع المحلي للحفظ المؤقت فقط."
-msgstr "The session cannot be changed while disconnected from the server. Local mode only saves requests temporarily."
+msgid ""
+"لا يمكن تغيير حالة الجلسة دون اتصال بالخادم. سيبقى الوضع المحلي للحفظ المؤقت"
+" فقط."
+msgstr ""
+"The session cannot be changed while disconnected from the server. Local mode"
+" only saves requests temporarily."
 
 msgid "فشل تسجيل الطالب"
 msgstr "Could not record student attendance"
@@ -2827,8 +3048,12 @@ msgstr "An error occurred while quickly recording attendance."
 msgid "حدد طالباً واحداً على الأقل أولاً."
 msgstr "Select at least one student first."
 
-msgid "سيتم إزالة الطلاب الجدد المحددين من الشعبة فقط، مع الاحتفاظ بسجلات حضورهم. هل تريد المتابعة؟"
-msgstr "The selected new students will be removed from this section only; their attendance records will be kept. Continue?"
+msgid ""
+"سيتم إزالة الطلاب الجدد المحددين من الشعبة فقط، مع الاحتفاظ بسجلات حضورهم. "
+"هل تريد المتابعة؟"
+msgstr ""
+"The selected new students will be removed from this section only; their "
+"attendance records will be kept. Continue?"
 
 msgid "تعذر تنفيذ الإجراء الجماعي."
 msgstr "Could not complete the bulk action."
@@ -2867,13 +3092,17 @@ msgid " طلب؛ بقيت محددة للمحاولة."
 msgstr " request(s); they remain selected so you can retry."
 
 msgid "ستتم إزالة الطالب من هذه الشعبة دون حذف سجل الحضور. هل تريد المتابعة؟"
-msgstr "This student will be removed from the section without deleting their attendance record. Continue?"
+msgstr ""
+"This student will be removed from the section without deleting their "
+"attendance record. Continue?"
 
 msgid "تعذر تحديث عضوية الطالب."
 msgstr "Could not update the student's section membership."
 
 msgid "تعذر تحديث كشف الحضور قبل الطباعة. تحقق من الاتصال ثم أعد المحاولة."
-msgstr "Could not refresh the attendance sheet before printing. Check your connection and try again."
+msgstr ""
+"Could not refresh the attendance sheet before printing. Check your "
+"connection and try again."
 
 msgid "عملاق"
 msgstr "Extra large"
@@ -2989,8 +3218,11 @@ msgstr "📱 Show link QR code"
 msgid "امسح الباركود لفتح صفحة التحضير فوراً"
 msgstr "Scan the QR code to open the check-in page"
 
-msgid "وجّه كاميرا الهاتف نحو الباركود لفتح الصفحة مباشرة ثم اكتب الكود أعلاه."
-msgstr "Point your phone camera at the QR code to open the page, then enter the code above."
+msgid ""
+"وجّه كاميرا الهاتف نحو الباركود لفتح الصفحة مباشرة ثم اكتب الكود أعلاه."
+msgstr ""
+"Point your phone camera at the QR code to open the page, then enter the code"
+" above."
 
 msgid "أو كتابة الرابط في المتصفح:"
 msgstr "Or enter the link in your browser:"
@@ -3067,8 +3299,12 @@ msgstr "Cancel schedule"
 msgid "لا توجد محاضرات مجدولة حالياً."
 msgstr "There are no scheduled lectures."
 
-msgid "يمكنك جدولة المحاضرات للأيام القادمة وحفظ إعداداتها مسبقاً لتوفير وقتك في القاعة."
-msgstr "Schedule upcoming lectures and save their settings in advance to save time in the classroom."
+msgid ""
+"يمكنك جدولة المحاضرات للأيام القادمة وحفظ إعداداتها مسبقاً لتوفير وقتك في "
+"القاعة."
+msgstr ""
+"Schedule upcoming lectures and save their settings in advance to save time "
+"in the classroom."
 
 msgid "جدولة محاضرة جديدة الآن"
 msgstr "Schedule a lecture now"
@@ -3113,7 +3349,7 @@ msgid "معزولة تماماً في مؤسستك وقسمك الأكاديمي
 msgstr "Scoped to your institution and academic department"
 
 msgid "إضافة مادة جديدة"
-msgstr "Add a course"
+msgstr "Add New Course"
 
 msgid "حصص أسبوعية مجدولة"
 msgstr "scheduled weekly class(es)"
@@ -3212,7 +3448,8 @@ msgid "تخصيص الجامعة والقسم الأكاديمي"
 msgstr "Set up institution and department"
 
 msgid "عزل تام لبياناتك وموادك وطلابك عن باقي الجامعات"
-msgstr "Keep your data, courses, and students separate from other institutions"
+msgstr ""
+"Keep your data, courses, and students separate from other institutions"
 
 msgid "اسمك الكامل (الأستاذ / الدكتور)"
 msgstr "Full name (instructor)"
@@ -3223,8 +3460,11 @@ msgstr "University and college name"
 msgid "مثال: جامعة البصرة - كلية الهندسة، أو جامعة بغداد - كلية العلوم..."
 msgstr "e.g. University of Basra - College of Engineering"
 
-msgid "يحدد المؤسسة التي يتبع لها حسابك ويعزل جميع بيانات الطلاب والشعب تحتها."
-msgstr "Sets the institution for your account and scopes its student and section data."
+msgid ""
+"يحدد المؤسسة التي يتبع لها حسابك ويعزل جميع بيانات الطلاب والشعب تحتها."
+msgstr ""
+"Sets the institution for your account and scopes its student and section "
+"data."
 
 msgid "القسم الأكاديمي أو التخصص"
 msgstr "Academic department or specialization"
@@ -3307,8 +3547,12 @@ msgstr "2 minutes"
 msgid "المحاضرة منتهية ومؤرشفة"
 msgstr "Lecture ended and archived"
 
-msgid "تم إغلاق استقبال الحضور لهذه الجلسة. تم إخفاء رمز الـ QR وكود التحضير (OTP) لضمان عدم تسجيل أي حضور إضافي بعد انتهاء المحاضرة."
-msgstr "Attendance is closed for this session. The QR and OTP codes are hidden to prevent additional check-ins after the lecture."
+msgid ""
+"تم إغلاق استقبال الحضور لهذه الجلسة. تم إخفاء رمز الـ QR وكود التحضير (OTP) "
+"لضمان عدم تسجيل أي حضور إضافي بعد انتهاء المحاضرة."
+msgstr ""
+"Attendance is closed for this session. The QR and OTP codes are hidden to "
+"prevent additional check-ins after the lecture."
 
 msgid "⛔ استقبال الحضور متوقف"
 msgstr "⛔ Attendance is closed"
@@ -3340,8 +3584,11 @@ msgstr "Code pinned (no rotation):"
 msgid "صالح طوال المحاضرة"
 msgstr "Valid for the duration of the lecture"
 
-msgid "⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً."
-msgstr "⚡ The code is pinned to prevent changes during projection or when using a printed QR poster."
+msgid ""
+"⚡ تم تثبيت الرمز لمنع التشويش أثناء العرض أو عند طباعة لوحة الـ QR مسبقاً."
+msgstr ""
+"⚡ The code is pinned to prevent changes during projection or when using a "
+"printed QR poster."
 
 msgid "🚀 الرمز مبرمج للعمل عبر شبكة القاعة المحلية"
 msgstr "🚀 The code is configured to work over the classroom's local network"
@@ -3367,8 +3614,13 @@ msgstr "✓ Done!"
 msgid "رقم الجلسة للمزامنة دون اتصال:"
 msgstr "Session ID for offline sync:"
 
-msgid "أدخله في صفحة التحضير أو احفظه في طابور عدم الاتصال. يجب أن تبقى الجلسة مفتوحة حتى تصل الطلبات إلى الخادم؛ استخدم QR المثبت إذا تعذر الاتصال طويلاً."
-msgstr "Enter this on the check-in page or save it with the offline request. Keep the session open until requests reach the server; use the pinned QR if the connection will be unavailable for a while."
+msgid ""
+"أدخله في صفحة التحضير أو احفظه في طابور عدم الاتصال. يجب أن تبقى الجلسة "
+"مفتوحة حتى تصل الطلبات إلى الخادم؛ استخدم QR المثبت إذا تعذر الاتصال طويلاً."
+msgstr ""
+"Enter this on the check-in page or save it with the offline request. Keep "
+"the session open until requests reach the server; use the pinned QR if the "
+"connection will be unavailable for a while."
 
 msgid "نظام الحماية متعدد العوامل:"
 msgstr "Multi-factor attendance protections:"
@@ -3379,8 +3631,12 @@ msgstr "📍 GPS enabled"
 msgid "حماية سحابية"
 msgstr "Server-side protection"
 
-msgid "يتجدد رمز الـ QR كل 15 ثانية مشفراً بتوقيع رقمي فريد لمنع تسجيل الحضور بالنيابة والتحقق من حساب الطالب."
-msgstr "The QR code refreshes every 15 seconds and is digitally signed to deter proxy attendance and validate the student's account."
+msgid ""
+"يتجدد رمز الـ QR كل 15 ثانية مشفراً بتوقيع رقمي فريد لمنع تسجيل الحضور "
+"بالنيابة والتحقق من حساب الطالب."
+msgstr ""
+"The QR code refreshes every 15 seconds and is digitally signed to deter "
+"proxy attendance and validate the student's account."
 
 msgid "مفعّل ويعمل (الرمز موجّه إلى الشبكة المحلية)"
 msgstr "Active (the QR code points to the local network)"
@@ -3391,8 +3647,12 @@ msgstr "Inactive (default mode)"
 msgid "تحضير جميع الطلاب كحاضرين؟"
 msgstr "Mark all students present?"
 
-msgid "سيتم تعيين حالة جميع طلاب هذه الشعبة (%(count)s طالب) كحاضر دفعة واحدة وحفظها في قاعدة البيانات."
-msgstr "All %(count)s students in this section will be marked present and saved to the database."
+msgid ""
+"سيتم تعيين حالة جميع طلاب هذه الشعبة (%(count)s طالب) كحاضر دفعة واحدة "
+"وحفظها في قاعدة البيانات."
+msgstr ""
+"All %(count)s students in this section will be marked present and saved to "
+"the database."
 
 msgid "تأكيد تحضير الجميع"
 msgstr "Confirm marking everyone present"
@@ -3400,8 +3660,11 @@ msgstr "Confirm marking everyone present"
 msgid "شبكة القاعة المحلية المصغرة"
 msgstr "Classroom local network"
 
-msgid "تسجيل حضور الطلاب عبر شبكة Wi-Fi / Hotspot المحلية دون الحاجة لإنترنت خارجي"
-msgstr "Record attendance over the local Wi-Fi/hotspot without external internet access"
+msgid ""
+"تسجيل حضور الطلاب عبر شبكة Wi-Fi / Hotspot المحلية دون الحاجة لإنترنت خارجي"
+msgstr ""
+"Record attendance over the local Wi-Fi/hotspot without external internet "
+"access"
 
 msgid "حالة وضع عدم الاتصال:"
 msgstr "Offline mode status:"
@@ -3412,8 +3675,11 @@ msgstr "Instructor computer / classroom server IP address:"
 msgid "مثال: 192.168.43.1 أو 172.21.67.11"
 msgstr "e.g. 192.168.43.1 or 172.21.67.11"
 
-msgid "تم رصد العناوين المحلية النشطة تلقائياً. اختر عنوان نقطة الاتصال (Hotspot) أو عنوان الـ Wi-Fi."
-msgstr "Active local addresses were detected. Select the hotspot or Wi-Fi address."
+msgid ""
+"تم رصد العناوين المحلية النشطة تلقائياً. اختر عنوان نقطة الاتصال (Hotspot) "
+"أو عنوان الـ Wi-Fi."
+msgstr ""
+"Active local addresses were detected. Select the hotspot or Wi-Fi address."
 
 msgid "🔗 الرابط المحلي الذي سيفتحه الطلاب:"
 msgstr "🔗 Local link students will open:"
@@ -3439,8 +3705,10 @@ msgstr "Ask students to connect to your hotspot."
 msgid "تفعيل وتحديث الـ QR"
 msgstr "Enable and refresh the QR code"
 
-msgid "بالأسفل؛ سيمسح الطلاب الرمز من الشاشة أو البروجكتر ويسجلون حضورهم فورياً."
-msgstr "below; students can scan the code from the screen or projector to check in."
+msgid ""
+"بالأسفل؛ سيمسح الطلاب الرمز من الشاشة أو البروجكتر ويسجلون حضورهم فورياً."
+msgstr ""
+"below; students can scan the code from the screen or projector to check in."
 
 msgid "تفعيل وتحديث رمز الـ QR محلياً"
 msgstr "Enable and refresh the local QR code"
@@ -3456,3 +3724,1279 @@ msgstr "Course:"
 
 msgid "الطابع الزمني"
 msgstr "Timestamp"
+
+msgid "إدارة البيانات والعمليات الأكاديمية"
+msgstr "Manage Academic Data & Operations"
+
+msgid "إعادة محاولة المزامنة"
+msgstr "Retry Sync"
+
+msgid "مسح السجل المحلي"
+msgstr "Clear Local Queue"
+
+msgid "هل أنت متأكد من رغبتك في مسح سجل طلبات الحضور المحفوظة على هذا الجهاز؟"
+msgstr ""
+"Are you sure you want to clear the locally saved attendance requests from "
+"this device?"
+
+msgid "رمز التحضير غير صالح"
+msgstr "Invalid attendance code"
+
+msgid "رمز التحضير غير موجود"
+msgstr "Attendance code is missing"
+
+msgid "توقيع الرمز غير صالح"
+msgstr "Invalid QR code signature"
+
+msgid "تم تجديد الرمز، يرجى مسح رمز QR الحالي"
+msgstr "Code rotated, please scan the current QR code"
+
+msgid "انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)"
+msgstr "Code expired (please scan the newly rotated code)"
+
+msgid "جلسة التحضير غير موجودة أو غير نشطة"
+msgstr "Attendance session does not exist or is inactive"
+
+msgid "معرف طلب المزامنة غير صالح؛ بقي الطلب محفوظاً على الجهاز."
+msgstr "Invalid sync request identifier; request remained saved on device."
+
+msgid "معرف طلب المزامنة مستخدم لطلب مختلف."
+msgstr "Sync request identifier is already used for a different request."
+
+msgid ""
+"وصل الطلب إلى قائمة مراجعة الأستاذ، لكنه لم يُعتمد حضوراً لأن رمز الحضور لم "
+"يمكن التحقق منه."
+msgstr ""
+"Request reached the instructor review list, but has not been approved as "
+"attendance because the code could not be verified."
+
+msgid "رمز الحضور بانتظار مراجعة الأستاذ"
+msgstr "Attendance code is awaiting instructor review"
+
+msgid "معرّف جلسة التحضير مطلوب مع رمز OTP."
+msgstr "Attendance session ID is required with OTP code."
+
+msgid "معرّف جلسة التحضير غير صالح."
+msgstr "Invalid attendance session ID."
+
+msgid "رمز التحضير السريع OTP غير صحيح أو انتهى."
+msgstr "Quick OTP code is incorrect or expired."
+
+msgid "رمز التحضير السريع (OTP) غير صحيح أو انتهى."
+msgstr "Quick OTP code is incorrect or expired."
+
+msgid ""
+"أوقف الأستاذ استقبال الحضور لهذه المحاضرة. احتفظ بطلبك واطلب منه فتح الجلسة "
+"لمزامنته."
+msgstr ""
+"The instructor has stopped accepting attendance for this lecture. Keep your "
+"request and ask them to reopen the session to sync."
+
+msgid ""
+"انتهت فترة الحضور عند الساعة %s. احتفظ بطلبك واطلب من الأستاذ تمديد الفترة "
+"لمزامنته."
+msgstr ""
+"Attendance period ended at %s. Keep your request and ask the instructor to "
+"extend the session to sync."
+
+msgid "فتح القائمة"
+msgstr "Open menu"
+
+msgid "دليل الحسابات والشعب والطلاب"
+msgstr "Accounts, Sections & Students Directory"
+
+msgid "دليل وإدارة الحسابات والشعب - نظام الحضور الذكي"
+msgstr "Accounts & Sections Directory - Smart Attendance System"
+
+msgid ""
+"تصفية الطلاب حسب المؤسسة، المرحلة، الشعبة، نوع الدراسة، ومعرفة حالة كل حساب "
+"مع إمكانية التفعيل والتعطيل فوراً."
+msgstr ""
+"Filter students by institution, level, section, study shift, and track "
+"account status with instant enable/disable controls."
+
+msgid "استيراد طلاب من Excel"
+msgstr "Import Students from Excel"
+
+msgid "لوحة Django Admin"
+msgstr "Django Admin Panel"
+
+msgid "لوحة إدارة دجانغو الكاملة"
+msgstr "Full Django Admin Panel"
+
+msgid "خيارات التصفية والفلاتر الذكية"
+msgstr "Smart Filtering Options & Controls"
+
+msgid "المؤسسة / الجامعة:"
+msgstr "Institution / University:"
+
+msgid "نوع الحساب (الدور الأكاديمي):"
+msgstr "Account Type (Academic Role):"
+
+msgid "المرحلة الدراسية:"
+msgstr "Academic Level:"
+
+msgid "الشعبة الدراسية:"
+msgstr "Class Section:"
+
+msgid "حالة الحساب:"
+msgstr "Account Status:"
+
+msgid "تطبيق الفلتر"
+msgstr "Apply Filter"
+
+msgid "نتائج التصفية:"
+msgstr "Filter Results:"
+
+msgid "طالب مسجل"
+msgstr "registered students"
+
+msgid "أستاذ / مشرف"
+msgstr "teachers / supervisors"
+
+msgid "مفعلة بالكامل"
+msgstr "Fully active"
+
+msgid "غير مفعلة"
+msgstr "Inactive"
+
+msgid "بحث بالاسم الكامل، اسم المستخدم، البريد، الرقم الجامعي، أو الهاتف..."
+msgstr "Search by full name, username, email, university ID, or phone..."
+
+msgid "المستخدم والمعلومات"
+msgstr "User & Details"
+
+msgid "المؤسسة / الكلية"
+msgstr "Institution / Faculty"
+
+msgid "الشعبة والمرحلة"
+msgstr "Section & Level"
+
+msgid "الإجراءات الفورية"
+msgstr "Instant Actions"
+
+msgid "كلمة السر"
+msgstr "Password"
+
+msgid "تعطيل"
+msgstr "Disable"
+
+msgid "تفعيل"
+msgstr "Enable"
+
+msgid "فعّال"
+msgstr "Active"
+
+msgid "معطّل"
+msgstr "Disabled"
+
+msgid "مفعّل"
+msgstr "Enabled"
+
+msgid "مدير نظام"
+msgstr "System Admin"
+
+msgid "أستاذ"
+msgstr "Teacher"
+
+msgid "غير محدد"
+msgstr "Not specified"
+
+msgid "جميع المؤسسات والجامعات"
+msgstr "All Institutions & Universities"
+
+msgid "الكل (جميع الأدوار والحسابات)"
+msgstr "All (All Roles & Accounts)"
+
+msgid "👑 مدراء النظام فقط"
+msgstr "👑 System Admins Only"
+
+msgid "👨‍🏫 الكادر التدريسي فقط"
+msgstr "👨‍🏫 Teaching Staff Only"
+
+msgid "🎓 الطلاب فقط"
+msgstr "🎓 Students Only"
+
+msgid "جميع المراحل الدراسية"
+msgstr "All Academic Levels"
+
+msgid "جميع الشعب والفصول"
+msgstr "All Sections & Classes"
+
+msgid "الكل (صباحي ومسائي)"
+msgstr "All (Morning & Evening)"
+
+msgid "☀️ دراسة صباحية"
+msgstr "☀️ Morning Study"
+
+msgid "🌙 دراسة مسائية"
+msgstr "🌙 Evening Study"
+
+msgid "جميع الحالات (النشطة والمعطلة)"
+msgstr "All Statuses (Active & Inactive)"
+
+msgid "🟢 الحسابات النشطة فقط"
+msgstr "🟢 Active Accounts Only"
+
+msgid "🔴 الحسابات المعطلة فقط"
+msgstr "🔴 Disabled Accounts Only"
+
+msgid "تغيير كلمة المرور فورياً"
+msgstr "Instant Password Reset"
+
+msgid "سيتم تغيير كلمة المرور فوراً للمستخدم:"
+msgstr "Password will be immediately updated for user:"
+
+msgid "كلمة المرور الجديدة:"
+msgstr "New Password:"
+
+msgid "اكتب كلمة المرور الجديدة هنا"
+msgstr "Type new password here"
+
+msgid "حفظ وتغيير كلمة السر"
+msgstr "Save & Change Password"
+
+msgid "لم يتم العثور على أي حسابات تطابق خيارات الفلترة المحددة."
+msgstr "No accounts found matching the selected filter criteria."
+
+msgid "سجلات الحضور العامة - لوحة الإدارة الشاملة"
+msgstr "General Attendance Records - Comprehensive Admin Dashboard"
+
+msgid "لوحة الإدارة المركزية"
+msgstr "Central Administration Panel"
+
+msgid "تحديث فوري للسجلات الأكاديمية"
+msgstr "Live Real-Time Academic Records Update"
+
+msgid "سجلات الحضور العامة"
+msgstr "General Attendance Records"
+
+msgid "سجل مطابق"
+msgstr "matching records"
+
+msgid ""
+"مراقبة وتصفية سجلات حضور وغياب الطلاب في المؤسسات، الكليات، الأقسام، والمواد"
+" الدراسية."
+msgstr ""
+"Monitor and filter student attendance and absence records across "
+"institutions, faculties, departments, and courses."
+
+msgid "طباعة الكشف"
+msgstr "Print Sheet"
+
+msgid "طباعة كشف"
+msgstr "Print Sheet"
+
+msgid "لوحة التقارير والتدقيق"
+msgstr "Reports & Audit Dashboard"
+
+msgid "إجمالي السجلات"
+msgstr "Total Records"
+
+msgid "نسبة الحضور:"
+msgstr "Attendance Rate:"
+
+msgid "حاضر في الموعد"
+msgstr "On-Time Attendance"
+
+msgid "حضور متأخر"
+msgstr "Late Attendance"
+
+msgid "يحتاج متابعة"
+msgstr "Needs Follow-up"
+
+msgid "حالات الغياب"
+msgstr "Absence Cases"
+
+msgid "غياب بدون عذر"
+msgstr "Unexcused Absence"
+
+msgid "بدون إنترنت (شبكة محلية)"
+msgstr "Offline (Local Hotspot)"
+
+msgid "تحضير QR:"
+msgstr "QR Check-in:"
+
+msgid "الفترة الزمنية:"
+msgstr "Time Period:"
+
+msgid "آخر 7 أيام"
+msgstr "Last 7 Days"
+
+msgid "آخر 30 يوماً"
+msgstr "Last 30 Days"
+
+msgid "إلغاء التاريخ"
+msgstr "Clear Date"
+
+msgid "بحث بالطالب / الرقم الجامعي:"
+msgstr "Search by Student / ID:"
+
+msgid "ابحث بالاسم، اسم المستخدم، أو الرقم الجامعي..."
+msgstr "Search by name, username, or university ID..."
+
+msgid "نوع الدراسة (الدوام):"
+msgstr "Study Shift (Attendance):"
+
+msgid "حالة الحضور:"
+msgstr "Attendance Status:"
+
+msgid "طريقة تسجيل الحضور"
+msgstr "Check-in Method"
+
+msgid "طريقة تسجيل الحضور:"
+msgstr "Check-in Method:"
+
+msgid "جميع الحالات"
+msgstr "All Statuses"
+
+msgid "حالة الحضور: جميع الحالات"
+msgstr "Attendance Status: All Statuses"
+
+msgid "طريقة التحضير: جميع الطرق"
+msgstr "Check-in Method: All Methods"
+
+msgid "الدوام: الكل (صباحي + مسائي)"
+msgstr "Shift: All (Morning + Evening)"
+
+msgid "✅ حاضر"
+msgstr "✅ Present"
+
+msgid "⏳ متأخر"
+msgstr "⏳ Late"
+
+msgid "❌ غائب"
+msgstr "❌ Absent"
+
+msgid "📝 غائب بعذر"
+msgstr "📝 Excused"
+
+msgid "📱 رمز QR الديناميكي"
+msgstr "📱 Dynamic QR Code"
+
+msgid "📶 بدون إنترنت (تسجيل فوري)"
+msgstr "📶 Offline (Direct Hotspot)"
+
+msgid "✍️ يدوي من المعلم"
+msgstr "✍️ Manual by Teacher"
+
+msgid "💳 بطاقة RFID / NFC"
+msgstr "💳 RFID / NFC Card"
+
+msgid "تطبيق الفلترة"
+msgstr "Apply Filter"
+
+msgid "إعادة ضبط الفلاتر"
+msgstr "Reset Filters"
+
+msgid "الطالب / المعرّف"
+msgstr "Student / Identifier"
+
+msgid "ملاحظات التدريسي"
+msgstr "Teacher Notes"
+
+msgid "بدون إنترنت (تسجيل فوري)"
+msgstr "Offline (Instant Sync)"
+
+msgid "لا توجد سجلات حضور تطابق الفلاتر المحددة"
+msgstr "No attendance records match the selected filters"
+
+msgid "مركز إدارة الحسابات والصلاحيات"
+msgstr "Accounts & Permissions Management Center"
+
+msgid "لديك صلاحيات كاملة لإدارة المستخدمين وبيانات النظام."
+msgstr "You have full permissions to manage users and system data."
+
+msgid "هوية وشعار النظام"
+msgstr "System Identity & Logo"
+
+msgid "تخصيص اسم المؤسسة والشعار الرسمي"
+msgstr "Customize institution name & official logo"
+
+msgid "اسم المؤسسة / الجامعة"
+msgstr "Institution / University Name"
+
+msgid "اسم المؤسسة / الجامعة:"
+msgstr "Institution / University Name:"
+
+msgid "الشعار الرسمي (الأيقونة)"
+msgstr "Official Logo (Icon)"
+
+msgid "الشعار الرسمي (الأيقونة):"
+msgstr "Official Logo (Icon):"
+
+msgid "حفظ هوية وشعار المؤسسة"
+msgstr "Save Institution Identity & Logo"
+
+msgid "أمان التسجيل الأكاديمي"
+msgstr "Academic Registration Security"
+
+msgid "رمز توثيق تسجيل الأساتذة"
+msgstr "Teacher Registration Verification Code"
+
+msgid ""
+"يُطلب هذا الكود السري حصراً من الأساتذة عند فتح حساب تدريسي لمنع تسجيل أي "
+"مستخدم غير مصرح به."
+msgstr ""
+"This secret code is required exclusively when instructors register to "
+"prevent unauthorized access."
+
+msgid "الرمز السري الفعّال حالياً:"
+msgstr "Currently Active Secret Code:"
+
+msgid "نسخ"
+msgstr "Copy"
+
+msgid "تغيير رمز الأساتذة وتحديثه:"
+msgstr "Change & Update Teacher Code:"
+
+msgid "اكتب الرمز الجديد هنا"
+msgstr "Type new code here"
+
+msgid "حفظ الرمز"
+msgstr "Save Code"
+
+msgid "حماية تسجيل الدخول والتسجيل"
+msgstr "Login & Registration Protection"
+
+msgid "التحقق البصري ضد الهجمات الآلية (CAPTCHA)"
+msgstr "Visual verification against automated attacks (CAPTCHA)"
+
+msgid "هذا الإعداد عام للنظام، لذلك يظهر للمدير الأعلى فقط."
+msgstr "This is a global system setting visible to Super Admins only."
+
+msgid "إدارة حسابات المستخدمين"
+msgstr "User Accounts Management"
+
+msgid "تغيير كلمات المرور، تفعيل/تعطيل الحسابات، تعيين الصلاحيات"
+msgstr "Change passwords, enable/disable accounts, assign permissions"
+
+msgid "إدارة الكادر التدريسي"
+msgstr "Teaching Staff Management"
+
+msgid "بيانات الأساتذة، التخصصات، والأقسام التابعة لهم"
+msgstr "Instructor profiles, specializations, and affiliated departments"
+
+msgid "إدارة الطلاب والملفات الأكاديمية"
+msgstr "Student Academic Files Management"
+
+msgid "الأرقام الجامعية، الدراسة الصباحية/المسائية ونقل الشعب"
+msgstr "University IDs, morning/evening shifts, and section transfers"
+
+msgid "إدارة الشعب الدراسية"
+msgstr "Class Sections Management"
+
+msgid "إضافة شعب جديدة (أ، ب، ج) وتحديد المراحل الدراسية"
+msgstr "Add new sections (A, B, C) and set academic levels"
+
+msgid "المواد الدراسية والمقررات"
+msgstr "Courses & Curriculum"
+
+msgid "إضافة مقررات جديدة وربطها بالأقسام الأكاديمية"
+msgstr "Add new courses and assign them to academic departments"
+
+msgid "جلسات وسجلات الحضور والغياب"
+msgstr "Attendance Sessions & Records"
+
+msgid "تعديل سجلات حضور أي طالب يدوياً أو حذف جلسات"
+msgstr "Manually edit student attendance records or manage sessions"
+
+msgid "الطلاب الأكثر غياباً (تحذير تجاوز 20%)"
+msgstr "Most Absent Students (Warning: Exceeded 20%)"
+
+msgid "مخالفة اللائحة الأكاديمية"
+msgstr "Academic Regulation Warning"
+
+msgid "مجموع الغيابات"
+msgstr "Total Absences"
+
+msgid "محاضرات"
+msgstr "lectures"
+
+msgid "عرض التقرير"
+msgstr "View Report"
+
+msgid "لا يوجد أي طلاب تجاوزوا الحد الحرج للغياب! 👍"
+msgstr "No students have exceeded the critical absence threshold! 👍"
+
+msgid "سجل عمليات التدقيق (Audit)"
+msgstr "Audit Activity Log"
+
+msgid "مراقبة التعديلات والعمليات الحساسة"
+msgstr "Monitor sensitive actions, changes, and operational logs"
+
+msgid "عنوان IP"
+msgstr "IP Address"
+
+msgid "عرض الكل"
+msgstr "View All"
+
+msgid "لا توجد عمليات مسجلة حديثاً"
+msgstr "No recently logged operations"
+
+msgid "استيراد وتضمين قوائم الطلاب"
+msgstr "Import & Enroll Student Rosters"
+
+msgid "يدعم العمود الواحد واللصق المباشر والإضافة الفورية"
+msgstr "Supports single column, direct paste, and instant creation"
+
+msgid ""
+"قم بتحديد الشعبة والمرحلة، أو أنشئ جامعة وشعبة جديدة فوراً من القائمة، "
+"وسيقوم النظام بتسجيلهم وتوليد بياناتهم تلقائياً."
+msgstr ""
+"Select section and level, or create a university/section instantly from the "
+"menu; the system will enroll them and generate credentials automatically."
+
+msgid "قائمة طلابي والشعب"
+msgstr "My Students & Sections List"
+
+msgid "الخطوة الأولى: تحديد الشعبة والمرحلة (تضمين الطلاب مسبقاً)"
+msgstr "Step 1: Select Section & Level (Pre-assign Students)"
+
+msgid "كل طالب يتم استيراده سينضم لهذه الشعبة فوراً"
+msgstr "Every imported student will join this section immediately"
+
+msgid "جامعة جديدة"
+msgstr "New University"
+
+msgid "اختر المؤسسة / الجامعة"
+msgstr "Choose Institution / University"
+
+msgid "شعبة جديدة"
+msgstr "New Section"
+
+msgid "اختر الشعبة لربطهم بها فوراً"
+msgstr "Select section to link them immediately"
+
+msgid "نوع الدراسة الافتراضي"
+msgstr "Default Study Shift"
+
+msgid "نوع الدراسة الافتراضي:"
+msgstr "Default Study Shift:"
+
+msgid "المرونة القصوى:"
+msgstr "Maximum Flexibility:"
+
+msgid ""
+"إذا كان ملف الإكسل يحتوي على عمود واحد فقط به أسماء الطلاب (مثل: علي حسن "
+"جاسم)، سيقوم النظام تلقائياً بتقسيم الاسم، وتوليد رقم جامعي فريد، وتعيين اسم"
+" مستخدم وكلمة مرور، وإلحاقهم بالشعبة المحددة أعلاه دون الحاجة لكتابة أي "
+"أعمدة إضافية! كما يمكنك إنشاء جامعة أو شعبة أو مادة جديدة مباشرة دون مغادرة "
+"الصفحة."
+msgstr ""
+"If the Excel file contains only one column with student names (e.g. Ali "
+"Hassan Jasim), the system will automatically parse names, generate unique "
+"university IDs, credentials, and assign them to the specified section "
+"without any extra columns! You can also create a new university, section, or"
+" course on the fly."
+
+msgid "الخطوة الثانية: إدخال بيانات الطلاب"
+msgstr "Step 2: Enter Student Data"
+
+msgid "رفع ملف إكسل / CSV"
+msgstr "Upload Excel / CSV File"
+
+msgid "اسحب ملف الإكسيل هنا أو انقر لتصفح الجهاز"
+msgstr "Drag Excel file here or click to browse"
+
+msgid ""
+"(حتى لو كان عموداً واحداً لأسماء الطلاب فقط) Excel (.xlsx, .xls) يقبل ملفات"
+msgstr ""
+"Accepts Excel (.xlsx, .xls) or CSV files (even with just a single student "
+"name column)"
+
+msgid ""
+"يقبل ملفات Excel (.xlsx, .xls) أو ملفات CSV (حتى لو كان عموداً واحداً لأسماء"
+" الطلاب فقط)"
+msgstr ""
+"Accepts Excel (.xlsx, .xls) or CSV files (even with just a single student "
+"name column)"
+
+msgid "الصق قائمة الأسماء هنا مباشرة (كل اسم في سطر منفصل)"
+msgstr "Paste names roster here directly (one name per line)"
+
+msgid "مثال:"
+msgstr "Example:"
+
+msgid "بدء الاستيراد وتضمين الطلاب"
+msgstr "Start Import & Enroll Students"
+
+msgid "جاري استيراد وتضمين الطلاب..."
+msgstr "Importing & enrolling students..."
+
+msgid "كيف يتعامل النظام مع ملفات الإكسل؟"
+msgstr "How does the system handle Excel files?"
+
+msgid "التعرف الذكي على الأعمدة"
+msgstr "Smart Column Recognition"
+
+msgid ""
+"يتعرف النظام تلقائياً على الأعمدة (الاسم، الرقم الجامعي، البريد، الهاتف) حتى"
+" وإن كانت التسميات مختلفة."
+msgstr ""
+"The system automatically recognizes columns (Name, ID, Email, Phone) even if"
+" headers vary."
+
+msgid "التسجيل التلقائي الذكي"
+msgstr "Smart Automatic Registration"
+
+msgid ""
+"يقوم النظام بقراءة الأسماء، ويأخذ الاسم الأول كاسم شخصي، وباقي الاسم كاسم "
+"عائلة، وينشئ رقماً جامعياً وحساباً فريداً لكل طالب تلقائياً."
+msgstr ""
+"The system parses names, assigns first/last names, generates unique "
+"university IDs, and creates student accounts automatically."
+
+msgid "اللصق المباشر السريع"
+msgstr "Instant Direct Paste"
+
+msgid ""
+"يمكنك نسخ الأسماء من أي مستند Word أو رسالة WhatsApp أو ملف PDF ولصقها هنا "
+"مباشرة."
+msgstr ""
+"You can copy names from Word, WhatsApp, or PDF documents and paste them here"
+" directly."
+
+msgid "إنشاء مؤسسة / جامعة جديدة"
+msgstr "Create New Institution / University"
+
+msgid "اسم المؤسسة / الجامعة *"
+msgstr "Institution / University Name *"
+
+msgid "مثال: جامعة بغداد - كلية الطب"
+msgstr "e.g. University of Baghdad - College of Medicine"
+
+msgid "الرمز المختصر (Code)"
+msgstr "Short Code"
+
+msgid "حفظ وتحديد الجامعة"
+msgstr "Save & Select University"
+
+msgid "اسم الشعبة *"
+msgstr "Section Name *"
+
+msgid "مثال: شعبة أ، شعبة C، المجموعة 1"
+msgstr "e.g. Section A, Section C, Group 1"
+
+msgid "المرحلة الدراسية *"
+msgstr "Academic Level *"
+
+msgid "المستوى الأول (المرحلة الأولى)"
+msgstr "First Year (Level 1)"
+
+msgid "المستوى الثاني (المرحلة الثانية)"
+msgstr "Second Year (Level 2)"
+
+msgid "المستوى الثالث (المرحلة الثالثة)"
+msgstr "Third Year (Level 3)"
+
+msgid "المستوى الرابع (المرحلة الرابعة)"
+msgstr "Fourth Year (Level 4)"
+
+msgid "المستوى الخامس (المرحلة الخامسة)"
+msgstr "Fifth Year (Level 5)"
+
+msgid "نوع الدراسة *"
+msgstr "Study Shift *"
+
+msgid "حفظ وتحديد الشعبة"
+msgstr "Save & Select Section"
+
+msgid "إضافة مادة دراسية جديدة"
+msgstr "Add New Course"
+
+msgid "مثال: الذكاء الاصطناعي، تراكيب البيانات"
+msgstr "e.g. Artificial Intelligence, Data Structures"
+
+msgid "رمز المادة (اختياري)"
+msgstr "Course Code (Optional)"
+
+msgid "مثال: CS301 (اتركه فارغاً للتوليد التلقائي)"
+msgstr "e.g. CS301 (leave empty for auto-generation)"
+
+msgid "حفظ وإضافة المادة"
+msgstr "Save & Add Course"
+
+msgid "وضع الطوارئ الذكي"
+msgstr "Smart Emergency Mode"
+
+msgid "وضع الطوارئ الفوري (بدون إنترنت)"
+msgstr "Instant Emergency Mode (Offline)"
+
+msgid ""
+"تحضير جميع الطلاب في القاعة عبر نقطة اتصال الهوت سبوت المحلية بدون أي اتصال "
+"خارجي بالإنترنت"
+msgstr ""
+"Check in all students in class via local hotspot without external internet "
+"connection"
+
+msgid "كشف الحضور الرسمي — وضع الطوارئ"
+msgstr "Official Attendance Sheet — Emergency Mode"
+
+msgid "رابط التحضير المحلي للطلاب في القاعة:"
+msgstr "Local Class Check-in Link for Students:"
+
+msgid "نسخ الرمز"
+msgstr "Copy Code"
+
+msgid "نسخ رمز OTP"
+msgstr "Copy OTP Code"
+
+msgid "رمز الطوارئ (OTP)"
+msgstr "Emergency OTP Code"
+
+msgid "نسبة الحضور الفورية"
+msgstr "Live Attendance Rate"
+
+msgid "سجل الحضور الفوري بنقرة واحدة"
+msgstr "Instant 1-Click Manual Check-in"
+
+msgid ""
+"لا يظهر أي طالب في هذه القائمة إلا بعد تسجيل حضوره الفعلي عبر رمز QR أو كود "
+"التحضير أو الحضور الفوري المباشر."
+msgstr ""
+"No student appears in this roster until their attendance is registered via "
+"QR, OTP, or direct 1-click check-in."
+
+msgid "لا يوجد طلاب مسجلين في هذه الشعبة الدراسية"
+msgstr "No students are enrolled in this class section"
+
+msgid "طريقة تحضير الطلاب بدون إنترنت خلال 30 ثانية"
+msgstr "How to check in students offline within 30 seconds"
+
+msgid "فعّل الهوت سبوت"
+msgstr "Enable Hotspot"
+
+msgid "من هاتفك أو لابتوبك بالقاعة"
+msgstr "From your phone or laptop in class"
+
+msgid "يتصل الطلاب بشبكتك"
+msgstr "Students connect to network"
+
+msgid "لا يحتاج أي رصيد أو إنترنت"
+msgstr "Requires no data or internet"
+
+msgid "يفتحون التحضير"
+msgstr "They open check-in"
+
+msgid "ويسجلون حضورهم فوراً"
+msgstr "And check in instantly"
+
+msgid "QR Code رابط التحضير المحلي"
+msgstr "Local Check-in QR Code Link"
+
+msgid "مسح فوري بالكاميرا"
+msgstr "Instant Camera Scan"
+
+msgid "امسح الباركود لفتح صفحة التحضير مباشرة"
+msgstr "Scan barcode to open check-in page directly"
+
+msgid ""
+"يفتح الطلاب كاميرا الهاتف ويوجهونها نحو هذا الباركود ليتم فتح صفحة تسجيل "
+"الحضور فوراً دون الحاجة لكتابة الرابط يدوياً."
+msgstr ""
+"Students aim phone camera at this QR code to open attendance page "
+"immediately without typing the URL."
+
+msgid "شغّل"
+msgstr "Run"
+
+msgid "حفظ محلي فوري"
+msgstr "Instant Local Save"
+
+msgid "يتيّح للطلاب مسح QR أو فتح الرابط بدون أي اتصال خارجي بالإنترنت"
+msgstr "Allows students to scan QR or open link without external internet"
+
+msgid "يتيح للطلاب مسح QR أو فتح الرابط بدون أي اتصال خارجي بالإنترنت"
+msgstr "Allows students to scan QR or open link without external internet"
+
+msgid "جلسة رقم"
+msgstr "Session #"
+
+msgid "1. المادة والشعبة الدراسية"
+msgstr "1. Course & Section Details"
+
+msgid "نوع الدراسة (صباحي / مسائي) *"
+msgstr "Study Shift (Morning / Evening) *"
+
+msgid "2. تفاصيل وتوقيت المحاضرة"
+msgstr "2. Lecture Timing & Details"
+
+msgid "وقت بدء المحاضرة *"
+msgstr "Start Time *"
+
+msgid "مدة المحاضرة (بالدقائق) *"
+msgstr "Duration (Minutes) *"
+
+msgid "عنوان أو موضوع المحاضرة"
+msgstr "Lecture Title or Topic"
+
+msgid "3. إعدادات الأمان ورمز التحضير السريع (OTP)"
+msgstr "3. Security & Quick OTP Code"
+
+msgid "رمز التحضير السريع الحالي (OTP)"
+msgstr "Current Quick OTP Code"
+
+msgid "توليد رمز عشوائي"
+msgstr "Generate Random Code"
+
+msgid "حفظ التعديلات وتحديث الجلسة"
+msgstr "Save Changes & Update Session"
+
+msgid "مثال: CS301"
+msgstr "e.g. CS301"
+
+msgid "33.279... (بغداد)"
+msgstr "33.279... (Baghdad)"
+
+msgid "44.376... (بغداد)"
+msgstr "44.376... (Baghdad)"
+
+msgid "15ث"
+msgstr "15s"
+
+msgid "ط"
+msgstr "S"
+
+msgid "عضو هيئة التدريس"
+msgstr "Faculty Member"
+
+msgid "قسم علوم الحاسوب"
+msgstr "Computer Science Department"
+
+msgid "قسمك الأكاديمي"
+msgstr "Your Academic Department"
+
+msgid "سجل حضوري الأكاديمي التفصيلي"
+msgstr "My Detailed Academic Attendance Record"
+
+msgid "↩️ اختيار شعبة سابقة"
+msgstr "↩️ Select Existing Section"
+
+msgid "➕ إنشاء شعبة جديدة فوراً"
+msgstr "➕ Create New Section Instantly"
+
+msgid "1. في حال توفر عمود واحد فقط (الاسم):"
+msgstr "1. If only one column is available (Name):"
+
+msgid "11 رقماً"
+msgstr "11 digits"
+
+msgid "2. في حال توفر أعمدة إضافية (اختيارية):"
+msgstr "2. If additional columns are available (Optional):"
+
+msgid "أدوات إدارية سريعة"
+msgstr "Quick Admin Tools"
+
+msgid "أستاذ مساعد"
+msgstr "Assistant Professor"
+
+msgid "إجمالي الحسابات"
+msgstr "Total Accounts"
+
+msgid "إجمالي الطلاب"
+msgstr "Total Students"
+
+msgid "إجمالي الطلاب:"
+msgstr "Total Students:"
+
+msgid "إدارة الشعب الدراسية (Sections)"
+msgstr "Manage Class Sections (Sections)"
+
+msgid "إدارة الكادر التدريسي (Teachers)"
+msgstr "Manage Teaching Staff (Teachers)"
+
+msgid "إدارة حسابات المستخدمين (Users)"
+msgstr "Manage User Accounts (Users)"
+
+msgid ""
+"إذا كان الملف يحتوي على (الرقم الجامعي، رقم الهاتف، نوع الدراسة، البريد "
+"الإلكتروني)، سيقوم النظام بقراءتها وحفظها دون إجبارك على أي حقل غير متوفر!"
+msgstr ""
+"If the file contains (University ID, Phone, Shift, Email), the system will "
+"read and import them without requiring missing fields!"
+
+msgid "إضافة جامعة / كلية جديدة الآن..."
+msgstr "Add new university / college now..."
+
+msgid "إضافة جامعة أو كلية جديدة فوراً"
+msgstr "Add new university or college instantly"
+
+msgid "إضافة شعب جديدة (أ، ب، ج)، وتحديد المراحل الدراسية"
+msgstr "Add new sections (A, B, C) and configure academic levels"
+
+msgid "إضافة شعبة دراسية جديدة"
+msgstr "Add New Class Section"
+
+msgid "إضافة شعبة دراسية جديدة الآن..."
+msgstr "Add new class section now..."
+
+msgid "إضافة شعبة دراسية جديدة فوراً"
+msgstr "Add new class section instantly"
+
+msgid "إضافة قوائم الطلاب دفعة واحدة"
+msgstr "Add student rosters in bulk"
+
+msgid "إضافة مادة دراسية جديدة فوراً"
+msgstr "Add new course instantly"
+
+msgid "إظهار باركود (QR)"
+msgstr "Show Barcode (QR)"
+
+msgid "إعادة تعيين كلمة المرور"
+msgstr "Reset Password"
+
+msgid "إعادة تعيين كلمة المرور فوراً"
+msgstr "Reset Password Instantly"
+
+msgid "إعادة ضبط جميع الفلاتر"
+msgstr "Reset All Filters"
+
+msgid "إعداد شبكة القاعة المحلية (Hotspot)"
+msgstr "Set up Local Classroom Network (Hotspot)"
+
+msgid "اختياري: بدون شعبة محددة"
+msgstr "Optional: No specific section"
+
+msgid "استيراد الطلاب - نظام الحضور الذكي"
+msgstr "Import Students - Smart Attendance System"
+
+msgid "استيراد مرن وفوري"
+msgstr "Flexible & Instant Import"
+
+msgid "اسم الجامعة / الكلية *"
+msgstr "University / College Name *"
+
+msgid "اضغط على زر"
+msgstr "Click the button"
+
+msgid "اكتب الرمز الجديد (مثال: UOB2026)"
+msgstr "Enter new code (e.g. UOB2026)"
+
+msgid "اكتبه على السبورة — للطلاب بدون كاميرا"
+msgstr "Write on board — for students without cameras"
+
+msgid "الأرقام الجامعية، الدراسة الصباحية/المسائية، ونقل الشعب"
+msgstr "University IDs, morning/evening shifts, and section transfers"
+
+msgid "البث المباشر للجلسة نشط ويتم التحديث تلقائياً"
+msgstr "Live session broadcast is active and auto-updating"
+
+msgid "التحقق يُفحص على الخادم، وليس اعتماداً على JavaScript فقط."
+msgstr ""
+"Verification is validated on the server, not just client-side JavaScript."
+
+msgid "الحسابات المعطلة"
+msgstr "Disabled Accounts"
+
+msgid "الحسابات النشطة"
+msgstr "Active Accounts"
+
+msgid "الدراسات العليا"
+msgstr "Postgraduate Studies"
+
+msgid "الدور"
+msgstr "Role"
+
+msgid "الشعبة / الفصل الدراسي:"
+msgstr "Section / Academic Class:"
+
+msgid "الشعبة والمرحلة:"
+msgstr "Section & Level:"
+
+msgid "الصق قائمة أسماء الطلاب هنا (كل طالب في سطر مستقل):"
+msgstr "Paste student names roster here (one student per line):"
+
+msgid "الطالب / المعرف"
+msgstr "Student / Identifier"
+
+msgid "الطلاب المعرضون لخطر الحرمان وفق اللائحة الأكاديمية"
+msgstr "Students at risk of denial according to academic regulation"
+
+msgid "الطلاب يكتبون هذا الرمز في صفحة الحضور فوراً"
+msgstr "Students enter this code on the check-in page instantly"
+
+msgid "العودة لشاشة الجلسة الرئيسية"
+msgstr "Return to Main Session Screen"
+
+msgid "العودة للجلسة الرئيسية"
+msgstr "Return to Main Session"
+
+msgid "القاعة الذكية"
+msgstr "Smart Classroom"
+
+msgid "المادة الدراسية:"
+msgstr "Course:"
+
+msgid "المادة:"
+msgstr "Course:"
+
+msgid "المرحلة / الصف الدراسي *"
+msgstr "Level / Academic Grade *"
+
+msgid "المطور: MUNTADHER HAZIM | 07724978301"
+msgstr "Developer: MUNTADHER HAZIM | 07724978301"
+
+msgid "المواد الدراسية والمقررات (Courses)"
+msgstr "Academic Courses & Curriculum (Courses)"
+
+msgid ""
+"النظام يعمل في وضع عدم الاتصال المحلي — يتم حفظ كل نقرة فورياً في قاعدة "
+"البيانات"
+msgstr ""
+"System is operating in offline mode — every click is instantly saved to the "
+"database"
+
+msgid "الوقت"
+msgstr "Time"
+
+msgid "انقر على الحالة بجانب كل طالب — الحفظ فوري ومحلي 100%"
+msgstr "Click the status beside each student — 100% instant local save"
+
+msgid "بانتظار تسجيل حضور الطلاب..."
+msgstr "Waiting for students to check in..."
+
+msgid "بحث بالاسم أو الرقم..."
+msgstr "Search by name or ID..."
+
+msgid "بحث وتصفية متعددة المستويات"
+msgstr "Multi-level Search & Filtering"
+
+msgid "بدون إنترنت"
+msgstr "Offline"
+
+msgid "تأكيد الحفظ"
+msgstr "Confirm Save"
+
+msgid "تحضير الكل"
+msgstr "Check-in All"
+
+msgid "تحكم شامل بقاعدة البيانات والإعدادات"
+msgstr "Comprehensive control over database & settings"
+
+msgid "تدريسي"
+msgstr "Faculty Member"
+
+msgid "تصفير الكل"
+msgstr "Reset All"
+
+msgid "تطبيق الفلاتر"
+msgstr "Apply Filters"
+
+msgid "تعديل في لوحة الإدارة"
+msgstr "Edit in Admin Panel"
+
+msgid "تعطيل الحساب"
+msgstr "Disable Account"
+
+msgid "تفعيل الحساب"
+msgstr "Enable Account"
+
+msgid "تم التسجيل بنجاح"
+msgstr "Successfully registered"
+
+msgid "تم نسخ رمز الأساتذة بنجاح:"
+msgstr "Teacher code copied successfully:"
+
+msgid "تنبيهات أثناء الاستيراد:"
+msgstr "Alerts during import:"
+
+msgid "توقيع الطالب"
+msgstr "Student Signature"
+
+msgid "جارٍ الحفظ..."
+msgstr "Saving..."
+
+msgid "جارٍ معالجة البيانات وتضمين الطلاب..."
+msgstr "Processing data & enrolling students..."
+
+msgid "جامعة بغداد — نظام الحضور الذكي"
+msgstr "University of Baghdad — Smart Attendance System"
+
+msgid ""
+"جرب تغيير خيارات البحث، المؤسسة، المادة، أو الشعبة، أو قم بإعادة ضبط الفلاتر"
+" لعرض كافة السجلات."
+msgstr ""
+"Try changing search keywords, institution, course, or section, or reset "
+"filters to display all records."
+
+msgid "جرب تغيير شروط الفلتر أو الضغط على 'إعادة ضبط'."
+msgstr "Try changing filter criteria or clicking 'Reset'."
+
+msgid "جميع الطرق والوسائل"
+msgstr "All Check-in Methods"
+
+msgid "حساب"
+msgstr "accounts"
+
+msgid "زينب رافد محمد العبيدي"
+msgstr "Zainab Rafid Mohammed Al-Obaidi"
+
+msgid "شعبة:"
+msgstr "Section:"
+
+msgid "غير مربوطة"
+msgstr "Not linked"
+
+msgid "كرار حيدر علي الساعدي"
+msgstr "Karrar Haider Ali Al-Saadi"
+
+msgid "لوحة التحكم الرئيسية"
+msgstr "Main Dashboard"
+
+msgid "مسجلين بالنظام"
+msgstr "registered in system"
+
+msgid "مصطفى حسين كاظم الكعبي"
+msgstr "Mustafa Hussein Kadhim Al-Kaabi"
+
+msgid "يوسف أحمد جاسم البصري"
+msgstr "Youssef Ahmed Jasim Al-Basri"
+
+msgid "يجب ربط حسابك بملف أستاذ قبل إنشاء جلسة حضور."
+msgstr ""
+"Your account must be linked to a teacher profile before creating an "
+"attendance session."
+
+msgid "غير مصرح لك بدخول هذه الصفحة."
+msgstr "You are not authorized to access this page."
+
+msgid "غير مصرح لك بحذف سجلات التدقيق."
+msgstr "You are not authorized to delete audit records."
+
+msgid "تم حذف سجل العملية بنجاح."
+msgstr "Audit operation log deleted successfully."
+
+msgid "لم يتم تحديد أي سجل للحذف."
+msgstr "No records were selected for deletion."
+
+msgid "هذه الصلاحية للمدير الأعلى فقط."
+msgstr "This permission is for Super Admins only."
+
+msgid "غير مصرح لك."
+msgstr "You are not authorized."
+
+msgid "قيمة إعداد التحقق غير صالحة."
+msgstr "Invalid verification setting value."
+
+msgid "تم حفظ بيانات وشعار المؤسسة بنجاح!"
+msgstr "Institution data and logo saved successfully!"
+
+msgid "هذه العملية متاحة للمدير الأعلى فقط."
+msgstr "This operation is available for Super Admins only."
+
+msgid "غير مصرح لك بفتح جلسة حضور."
+msgstr "You are not authorized to start an attendance session."
+
+msgid "غير مصرح لك بعرض شاشة التحضير."
+msgstr "You are not authorized to view the attendance screen."
+
+msgid "لم يتم العثور على جلسة التحضير المطلوبة."
+msgstr "The requested attendance session was not found."
+
+msgid "هذه الصفحة مخصصة للطلاب فقط."
+msgstr "This page is restricted to students only."
+
+msgid "لا يوجد ملف طالب مرتبط بحسابك."
+msgstr "No student profile is linked to your account."
+
+msgid "هذه الصفحة مخصصة للمعلمين فقط."
+msgstr "This page is restricted to teachers only."
+
+msgid "لا يوجد ملف معلم مرتبط بحسابك."
+msgstr "No teacher profile is linked to your account."
+
+msgid "هذه الصفحة مخصصة للمعلمين والإداريين فقط."
+msgstr "This page is restricted to teachers and administrators only."
+
+msgid "يرجى تحديد أو إدخال اسم مادة صالحة."
+msgstr "Please select or enter a valid course name."
+
+msgid "غير مصرح لك بالوصول لهذه الصفحة."
+msgstr "You are not authorized to access this page."
+
+msgid "غير مصرح لك بتشغيل جلسات التحضير."
+msgstr "You are not authorized to run attendance sessions."
+
+msgid "غير مصرح لك بتشغيل هذه الجلسة."
+msgstr "You are not authorized to run this session."
+
+msgid "غير مصرح لك بتشغيل هذه الحصة."
+msgstr "You are not authorized to run this lecture."
+
+msgid "غير مصرح لك بإلغاء هذه الجلسة."
+msgstr "You are not authorized to cancel this session."
+
+msgid "لم يتم تحديد أي جلسة للحذف."
+msgstr "No sessions were selected for deletion."
+
+msgid "سجل حضور آلي"
+msgstr "Automatic check-in log"
+
+msgid "تسجيل غياب تلقائي عند إغلاق الجلسة"
+msgstr "Automatic absence registration upon closing session"
+
+msgid "ملف ولي الأمر"
+msgstr "Guardian Profile"
+
+msgid "ملفات أولياء الأمور"
+msgstr "Guardian Profiles"
+
+msgid "الرقم الجامعي/المدرسي"
+msgstr "University / School ID"
+
+msgid "الشعب الدراسية المسجلة"
+msgstr "Enrolled Class Sections"
+
+msgid "بطاقة RFID/NFC"
+msgstr "RFID/NFC Card"
+
+msgid "الرقم الوظيفي"
+msgstr "Employee ID"
+
+msgid "التخصص"
+msgstr "Specialization"
+
+msgid "ملف المعلم"
+msgstr "Teacher Profile"
+
+msgid "ملفات المعلمين"
+msgstr "Teacher Profiles"
+
+msgid "بانتظار المراجعة"
+msgstr "Pending Review"
+
+msgid "تمت الموافقة"
+msgstr "Approved"
+
+msgid "مرفوض"
+msgstr "Rejected"
+
+msgid "بطاقة الطالب (QR ثابت)"
+msgstr "Student Card (Static QR)"
+
+msgid "شبكة WiFi"
+msgstr "WiFi Network"
+
+msgid "سجل حضور الطالب"
+msgstr "Student Attendance Record"
+
+msgid "تاريخ آخر تعديل"
+msgstr "Last Modified Date"
+
+msgid "عدله المستخدم"
+msgstr "Modified By User"
+
+msgid "ملاحظات / سبب التعديل اليدوي"
+msgstr "Notes / Reason for Manual Edit"
+
+msgid ""
+"رقم الهاتف غير صحيح! يجب أن يكون رقماً عراقياً مكوّناً من 11 رقماً ويبدأ بـ "
+"07 (مثال: 07724978301)."
+msgstr ""
+"Invalid phone number! Must be an 11-digit Iraqi number starting with 07 "
+"(e.g. 07724978301)."
+
+msgid "الرقم الجامعي مستخدم من قبل طالب آخر، تم الإبقاء على رقمك الحالي."
+msgstr ""
+"University ID is already used by another student, keeping your current ID."

@@ -3,6 +3,8 @@ import hmac
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 
 
+from django.utils.translation import gettext as _
+
 DEFAULT_QR_TOKEN_TTL = 30
 MAX_DYNAMIC_QR_TOKEN_TTL = 120
 FROZEN_QR_TOKEN_TTL = 24 * 60 * 60
@@ -42,7 +44,7 @@ def verify_qr_token(
     Supports raw signatures, URL-encoded tokens, full URLs, and unquoted strings.
     """
     if not token_str:
-        return None, "رمز التحضير غير موجود"
+        return None, _("رمز التحضير غير موجود")
 
     import urllib.parse
     token_str = str(token_str).strip().strip('"').strip("'")
@@ -72,7 +74,7 @@ def verify_qr_token(
         unsigned_data = signer.unsign(token_str)
         parts = unsigned_data.split(":")
         if len(parts) != 3:
-            return None, "توقيع الرمز غير صالح"
+            return None, _("توقيع الرمز غير صالح")
 
         session_id = int(parts[0])
         token_salt = parts[1]
@@ -85,12 +87,12 @@ def verify_qr_token(
             else MAX_DYNAMIC_QR_TOKEN_TTL
         )
         if not 1 <= token_ttl <= max_ttl:
-            return None, "توقيع الرمز غير صالح"
+            return None, _("توقيع الرمز غير صالح")
         if (
             not hmac.compare_digest(str(attendance_session.qr_salt), token_salt)
             and not allow_rotated_salt
         ):
-            return None, "تم تجديد الرمز، يرجى مسح رمز QR الحالي"
+            return None, _("تم تجديد الرمز، يرجى مسح رمز QR الحالي")
 
         try:
             signer.unsign(token_str, max_age=min(token_ttl, max_age))
@@ -100,11 +102,11 @@ def verify_qr_token(
         return attendance_session, None
 
     except SignatureExpired:
-        return None, "انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)"
+        return None, _("انتهت صلاحية الرمز (يرجى مسح الرمز الجديد المتجدد)")
     except BadSignature:
-        return None, "توقيع الرمز غير صالح"
+        return None, _("توقيع الرمز غير صالح")
     except (ValueError, IndexError, AttendanceSession.DoesNotExist):
-        return None, "جلسة التحضير غير موجودة أو غير نشطة"
+        return None, _("جلسة التحضير غير موجودة أو غير نشطة")
 
 
 def is_ip_in_subnet(ip_str, subnet_str):

@@ -233,51 +233,52 @@
     <!-- Top Navigation Bar -->
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print">
         <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <button @click="sidebarOpen = !sidebarOpen" class="text-slate-500 hover:text-slate-600 focus:outline-none sm:hidden mr-2">
+            <div class="flex justify-between items-center h-16 gap-2">
+                <!-- Left Nav Section / Logo -->
+                <div class="flex items-center gap-2 sm:gap-3.5 min-w-0">
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-slate-600 hover:text-slate-900 focus:outline-none sm:hidden p-1.5 -m-1 rounded-lg hover:bg-slate-100 shrink-0" aria-label="{% trans 'فتح القائمة' %}">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <!-- Logo / Title -->
-                    <a href="/" class="flex items-center space-x-reverse space-x-3">
+                    <a href="/" class="flex items-center gap-2 sm:gap-3 min-w-0 group">
                         {% if system_institution_logo %}
-                            <img src="{{ system_institution_logo }}" alt="Logo" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200 shadow-xs p-0.5">
+                            <img src="{{ system_institution_logo }}" alt="Logo" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200 shadow-xs p-0.5 shrink-0">
                         {% else %}
-                            <div class="h-9 w-9 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-brand-200">
+                            <div class="h-9 w-9 bg-brand-600 group-hover:bg-brand-700 transition-colors rounded-xl flex items-center justify-center text-white font-black text-base shadow-md shadow-brand-200 shrink-0">
                                 {% trans "ح" %}
                             </div>
                         {% endif %}
-                        <div class="flex flex-col">
-                            <span class="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-none">{% trans "نظام الحضور الذكي" %}</span>
-                            <span class="text-[10px] text-slate-400 font-semibold mt-0.5">{{ system_institution_name|default:"جامعة بغداد" }}</span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-sm sm:text-base font-bold text-slate-800 tracking-tight leading-tight truncate">{% trans "نظام الحضور الذكي" %}</span>
+                            <span class="text-[10px] text-slate-400 font-semibold truncate">{{ system_institution_name|default:"جامعة بغداد" }}</span>
                         </div>
                     </a>
                 </div>
                 
                 <!-- Right Nav Section -->
-                <div class="flex items-center space-x-reverse space-x-3 sm:space-x-4">
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                     <!-- Network Status Pill (Desktop & Tablet) -->
-                    <div id="pwa-network-badge" class="hidden sm:inline-flex items-center space-x-reverse space-x-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all">
+                    <div id="pwa-network-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold transition-all">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span id="pwa-network-badge-text">{% trans "متصل" %}</span>
                     </div>
 
-                    <form action="{% url 'set_language' %}" method="post" class="inline-flex">
+                    <form action="{% url 'set_language' %}" method="post" class="inline-flex m-0">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.get_full_path }}">
                         {% if LANGUAGE_CODE == "ar" %}
                             <input type="hidden" name="language" value="en">
-                            <button type="submit" lang="en" dir="ltr" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50" aria-label="{% trans 'Switch language to English' %}">English</button>
+                            <button type="submit" lang="en" dir="ltr" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors" aria-label="{% trans 'Switch language to English' %}">English</button>
                         {% else %}
                             <input type="hidden" name="language" value="ar">
-                            <button type="submit" lang="ar" dir="rtl" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50" aria-label="{% trans 'Switch language to Arabic' %}">العربية</button>
+                            <button type="submit" lang="ar" dir="rtl" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors" aria-label="{% trans 'Switch language to Arabic' %}">العربية</button>
                         {% endif %}
                     </form>
 
                     <!-- PWA Header Install Button (Dynamic) -->
-                    <button id="pwa-header-install-btn" onclick="pwaInstallApp()" class="hidden items-center space-x-reverse space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                    <button id="pwa-header-install-btn" onclick="pwaInstallApp()" class="hidden items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -544,7 +545,7 @@
                              class="p-4 rounded-xl border {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-800{% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex justify-between items-center shadow-sm">
                             <span class="text-sm font-semibold flex items-center gap-2">
                                 {% if message.tags == 'error' %}<span>⚠️</span>{% elif message.tags == 'warning' %}<span>ℹ️</span>{% else %}<span>✅</span>{% endif %}
-                                {{ message }}
+                                {% trans message.message as translated_msg %}{{ translated_msg|default:message }}
                             </span>
                             <button @click="visible = false"
                                     class="ml-3 mr-1 text-current opacity-50 hover:opacity-100 transition-opacity text-lg leading-none font-bold shrink-0"
@@ -753,42 +754,6 @@
     <script>
         let deferredPrompt = null;
         let newWorker = null;
-
-        function resumeSavedAttendanceQueue() {
-            if (!navigator.onLine || window.location.pathname === '/attendance/checkin/') return;
-            try {
-                const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
-                if (!Array.isArray(queue) || !queue.length) {
-                    sessionStorage.removeItem('attendance_sync_navigation');
-                    return;
-                }
-                if (sessionStorage.getItem('attendance_sync_navigation') === '1') return;
-                sessionStorage.setItem('attendance_sync_navigation', '1');
-                window.location.assign('/attendance/checkin/?sync_offline=' + Date.now());
-            } catch (error) {
-                console.error('[Attendance] Could not inspect saved offline queue:', error);
-            }
-        }
-
-        window.addEventListener('load', resumeSavedAttendanceQueue, { once: true });
-        window.addEventListener('online', resumeSavedAttendanceQueue);
-        window.addEventListener('beforeunload', function(event) {
-            if (sessionStorage.getItem('attendance_sync_navigation') === '1') {
-                sessionStorage.removeItem('attendance_sync_navigation');
-                return;
-            }
-            try {
-                const queue = JSON.parse(localStorage.getItem('offline_attendance_queue') || '[]');
-                if (Array.isArray(queue) && queue.length) {
-                    event.preventDefault();
-                    event.returnValue = document.documentElement.lang === 'en'
-                        ? 'You have attendance requests saved on this device that have not been synced. Leave this page?'
-                        : 'لديك طلبات حضور محفوظة لم تؤكد مزامنتها. هل تريد مغادرة الصفحة؟';
-                }
-            } catch (error) {
-                console.error('[Attendance] Could not inspect saved queue before leaving:', error);
-            }
-        });
 
         const isIos = () => {
             const userAgent = window.navigator.userAgent.toLowerCase();

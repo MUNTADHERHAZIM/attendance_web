@@ -1,36 +1,37 @@
 from django.db import models
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 import uuid
 
 class AttendanceSession(models.Model):
-    session = models.ForeignKey("academics.Session", on_delete=models.CASCADE, related_name="attendance_sessions", verbose_name="الحصة/المحاضرة")
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="مُنشئ الجلسة")
-    date = models.DateField(verbose_name="التاريخ")
-    qr_salt = models.UUIDField(default=uuid.uuid4, verbose_name="ملح التشفير للـ QR")
-    start_time = models.DateTimeField(auto_now_add=True, verbose_name="وقت البدء")
-    end_time = models.DateTimeField(verbose_name="وقت الانتهاء")
-    is_active = models.BooleanField(default=True, verbose_name="نشطة")
-    requires_wifi = models.BooleanField(default=False, verbose_name="تطلب التحقق من WiFi")
-    requires_geofence = models.BooleanField(default=False, verbose_name="تطلب التحقق من الموقع الجغرافي")
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="خط عرض المحاضرة")
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="خط طول المحاضرة")
-    radius_meters = models.PositiveIntegerField(default=50, verbose_name="نطاق السماح الجغرافي بالمتر")
-    quick_otp = models.CharField(max_length=6, blank=True, null=True, verbose_name="رمز التحضير السريع (OTP)")
-    allowed_ip_subnet = models.CharField(max_length=50, blank=True, null=True, verbose_name="نطاق الـ IP المؤقت / Hotspot Subnet")
-    allowed_wifi_ssid = models.CharField(max_length=100, blank=True, null=True, verbose_name="اسم الـ WiFi المؤقت / Hotspot SSID")
-    topic = models.CharField(max_length=200, blank=True, null=True, verbose_name="موضوع أو عنوان المحاضرة")
-    lecture_type = models.CharField(max_length=50, blank=True, default="نظري", verbose_name="نوع المحاضرة")
-    is_frozen_qr = models.BooleanField(default=False, verbose_name="تثبيت كود الـ QR (رمز ثابت)")
+    session = models.ForeignKey("academics.Session", on_delete=models.CASCADE, related_name="attendance_sessions", verbose_name=_("الحصة/المحاضرة"))
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name=_("مُنشئ الجلسة"))
+    date = models.DateField(verbose_name=_("التاريخ"))
+    qr_salt = models.UUIDField(default=uuid.uuid4, verbose_name=_("ملح التشفير للـ QR"))
+    start_time = models.DateTimeField(auto_now_add=True, verbose_name=_("وقت البدء"))
+    end_time = models.DateTimeField(verbose_name=_("وقت الانتهاء"))
+    is_active = models.BooleanField(default=True, verbose_name=_("نشطة"))
+    requires_wifi = models.BooleanField(default=False, verbose_name=_("تطلب التحقق من WiFi"))
+    requires_geofence = models.BooleanField(default=False, verbose_name=_("تطلب التحقق من الموقع الجغرافي"))
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name=_("خط عرض المحاضرة"))
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name=_("خط طول المحاضرة"))
+    radius_meters = models.PositiveIntegerField(default=50, verbose_name=_("نطاق السماح الجغرافي بالمتر"))
+    quick_otp = models.CharField(max_length=6, blank=True, null=True, verbose_name=_("رمز التحضير السريع (OTP)"))
+    allowed_ip_subnet = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("نطاق الـ IP المؤقت / Hotspot Subnet"))
+    allowed_wifi_ssid = models.CharField(max_length=100, blank=True, null=True, verbose_name=_("اسم الـ WiFi المؤقت / Hotspot SSID"))
+    topic = models.CharField(max_length=200, blank=True, null=True, verbose_name=_("موضوع أو عنوان المحاضرة"))
+    lecture_type = models.CharField(max_length=50, blank=True, default="نظري", verbose_name=_("نوع المحاضرة"))
+    is_frozen_qr = models.BooleanField(default=False, verbose_name=_("تثبيت كود الـ QR (رمز ثابت)"))
     shift = models.CharField(
         max_length=10,
-        choices=[("MORNING", "صباحي"), ("EVENING", "مسائي")],
+        choices=[("MORNING", _("صباحي")), ("EVENING", _("مسائي"))],
         default="MORNING",
-        verbose_name="نوع الدراسة (صباحي/مسائي)"
+        verbose_name=_("نوع الدراسة (صباحي/مسائي)")
     )
 
     class Meta:
-        verbose_name = "جلسة تحضير"
-        verbose_name_plural = "جلسات التحضير"
+        verbose_name = _("جلسة تحضير")
+        verbose_name_plural = _("جلسات التحضير")
 
     def __str__(self):
         return f"جلسة {self.session} بتاريخ {self.date}"
@@ -65,19 +66,19 @@ class AttendanceSession(models.Model):
 
 class AttendanceRecord(models.Model):
     class Statuses(models.TextChoices):
-        PRESENT = "PRESENT", "حاضر"
-        ABSENT = "ABSENT", "غائب"
-        LATE = "LATE", "متأخر"
-        EXCUSED = "EXCUSED", "غائب بعذر"
+        PRESENT = "PRESENT", _("حاضر")
+        ABSENT = "ABSENT", _("غائب")
+        LATE = "LATE", _("متأخر")
+        EXCUSED = "EXCUSED", _("غائب بعذر")
 
     class Methods(models.TextChoices):
-        QR = "QR", "رمز QR الديناميكي"
-        STATIC_QR = "STATIC_QR", "بطاقة الطالب (QR ثابت)"
-        WIFI = "WIFI", "شبكة WiFi"
-        RFID = "RFID", "بطاقة RFID / NFC"
-        MANUAL = "MANUAL", "يدوي (من المعلم)"
-        OTP = "OTP", "رمز التحضير السريع (OTP)"
-        OFFLINE_MANUAL = "OFFLINE_MANUAL", "بدون إنترنت (تسجيل فوري)"
+        QR = "QR", _("رمز QR الديناميكي")
+        STATIC_QR = "STATIC_QR", _("بطاقة الطالب (QR ثابت)")
+        WIFI = "WIFI", _("شبكة WiFi")
+        RFID = "RFID", _("بطاقة RFID / NFC")
+        MANUAL = "MANUAL", _("يدوي (من المعلم)")
+        OTP = "OTP", _("رمز التحضير السريع (OTP)")
+        OFFLINE_MANUAL = "OFFLINE_MANUAL", _("بدون إنترنت (تسجيل فوري)")
 
     student = models.ForeignKey("accounts.StudentProfile", on_delete=models.CASCADE, related_name="attendance_records", verbose_name="الطالب")
     attendance_session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name="records", verbose_name="جلسة التحضير")
@@ -110,9 +111,9 @@ class AttendanceRecord(models.Model):
 
 class OfflineAttendanceSubmission(models.Model):
     class Statuses(models.TextChoices):
-        PENDING = "PENDING", "بانتظار المراجعة"
-        APPROVED = "APPROVED", "تمت الموافقة"
-        REJECTED = "REJECTED", "مرفوض"
+        PENDING = "PENDING", _("بانتظار المراجعة")
+        APPROVED = "APPROVED", _("تمت الموافقة")
+        REJECTED = "REJECTED", _("مرفوض")
 
     attendance_session = models.ForeignKey(
         AttendanceSession,

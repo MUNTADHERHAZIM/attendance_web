@@ -417,6 +417,11 @@ const checkinI18n = {
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 for (let index = 0; index < queue.length; index += 1) {
                     const item = queue[index];
+                    if (!item.queue_id) {
+                        item.queue_id = (window.crypto && crypto.randomUUID)
+                            ? crypto.randomUUID()
+                            : 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+                    }
                     if (item.sync_status === 'needs_review') {
                         remaining.push(item);
                         reviewCount += 1;
@@ -520,6 +525,18 @@ const checkinI18n = {
             if (navigator.onLine) this.syncOfflineQueue();
         },
         
+        clearOfflineQueue() {
+            const confirmMsg = document.documentElement.lang === 'en'
+                ? 'Are you sure you want to clear the locally saved attendance requests from this device?'
+                : 'هل أنت متأكد من رغبتك في مسح سجل طلبات الحضور المحفوظة على هذا الجهاز؟';
+            if (window.confirm(confirmMsg)) {
+                localStorage.removeItem('offline_attendance_queue');
+                this.offlineQueueCount = 0;
+                this.offlineQueueItems = [];
+                this.offlineSyncMessage = '';
+            }
+        },
+
         resetScanner() {
             this.scanning = true;
             this.loading = false;
@@ -624,7 +641,7 @@ const checkinI18n = {
 
         <div class="space-y-1">
             <label class="block text-xs font-bold text-slate-700">{% trans "رمز التحضير السريع (OTP) *" %}</label>
-            <input type="text" x-model="otpCode" maxlength="6" placeholder="مثال: 849201" dir="ltr"
+            <input type="text" x-model="otpCode" maxlength="6" placeholder="{% trans 'مثال: 849201' %}" dir="ltr"
                 class="w-full text-center tracking-widest text-2xl font-black font-mono h-14 border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none">
         </div>
 
@@ -667,10 +684,16 @@ const checkinI18n = {
                 </li>
             </template>
         </ul>
-        <button type="button" x-show="offlineQueueCount > 0" @click="syncOfflineQueue(true)" :disabled="isSyncingOfflineQueue"
-            class="px-3 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
-            {% trans "إعادة محاولة المزامنة / إعادة فحص المرفوض" %}
-        </button>
+        <div class="flex flex-wrap gap-2 pt-1" x-show="offlineQueueCount > 0">
+            <button type="button" @click="syncOfflineQueue(true)" :disabled="isSyncingOfflineQueue"
+                class="flex-1 min-w-[130px] px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-sm disabled:opacity-50 text-xs">
+                {% trans "إعادة محاولة المزامنة" %}
+            </button>
+            <button type="button" @click="clearOfflineQueue()"
+                class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold transition-all text-xs">
+                {% trans "مسح السجل المحلي" %}
+            </button>
+        </div>
     </div>
 
 </div>

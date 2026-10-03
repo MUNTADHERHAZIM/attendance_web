@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}سجلات الحضور العامة - لوحة الإدارة الشاملة{% endblock %}
+{% block title %}{% trans "سجلات الحضور العامة - لوحة الإدارة الشاملة" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -15,18 +16,18 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-800">
-                        🏛️ لوحة الإدارة المركزية
+                        🏛️ {% trans "لوحة الإدارة المركزية" %}
                     </span>
-                    <span class="text-xs text-slate-400 font-bold">تحديث فوري للسجلات الأكاديمية</span>
+                    <span class="text-xs text-slate-400 font-bold">{% trans "تحديث فوري للسجلات الأكاديمية" %}</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-3">
-                    <span>سجلات الحضور العامة</span>
-                    <span class="text-xs px-3 pyالان-1 rounded-full bg-slate-100 text-slate-700 font-black border border-slate-200">
-                        {{ total_records }} سجل مطابق
+                    <span>{% trans "سجلات الحضور العامة" %}</span>
+                    <span class="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-black border border-slate-200">
+                        {{ total_records }} {% trans "سجل مطابق" %}
                     </span>
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-semibold mt-1">
-                    مراقبة وتصفية سجلات حضور وغياب الطلاب في المؤسسات، الكليات، الأقسام، والمواد الدراسية.
+                    {% trans "مراقبة وتصفية سجلات حضور وغياب الطلاب في المؤسسات، الكليات، الأقسام، والمواد الدراسية." %}
                 </p>
             </div>
 
@@ -34,26 +35,26 @@
             <div class="flex items-center gap-2 flex-wrap">
                 <button type="button" onclick="window.print()" class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5">
                     <span>🖨️</span>
-                    <span>طباعة الكشف</span>
+                    <span>{% trans "طباعة الكشف" %}</span>
                 </button>
                 <a href="{% url 'reports:admin_reports_overview' %}" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
                     <span>📊</span>
-                    <span>لوحة التقارير والتدقيق</span>
+                    <span>{% trans "لوحة التقارير والتدقيق" %}</span>
                 </a>
             </div>
         </div>
 
         <!-- 2. High-Level Summary Stats Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
             <!-- Total Matching & Attendance Rate -->
             <div class="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0 font-bold">
                     📋
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 block">إجمالي السجلات</span>
+                    <span class="text-[11px] font-bold text-slate-400 block">{% trans "إجمالي السجلات" %}</span>
                     <span class="text-lg font-black text-slate-900 leading-tight block">{{ total_records }}</span>
-                    <span class="text-[10px] font-bold text-indigo-600 mt-0.5 block">نسبة الحضور: {{ present_pct }}%</span>
+                    <span class="text-[10px] font-bold text-indigo-600 mt-0.5 block">{% trans "نسبة الحضور:" %} {{ present_pct }}%</span>
                 </div>
             </div>
 
@@ -63,9 +64,9 @@
                     ✅
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 block">حاضر في الموعد</span>
+                    <span class="text-[11px] font-bold text-slate-400 block">{% trans "حاضر في الموعد" %}</span>
                     <span class="text-lg font-black text-emerald-700 leading-tight block">{{ present_count }}</span>
-                    <span class="text-[10px] font-bold text-emerald-600 mt-0.5 block">طالب مسجل</span>
+                    <span class="text-[10px] font-bold text-emerald-600 mt-0.5 block">{% trans "طالب مسجل" %}</span>
                 </div>
             </div>
 
@@ -75,9 +76,9 @@
                     ⏳
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 block">حضور متأخر</span>
+                    <span class="text-[11px] font-bold text-slate-400 block">{% trans "حضور متأخر" %}</span>
                     <span class="text-lg font-black text-amber-700 leading-tight block">{{ late_count }}</span>
-                    <span class="text-[10px] font-bold text-amber-600 mt-0.5 block">يحتاج متابعة</span>
+                    <span class="text-[10px] font-bold text-amber-600 mt-0.5 block">{% trans "يحتاج متابعة" %}</span>
                 </div>
             </div>
 
@@ -87,9 +88,9 @@
                     ❌
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 block">حالات الغياب</span>
+                    <span class="text-[11px] font-bold text-slate-400 block">{% trans "حالات الغياب" %}</span>
                     <span class="text-lg font-black text-rose-700 leading-tight block">{{ absent_count }}</span>
-                    <span class="text-[10px] font-bold text-rose-600 mt-0.5 block">غياب بدون عذر</span>
+                    <span class="text-[10px] font-bold text-rose-600 mt-0.5 block">{% trans "غياب بدون عذر" %}</span>
                 </div>
             </div>
 
@@ -99,9 +100,9 @@
                     📶
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 block">بدون إنترنت (شبكة محلية)</span>
+                    <span class="text-[11px] font-bold text-slate-400 block">{% trans "بدون إنترنت (شبكة محلية)" %}</span>
                     <span class="text-lg font-black text-cyan-700 leading-tight block">{{ offline_count }}</span>
-                    <span class="text-[10px] font-bold text-cyan-600 mt-0.5 block">📱 تحضير QR: {{ qr_count }}</span>
+                    <span class="text-[10px] font-bold text-cyan-600 mt-0.5 block">📱 {% trans "تحضير QR:" %} {{ qr_count }}</span>
                 </div>
             </div>
         </div>
@@ -110,27 +111,27 @@
         <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-black text-slate-700">الفترة الزمنية:</span>
+                    <span class="text-xs font-black text-slate-700">{% trans "الفترة الزمنية:" %}</span>
                     <div class="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 text-xs font-bold" role="group">
                         <a href="?period=all{% if inst_filter %}&institution_id={{ inst_filter }}{% endif %}{% if sec_filter %}&section_id={{ sec_filter }}{% endif %}{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
                            class="px-3 py-1.5 rounded-lg transition-all {% if period == 'all' or not period and not date_param %}bg-white text-indigo-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                            🎓 الكل
+                            🎓 {% trans "الكل" %}
                         </a>
                         <a href="?period=today{% if inst_filter %}&institution_id={{ inst_filter }}{% endif %}{% if sec_filter %}&section_id={{ sec_filter }}{% endif %}{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
                            class="px-3 py-1.5 rounded-lg transition-all {% if period == 'today' %}bg-white text-indigo-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                            📅 اليوم
+                            📅 {% trans "اليوم" %}
                         </a>
                         <a href="?period=yesterday{% if inst_filter %}&institution_id={{ inst_filter }}{% endif %}{% if sec_filter %}&section_id={{ sec_filter }}{% endif %}{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
                            class="px-3 py-1.5 rounded-lg transition-all {% if period == 'yesterday' %}bg-white text-indigo-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                            🗓️ أمس
+                            🗓️ {% trans "أمس" %}
                         </a>
                         <a href="?period=week{% if inst_filter %}&institution_id={{ inst_filter }}{% endif %}{% if sec_filter %}&section_id={{ sec_filter }}{% endif %}{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
                            class="px-3 py-1.5 rounded-lg transition-all {% if period == 'week' %}bg-white text-indigo-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                            📊 آخر 7 أيام
+                            📊 {% trans "آخر 7 أيام" %}
                         </a>
                         <a href="?period=month{% if inst_filter %}&institution_id={{ inst_filter }}{% endif %}{% if sec_filter %}&section_id={{ sec_filter }}{% endif %}{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if shift_filter %}&shift={{ shift_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
                            class="px-3 py-1.5 rounded-lg transition-all {% if period == 'month' %}bg-white text-indigo-700 shadow-xs font-black{% else %}text-slate-500 hover:text-slate-800{% endif %}">
-                            📈 آخر 30 يوماً
+                            📈 {% trans "آخر 30 يوماً" %}
                         </a>
                     </div>
                 </div>
@@ -145,14 +146,14 @@
                     {% if method_filter %}<input type="hidden" name="method" value="{{ method_filter }}">{% endif %}
                     {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
                     
-                    <span class="text-xs font-bold text-slate-500">أو تاريخ محدد:</span>
+                    <span class="text-xs font-bold text-slate-500">{% trans "أو تاريخ محدد:" %}</span>
                     <input type="date" 
                            name="date" 
                            value="{{ date_param }}" 
                            onchange="this.form.submit()" 
                            class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500">
                     {% if date_param %}
-                        <a href="?period=all" class="text-xs text-rose-500 hover:underline font-bold mr-1">✕ إلغاء التاريخ</a>
+                        <a href="?period=all" class="text-xs text-rose-500 hover:underline font-bold mr-1">✕ {% trans "إلغاء التاريخ" %}</a>
                     {% endif %}
                 </form>
             </div>
@@ -166,13 +167,13 @@
                     
                     <!-- 1. Search Query Input -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">بحث بالطالب / الرقم الجامعي:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "بحث بالطالب / الرقم الجامعي:" %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">🔍</span>
                             <input type="text" 
                                    name="q" 
                                    value="{{ search_query }}" 
-                                   placeholder="ابحث بالاسم، اسم المستخدم، أو الرقم الجامعي..." 
+                                   placeholder="{% trans 'ابحث بالاسم، اسم المستخدم، أو الرقم الجامعي...' %}" 
                                    class="w-full pr-9 pl-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/70 focus:bg-white transition-all">
                         </div>
                     </div>
@@ -181,9 +182,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ inst_filter }}', 
-                        label: '{% for inst in institutions %}{% if inst_filter == inst.id|stringformat:'s' %}{{ inst.name|escapejs }}{% endif %}{% endfor %}' || 'جميع المؤسسات والجامعات' 
+                        label: '{% for inst in institutions %}{% if inst_filter == inst.id|stringformat:'s' %}{{ inst.name|escapejs }}{% endif %}{% endfor %}' || '{% trans "جميع المؤسسات والجامعات"|escapejs %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">المؤسسة / الجامعة:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "المؤسسة / الجامعة:" %}</label>
                         <input type="hidden" name="institution_id" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -197,10 +198,10 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = ''; label = 'جميع المؤسسات والجامعات'; open = false" 
+                            <div @click="value = ''; label = '{% trans "جميع المؤسسات والجامعات"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>جميع المؤسسات والجامعات</span>
+                                <span>{% trans "جميع المؤسسات والجامعات" %}</span>
                                 <span x-show="value === ''" class="text-indigo-600">✓</span>
                             </div>
                             {% for inst in institutions %}
@@ -218,9 +219,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ course_filter }}', 
-                        label: '{% for crs in courses %}{% if course_filter == crs.id|stringformat:'s' %}{{ crs.name|escapejs }} ({{ crs.code|escapejs }}){% endif %}{% endfor %}' || 'جميع المواد الدراسية' 
+                        label: '{% for crs in courses %}{% if course_filter == crs.id|stringformat:'s' %}{{ crs.name|escapejs }} ({{ crs.code|escapejs }}){% endif %}{% endfor %}' || '{% trans "جميع المواد الدراسية"|escapejs %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">المادة الدراسية:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "المادة الدراسية:" %}</label>
                         <input type="hidden" name="course_id" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -234,10 +235,10 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = ''; label = 'جميع المواد الدراسية'; open = false" 
+                            <div @click="value = ''; label = '{% trans "جميع المواد الدراسية"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>جميع المواد الدراسية</span>
+                                <span>{% trans "جميع المواد الدراسية" %}</span>
                                 <span x-show="value === ''" class="text-indigo-600">✓</span>
                             </div>
                             {% for crs in courses %}
@@ -255,9 +256,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ sec_filter }}', 
-                        label: '{% for sec in sections %}{% if sec_filter == sec.id|stringformat:'s' %}{{ sec.name|escapejs }} ({{ sec.level|default:''|escapejs }}){% endif %}{% endfor %}' || 'جميع الشعب والفصول' 
+                        label: '{% for sec in sections %}{% if sec_filter == sec.id|stringformat:'s' %}{{ sec.name|escapejs }} ({{ sec.level|default:''|escapejs }}){% endif %}{% endfor %}' || '{% trans "جميع الشعب والفصول"|escapejs %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">الشعبة / الفصل الدراسي:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "الشعبة / الفصل الدراسي:" %}</label>
                         <input type="hidden" name="section_id" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -271,10 +272,10 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 max-h-60 overflow-y-auto text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = ''; label = 'جميع الشعب والفصول'; open = false" 
+                            <div @click="value = ''; label = '{% trans "جميع الشعب والفصول"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>جميع الشعب والفصول</span>
+                                <span>{% trans "جميع الشعب والفصول" %}</span>
                                 <span x-show="value === ''" class="text-indigo-600">✓</span>
                             </div>
                             {% for sec in sections %}
@@ -292,9 +293,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ shift_filter }}', 
-                        label: '{% if shift_filter == 'MORNING' %}☀️ دراسة صباحية{% elif shift_filter == 'EVENING' %}🌙 دراسة مسائية{% else %}الدوام: الكل (صباحي + مسائي){% endif %}' 
+                        label: '{% if shift_filter == 'MORNING' %}{% trans "☀️ دراسة صباحية"|escapejs %}{% elif shift_filter == 'EVENING' %}{% trans "🌙 دراسة مسائية"|escapejs %}{% else %}{% trans "الدوام: الكل (صباحي + مسائي)"|escapejs %}{% endif %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">نوع الدراسة (الدوام):</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "نوع الدراسة (الدوام):" %}</label>
                         <input type="hidden" name="shift" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -308,22 +309,22 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = ''; label = 'الدوام: الكل (صباحي + مسائي)'; open = false" 
+                            <div @click="value = ''; label = '{% trans "الدوام: الكل (صباحي + مسائي)"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>الدوام: الكل (صباحي + مسائي)</span>
+                                <span>{% trans "الدوام: الكل (صباحي + مسائي)" %}</span>
                                 <span x-show="value === ''" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'MORNING'; label = '☀️ دراسة صباحية'; open = false" 
+                            <div @click="value = 'MORNING'; label = '{% trans "☀️ دراسة صباحية"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'MORNING' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>☀️ دراسة صباحية</span>
+                                <span>{% trans "☀️ دراسة صباحية" %}</span>
                                 <span x-show="value === 'MORNING'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'EVENING'; label = '🌙 دراسة مسائية'; open = false" 
+                            <div @click="value = 'EVENING'; label = '{% trans "🌙 دراسة مسائية"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'EVENING' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>🌙 دراسة مسائية</span>
+                                <span>{% trans "🌙 دراسة مسائية" %}</span>
                                 <span x-show="value === 'EVENING'" class="text-indigo-600">✓</span>
                             </div>
                         </div>
@@ -333,9 +334,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ status_filter }}', 
-                        label: '{% if status_filter == 'PRESENT' %}✅ حاضر فقط{% elif status_filter == 'LATE' %}⏳ متأخر فقط{% elif status_filter == 'ABSENT' %}❌ غائب فقط{% elif status_filter == 'EXCUSED' %}📝 غائب بعذر{% else %}حالة الحضور: جميع الحالات{% endif %}' 
+                        label: '{% if status_filter == 'PRESENT' %}{% trans "✅ حاضر فقط"|escapejs %}{% elif status_filter == 'LATE' %}{% trans "⏳ متأخر فقط"|escapejs %}{% elif status_filter == 'ABSENT' %}{% trans "❌ غائب فقط"|escapejs %}{% elif status_filter == 'EXCUSED' %}{% trans "📝 غائب بعذر"|escapejs %}{% else %}{% trans "حالة الحضور: جميع الحالات"|escapejs %}{% endif %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">حالة الحضور:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "حالة الحضور:" %}</label>
                         <input type="hidden" name="status" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -349,34 +350,34 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = 'ALL'; label = 'حالة الحضور: جميع الحالات'; open = false" 
+                            <div @click="value = 'ALL'; label = '{% trans "حالة الحضور: جميع الحالات"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'ALL' || value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>جميع الحالات</span>
+                                <span>{% trans "جميع الحالات" %}</span>
                                 <span x-show="value === 'ALL' || value === ''" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'PRESENT'; label = '✅ حاضر فقط'; open = false" 
+                            <div @click="value = 'PRESENT'; label = '{% trans "✅ حاضر فقط"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'PRESENT' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>✅ حاضر</span>
+                                <span>{% trans "✅ حاضر" %}</span>
                                 <span x-show="value === 'PRESENT'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'LATE'; label = '⏳ متأخر فقط'; open = false" 
+                            <div @click="value = 'LATE'; label = '{% trans "⏳ متأخر فقط"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'LATE' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>⏳ متأخر</span>
+                                <span>{% trans "⏳ متأخر" %}</span>
                                 <span x-show="value === 'LATE'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'ABSENT'; label = '❌ غائب فقط'; open = false" 
+                            <div @click="value = 'ABSENT'; label = '{% trans "❌ غائب فقط"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'ABSENT' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>❌ غائب</span>
+                                <span>{% trans "❌ غائب" %}</span>
                                 <span x-show="value === 'ABSENT'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'EXCUSED'; label = '📝 غائب بعذر'; open = false" 
+                            <div @click="value = 'EXCUSED'; label = '{% trans "📝 غائب بعذر"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'EXCUSED' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>📝 غائب بعذر</span>
+                                <span>{% trans "📝 غائب بعذر" %}</span>
                                 <span x-show="value === 'EXCUSED'" class="text-indigo-600">✓</span>
                             </div>
                         </div>
@@ -386,9 +387,9 @@
                     <div x-data="{ 
                         open: false, 
                         value: '{{ method_filter }}', 
-                        label: '{% if method_filter == 'OFFLINE_MANUAL' %}📶 بدون إنترنت (تسجيل فوري){% elif method_filter == 'QR' %}📱 رمز QR الديناميكي{% elif method_filter == 'RFID' %}💳 بطاقة RFID / NFC{% elif method_filter == 'MANUAL' %}✍️ يدوي من المعلم{% else %}طريقة التحضير: جميع الطرق{% endif %}' 
+                        label: '{% if method_filter == 'OFFLINE_MANUAL' %}{% trans "📶 بدون إنترنت (تسجيل فوري)"|escapejs %}{% elif method_filter == 'QR' %}{% trans "📱 رمز QR الديناميكي"|escapejs %}{% elif method_filter == 'RFID' %}{% trans "💳 بطاقة RFID / NFC"|escapejs %}{% elif method_filter == 'MANUAL' %}{% trans "✍️ يدوي من المعلم"|escapejs %}{% else %}{% trans "طريقة التحضير: جميع الطرق"|escapejs %}{% endif %}' 
                     }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">طريقة تسجيل الحضور:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "طريقة تسجيل الحضور:" %}</label>
                         <input type="hidden" name="method" :value="value">
                         <button type="button" 
                                 @click="open = !open" 
@@ -402,34 +403,34 @@
                         <div x-show="open" 
                              x-transition
                              class="absolute z-50 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-1.5 text-xs font-bold text-slate-700 space-y-0.5">
-                            <div @click="value = 'ALL'; label = 'طريقة التحضير: جميع الطرق'; open = false" 
+                            <div @click="value = 'ALL'; label = '{% trans "طريقة التحضير: جميع الطرق"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'ALL' || value === '' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>جميع الطرق والوسائل</span>
+                                <span>{% trans "جميع الطرق والوسائل" %}</span>
                                 <span x-show="value === 'ALL' || value === ''" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'OFFLINE_MANUAL'; label = '📶 بدون إنترنت (تسجيل فوري)'; open = false" 
+                            <div @click="value = 'OFFLINE_MANUAL'; label = '{% trans "📶 بدون إنترنت (تسجيل فوري)"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'OFFLINE_MANUAL' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>📶 بدون إنترنت (تسجيل فوري)</span>
+                                <span>{% trans "📶 بدون إنترنت (تسجيل فوري)" %}</span>
                                 <span x-show="value === 'OFFLINE_MANUAL'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'QR'; label = '📱 رمز QR الديناميكي'; open = false" 
+                            <div @click="value = 'QR'; label = '{% trans "📱 رمز QR الديناميكي"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'QR' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>📱 رمز QR الديناميكي</span>
+                                <span>{% trans "📱 رمز QR الديناميكي" %}</span>
                                 <span x-show="value === 'QR'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'RFID'; label = '💳 بطاقة RFID / NFC'; open = false" 
+                            <div @click="value = 'RFID'; label = '{% trans "💳 بطاقة RFID / NFC"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'RFID' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>💳 بطاقة RFID / NFC</span>
+                                <span>{% trans "💳 بطاقة RFID / NFC" %}</span>
                                 <span x-show="value === 'RFID'" class="text-indigo-600">✓</span>
                             </div>
-                            <div @click="value = 'MANUAL'; label = '✍️ يدوي من المعلم'; open = false" 
+                            <div @click="value = 'MANUAL'; label = '{% trans "✍️ يدوي من المعلم"|escapejs %}'; open = false" 
                                  class="px-3 py-2 rounded-xl hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center justify-between transition-colors"
                                  :class="value === 'MANUAL' ? 'bg-indigo-50 text-indigo-700 font-black' : ''">
-                                <span>✍️ يدوي من المعلم</span>
+                                <span>{% trans "✍️ يدوي من المعلم" %}</span>
                                 <span x-show="value === 'MANUAL'" class="text-indigo-600">✓</span>
                             </div>
                         </div>
@@ -439,11 +440,11 @@
                     <div class="sm:col-span-2 lg:col-span-2 flex items-center gap-2 pt-5">
                         <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors flex items-center gap-1.5">
                             <span>🔍</span>
-                            <span>تطبيق الفلترة</span>
+                            <span>{% trans "تطبيق الفلترة" %}</span>
                         </button>
                         {% if inst_filter or sec_filter or course_filter or shift_filter or status_filter or method_filter or search_query or date_param or period %}
                             <a href="{% url 'attendance:student_records_web' %}" class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors">
-                                ✕ إعادة ضبط الفلاتر
+                                ✕ {% trans "إعادة ضبط الفلاتر" %}
                             </a>
                         {% endif %}
                     </div>
@@ -455,8 +456,8 @@
     {% else %}
         <!-- 🎓 STUDENT PERSONAL VIEW -->
         <div class="border-b border-slate-100 pb-4">
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">سجل حضوري الأكاديمي التفصيلي</h1>
-            <p class="text-xs text-slate-400 font-semibold mt-1">الرقم الجامعي: {{ student.student_id }}</p>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{% trans "سجل حضوري الأكاديمي التفصيلي" %}</h1>
+            <p class="text-xs text-slate-400 font-semibold mt-1">{% trans "الرقم الجامعي:" %} {{ student.student_id }}</p>
         </div>
     {% endif %}
 
@@ -470,15 +471,15 @@
                     <thead>
                         <tr class="bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                             {% if is_admin %}
-                                <th class="px-5 py-3.5">الطالب / المعرف</th>
+                                <th class="px-5 py-3.5">{% trans "الطالب / المعرف" %}</th>
                             {% endif %}
-                            <th class="px-5 py-3.5">المادة الدراسية</th>
-                            <th class="px-5 py-3.5 text-center">الشعبة / المرحلة</th>
-                            <th class="px-5 py-3.5 text-center">التاريخ</th>
-                            <th class="px-5 py-3.5 text-center">وقت التسجيل</th>
-                            <th class="px-5 py-3.5 text-center">الحالة</th>
-                            <th class="px-5 py-3.5 text-center">طريقة التحضير</th>
-                            <th class="px-5 py-3.5">ملاحظات التدريسي</th>
+                            <th class="px-5 py-3.5">{% trans "المادة الدراسية" %}</th>
+                            <th class="px-5 py-3.5 text-center">{% trans "الشعبة / المرحلة" %}</th>
+                            <th class="px-5 py-3.5 text-center">{% trans "التاريخ" %}</th>
+                            <th class="px-5 py-3.5 text-center">{% trans "وقت التسجيل" %}</th>
+                            <th class="px-5 py-3.5 text-center">{% trans "الحالة" %}</th>
+                            <th class="px-5 py-3.5 text-center">{% trans "طريقة التحضير" %}</th>
+                            <th class="px-5 py-3.5">{% trans "ملاحظات التدريسي" %}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-semibold text-xs text-slate-700">
@@ -567,14 +568,14 @@
                 <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-3xl mb-3">
                     🔍
                 </div>
-                <h3 class="text-base font-black text-slate-800">لا توجد سجلات حضور تطابق الفلاتر المحددة</h3>
+                <h3 class="text-base font-black text-slate-800">{% trans "لا توجد سجلات حضور تطابق الفلاتر المحددة" %}</h3>
                 <p class="text-xs text-slate-400 font-semibold mt-1 max-w-md mx-auto">
-                    جرب تغيير خيارات البحث، المؤسسة، المادة، أو الشعبة، أو قم بإعادة ضبط الفلاتر لعرض كافة السجلات.
+                    {% trans "جرب تغيير خيارات البحث، المؤسسة، المادة، أو الشعبة، أو قم بإعادة ضبط الفلاتر لعرض كافة السجلات." %}
                 </p>
                 <div class="mt-4">
                     <a href="{% url 'attendance:student_records_web' %}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors">
                         <span>↺</span>
-                        <span>إعادة ضبط جميع الفلاتر</span>
+                        <span>{% trans "إعادة ضبط جميع الفلاتر" %}</span>
                     </a>
                 </div>
             </div>
@@ -583,3 +584,4 @@
 
 </div>
 {% endblock %}
+

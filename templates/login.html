@@ -760,7 +760,7 @@ select.form-input { cursor: pointer; appearance: none; }
 
             <div class="info-stats" style="margin-top:1.5rem">
                 <div class="stat-card">
-                    <div class="stat-number">15ث</div>
+                    <div class="stat-number">{% trans "15ث" %}</div>
                     <div class="stat-label">{% trans "صلاحية QR الديناميكي" %}</div>
                 </div>
                 <div class="stat-card">
@@ -1282,8 +1282,11 @@ document.addEventListener('alpine:init', () => {
         /* ─ english name validation ─ */
         validateEnglishName() {
             const val = this.reg.name;
+            const isEn = document.documentElement.lang === 'en';
             if (/[^a-zA-Z0-9_]/.test(val)) {
-                this.regNameError = 'يجب إدخال الاسم بالأحرف الإنجليزية والأرقام فقط (A-Z, a-z, 0-9, _) بدون مسافات أو حروف عربية';
+                this.regNameError = isEn 
+                    ? 'Name must contain English letters and numbers only (A-Z, a-z, 0-9, _) without spaces or special characters'
+                    : 'يجب إدخال الاسم بالأحرف الإنجليزية والأرقام فقط (A-Z, a-z, 0-9, _) بدون مسافات أو حروف عربية';
                 this.reg.name = val.replace(/[^a-zA-Z0-9_]/g, '');
             } else {
                 this.regNameError = '';
@@ -1295,17 +1298,20 @@ document.addEventListener('alpine:init', () => {
             let p = (this.reg.phone || '').replace(/[^0-9]/g, '');
             if (p.length > 11) p = p.substring(0, 11);
             this.reg.phone = p;
+            const isEn = document.documentElement.lang === 'en';
 
             if (!p) {
-                this.regPhoneError = 'رقم الجوال العراقي مطلوب.';
+                this.regPhoneError = isEn ? 'Iraqi phone number is required.' : 'رقم الجوال العراقي مطلوب.';
                 return false;
             }
             if (!p.startsWith('07')) {
-                this.regPhoneError = 'يجب أن يبدأ الرقم العراقي بـ 07 (مثال: 077, 078, 075).';
+                this.regPhoneError = isEn ? 'Iraqi number must start with 07 (e.g. 077, 078, 075).' : 'يجب أن يبدأ الرقم العراقي بـ 07 (مثال: 077, 078, 075).';
                 return false;
             }
             if (p.length < 11) {
-                this.regPhoneError = `الرقم غير مكتمل (${p.length}/11 رقماً). يجب أن يتكون من 11 رقماً تماماً.`;
+                this.regPhoneError = isEn 
+                    ? `Incomplete phone number (${p.length}/11 digits). Must be exactly 11 digits.`
+                    : `الرقم غير مكتمل (${p.length}/11 رقماً). يجب أن يتكون من 11 رقماً تماماً.`;
                 return false;
             }
             this.regPhoneError = '';
@@ -1370,6 +1376,7 @@ document.addEventListener('alpine:init', () => {
             if (!this.validateIraqiPhone()) return;
 
             this.regError = '';
+            const isEn = document.documentElement.lang === 'en';
 
             this.regLoading = true;
             try {
@@ -1403,12 +1410,12 @@ document.addEventListener('alpine:init', () => {
                         window.location.href = data.redirect_url || '/';
                     }, 1400);
                 } else {
-                    this.regError = data.error || 'تعذر إنشاء الحساب، يرجى التحقق من صحة البيانات.';
+                    this.regError = data.error || (isEn ? 'Could not create account, please check your information.' : 'تعذر إنشاء الحساب، يرجى التحقق من صحة البيانات.');
                     this.capRegInput = '';
                     if (this.captchaEnabled) this.refreshCaptcha('register');
                 }
             } catch (err) {
-                this.regError = 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مجدداً.';
+                this.regError = isEn ? 'Server connection error, please try again.' : 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مجدداً.';
                 this.capRegInput = '';
                 if (this.captchaEnabled) this.refreshCaptcha('register');
             } finally {
@@ -1419,6 +1426,7 @@ document.addEventListener('alpine:init', () => {
         /* ─ password strength ─ */
         calcStrength() {
             const p = this.reg.password;
+            const isEn = document.documentElement.lang === 'en';
             if (!p) { this.strength = { pct:0, color:'#e2e8f0', label:'' }; return; }
             let s = 0;
             if (p.length >= 8)  s++;
@@ -1428,11 +1436,11 @@ document.addEventListener('alpine:init', () => {
             if (/[^A-Za-z0-9]/.test(p)) s++;
             const lvl = [
                 null,
-                { pct:20, color:'#ef4444', label:'ضعيفة جداً' },
-                { pct:40, color:'#f97316', label:'ضعيفة' },
-                { pct:65, color:'#eab308', label:'متوسطة' },
-                { pct:85, color:'#22c55e', label:'قوية' },
-                { pct:100, color:'#16a34a', label:'قوية جداً 🔐' },
+                { pct:20, color:'#ef4444', label: isEn ? 'Very Weak' : 'ضعيفة جداً' },
+                { pct:40, color:'#f97316', label: isEn ? 'Weak' : 'ضعيفة' },
+                { pct:65, color:'#eab308', label: isEn ? 'Medium' : 'متوسطة' },
+                { pct:85, color:'#22c55e', label: isEn ? 'Strong' : 'قوية' },
+                { pct:100, color:'#16a34a', label: isEn ? 'Very Strong 🔐' : 'قوية جداً 🔐' },
             ];
             this.strength = lvl[Math.min(s, 5)] || lvl[1];
         },

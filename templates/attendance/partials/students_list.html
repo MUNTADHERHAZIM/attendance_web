@@ -137,12 +137,12 @@
                         {% if item.profile.study_shift == 'MORNING' %}
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
                                 <span>☀️</span>
-                                <span>صباحي</span>
+                                <span>{% trans "صباحي" %}</span>
                             </span>
                         {% elif item.profile.study_shift == 'EVENING' %}
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs">
                                 <span>🌙</span>
-                                <span>مسائي</span>
+                                <span>{% trans "مسائي" %}</span>
                             </span>
                         {% else %}
                             <span class="text-slate-400 text-xs">-</span>

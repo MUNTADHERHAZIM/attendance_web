@@ -5,20 +5,6 @@
 
 {% block content %}
 <div class="space-y-8" x-data="{ showCodeModal: false }">
-    
-    <!-- Messages / Alerts -->
-    {% if messages %}
-        <div class="space-y-2">
-            {% for message in messages %}
-                <div class="p-4 rounded-xl text-sm font-bold flex items-center justify-between {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
-                    <div class="flex items-center gap-2">
-                        <span>{% if message.tags == 'success' %}✅{% else %}ℹ️{% endif %}</span>
-                        <span>{{ message }}</span>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
 
     <!-- Header & Super Admin Direct Bar -->
     <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -133,8 +119,8 @@
                             👤
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-brand-600 transition-colors">إدارة حسابات المستخدمين (Users)</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">تغيير كلمات المرور، تفعيل/تعطيل الحسابات، تعيين الصلاحيات</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-brand-600 transition-colors">{% trans "إدارة حسابات المستخدمين (Users)" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "تغيير كلمات المرور، تفعيل/تعطيل الحسابات، تعيين الصلاحيات" %}</p>
                         </div>
                     </a>
 
@@ -144,8 +130,8 @@
                             👨‍🏫
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">إدارة الكادر التدريسي (Teachers)</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">بيانات الأساتذة، التخصصات، والأقسام التابعة لهم</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">{% trans "إدارة الكادر التدريسي (Teachers)" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "بيانات الأساتذة، التخصصات، والأقسام التابعة لهم" %}</p>
                         </div>
                     </a>
 
@@ -155,8 +141,8 @@
                             🎓
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-sky-700 transition-colors">إدارة الطلاب والملفات الأكاديمية</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">الأرقام الجامعية، الدراسة الصباحية/المسائية، ونقل الشعب</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-sky-700 transition-colors">{% trans "إدارة الطلاب والملفات الأكاديمية" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "الأرقام الجامعية، الدراسة الصباحية/المسائية، ونقل الشعب" %}</p>
                         </div>
                     </a>
 
@@ -166,8 +152,8 @@
                             🏫
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-amber-700 transition-colors">إدارة الشعب الدراسية (Sections)</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">إضافة شعب جديدة (أ، ب، ج)، وتحديد المراحل الدراسية</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-amber-700 transition-colors">{% trans "إدارة الشعب الدراسية (Sections)" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "إضافة شعب جديدة (أ، ب، ج)، وتحديد المراحل الدراسية" %}</p>
                         </div>
                     </a>
 
@@ -177,8 +163,8 @@
                             📚
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors">المواد الدراسية والمقررات (Courses)</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">إضافة مقررات جديدة وربطها بالأقسام الأكاديمية</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors">{% trans "المواد الدراسية والمقررات (Courses)" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "إضافة مقررات جديدة وربطها بالأقسام الأكاديمية" %}</p>
                         </div>
                     </a>
 
@@ -188,8 +174,8 @@
                             📋
                         </div>
                         <div class="min-w-0">
-                            <h4 class="text-xs font-black text-slate-900 group-hover:text-rose-700 transition-colors">جلسات وسجلات الحضور والغياب</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">تعديل سجلات حضور أي طالب يدوياً أو حذف جلسات</p>
+                            <h4 class="text-xs font-black text-slate-900 group-hover:text-rose-700 transition-colors">{% trans "جلسات وسجلات الحضور والغياب" %}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{% trans "تعديل سجلات حضور أي طالب يدوياً أو حذف جلسات" %}</p>
                         </div>
                     </a>
                 </div>
@@ -199,11 +185,11 @@
             <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-base font-black text-slate-900">الطلاب الأكثر غياباً (تحذير تجاوز 20%)</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">الطلاب المعرضون لخطر الحرمان وفق اللائحة الأكاديمية</p>
+                        <h2 class="text-base font-black text-slate-900">{% trans "الطلاب الأكثر غياباً (تحذير تجاوز 20%)" %}</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">{% trans "الطلاب المعرضون لخطر الحرمان وفق اللائحة الأكاديمية" %}</p>
                     </div>
                     <span class="px-2.5 py-1 bg-rose-50 text-rose-700 text-xs font-bold rounded-lg border border-rose-200">
-                        مخالفة اللائحة الأكاديمية
+                        {% trans "مخالفة اللائحة الأكاديمية" %}
                     </span>
                 </div>
 
@@ -212,11 +198,11 @@
                         <table class="min-w-full divide-y divide-slate-100">
                             <thead>
                                 <tr class="text-slate-500 text-xs font-black uppercase">
-                                    <th class="px-4 py-3 text-right">اسم الطالب</th>
-                                    <th class="px-4 py-3 text-center">الرقم الجامعي</th>
-                                    <th class="px-4 py-3 text-center">مجموع الغيابات</th>
-                                    <th class="px-4 py-3 text-center">نسبة الغياب</th>
-                                    <th class="px-4 py-3 text-center">الإجراء</th>
+                                    <th class="px-4 py-3 text-right">{% trans "اسم الطالب" %}</th>
+                                    <th class="px-4 py-3 text-center">{% trans "الرقم الجامعي" %}</th>
+                                    <th class="px-4 py-3 text-center">{% trans "مجموع الغيابات" %}</th>
+                                    <th class="px-4 py-3 text-center">{% trans "نسبة الغياب" %}</th>
+                                    <th class="px-4 py-3 text-center">{% trans "الإجراء" %}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium text-xs sm:text-sm">
@@ -224,7 +210,7 @@
                                     <tr class="hover:bg-slate-50/80 transition-colors">
                                         <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-900">{{ item.student.user.get_full_name }}</td>
                                         <td class="px-4 py-3.5 whitespace-nowrap text-slate-500 text-center font-mono font-bold">{{ item.student.student_id }}</td>
-                                        <td class="px-4 py-3.5 whitespace-nowrap text-slate-800 text-center">{{ item.absences }} محاضرات</td>
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-slate-800 text-center">{{ item.absences }} {% trans "محاضرات" %}</td>
                                         <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800">
                                                 {{ item.pct }}%
@@ -232,7 +218,7 @@
                                         </td>
                                         <td class="px-4 py-3.5 whitespace-nowrap text-center">
                                             <a href="{% url 'reports:admin_student_detail' item.student.id %}" class="inline-flex items-center px-3 py-1 bg-brand-50 text-brand-600 rounded-lg font-bold text-xs hover:bg-brand-100 transition-colors">
-                                                عرض التقرير ←
+                                                {% trans "عرض التقرير" %}
                                             </a>
                                         </td>
                                     </tr>
@@ -242,7 +228,7 @@
                     </div>
                 {% else %}
                     <div class="text-center py-10 text-slate-400 font-semibold text-sm">
-                        لا يوجد أي طلاب تجاوزوا الحد الحرج للغياب! 👍
+                        {% trans "لا يوجد أي طلاب تجاوزوا الحد الحرج للغياب! 👍" %}
                     </div>
                 {% endif %}
             </div>
@@ -258,8 +244,8 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xl">🎨</span>
                         <div>
-                            <h3 class="text-sm font-black text-slate-900">هوية وشعار النظام</h3>
-                            <p class="text-[11px] text-slate-400 font-medium">تخصيص اسم المؤسسة والشعار الرسمي</p>
+                            <h3 class="text-sm font-black text-slate-900">{% trans "هوية وشعار النظام" %}</h3>
+                            <p class="text-[11px] text-slate-400 font-medium">{% trans "تخصيص اسم المؤسسة والشعار الرسمي" %}</p>
                         </div>
                     </div>
                 </div>
@@ -269,16 +255,16 @@
                     <input type="hidden" name="update_institution" value="1">
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم المؤسسة / الجامعة:</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "اسم المؤسسة / الجامعة:" %}</label>
                         <input type="text" 
                                name="institution_name" 
-                               value="{{ institution.name|default:'جامعة بغداد' }}" 
+                               value="{{ institution.name|default:_('جامعة بغداد') }}" 
                                required
                                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">الشعار الرسمي (الأيقونة):</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{% trans "الشعار الرسمي (الأيقونة):" %}</label>
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 shadow-2xs">
                                 {% if institution.logo %}
@@ -297,7 +283,7 @@
                     <button type="submit" 
                             class="w-full py-2.5 px-4 rounded-xl text-xs font-black text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-xs flex items-center justify-center gap-1.5">
                         <span>💾</span>
-                        <span>حفظ هوية وشعار المؤسسة</span>
+                        <span>{% trans "حفظ هوية وشعار المؤسسة" %}</span>
                     </button>
                 </form>
             </div>
@@ -305,41 +291,41 @@
             <!-- 🔑 TEACHER REGISTRATION CODE MANAGEMENT (إدارة كود تسجيل الأساتذة) -->
             <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-indigo-800/50 space-y-4">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-black uppercase tracking-wider text-indigo-300">أمان التسجيل الأكاديمي</span>
+                    <span class="text-xs font-black uppercase tracking-wider text-indigo-300">{% trans "أمان التسجيل الأكاديمي" %}</span>
                     <span class="text-lg">🔐</span>
                 </div>
                 
                 <div>
-                    <h3 class="text-base font-black text-white">رمز توثيق تسجيل الأساتذة</h3>
-                    <p class="text-xs text-indigo-200 mt-1">يُطلب هذا الكود السري حصراً من الأساتذة عند فتح حساب تدريسي لمنع تسجيل أي مستخدم غير مصرح به.</p>
+                    <h3 class="text-base font-black text-white">{% trans "رمز توثيق تسجيل الأساتذة" %}</h3>
+                    <p class="text-xs text-indigo-200 mt-1">{% trans "يُطلب هذا الكود السري حصراً من الأساتذة عند فتح حساب تدريسي لمنع تسجيل أي مستخدم غير مصرح به." %}</p>
                 </div>
 
                 <div class="p-3.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/15 flex items-center justify-between">
                     <div>
-                        <p class="text-[10px] text-indigo-300 font-bold uppercase">الرمز السري الفعّال حالياً:</p>
+                        <p class="text-[10px] text-indigo-300 font-bold uppercase">{% trans "الرمز السري الفعّال حالياً:" %}</p>
                         <p class="text-xl font-black font-mono tracking-widest text-amber-300 mt-0.5" id="currentTeacherCode">{{ teacher_code }}</p>
                     </div>
                     <button type="button" 
-                            onclick="navigator.clipboard.writeText('{{ teacher_code }}'); alert('تم نسخ رمز الأساتذة بنجاح: {{ teacher_code }}');" 
+                            onclick="navigator.clipboard.writeText('{{ teacher_code }}'); alert('{% trans "تم نسخ رمز الأساتذة بنجاح:" %} {{ teacher_code }}');" 
                             class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-bold text-white transition-colors"
-                            title="نسخ الرمز">
-                        📋 نسخ
+                            title="{% trans 'نسخ الرمز' %}">
+                        📋 {% trans "نسخ" %}
                     </button>
                 </div>
 
                 <!-- Update Code Form -->
                 <form method="POST" action="/" class="pt-2 border-t border-white/10 space-y-2.5">
                     {% csrf_token %}
-                    <label class="block text-xs font-bold text-indigo-200">تغيير رمز الأساتذة وتحديثه:</label>
+                    <label class="block text-xs font-bold text-indigo-200">{% trans "تغيير رمز الأساتذة وتحديثه:" %}</label>
                     <div class="flex gap-2">
                         <input type="text" 
                                name="new_teacher_code" 
-                               placeholder="اكتب الرمز الجديد (مثال: UOB2026)" 
+                               placeholder="{% trans 'اكتب الرمز الجديد (مثال: UOB2026)' %}" 
                                required
                                class="flex-1 px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300/60 focus:outline-hidden focus:ring-2 focus:ring-amber-400">
                         <button type="submit" 
                                 class="px-3.5 py-2 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition-colors shrink-0 shadow-xs">
-                            حفظ الرمز
+                            {% trans "حفظ الرمز" %}
                         </button>
                     </div>
                 </form>
@@ -349,35 +335,35 @@
             <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-black text-slate-900">حماية تسجيل الدخول والتسجيل</h3>
-                        <p class="text-xs text-slate-500 mt-1">التحقق يُفحص على الخادم، وليس اعتماداً على JavaScript فقط.</p>
+                        <h3 class="text-sm font-black text-slate-900">{% trans "حماية تسجيل الدخول والتسجيل" %}</h3>
+                        <p class="text-xs text-slate-500 mt-1">{% trans "التحقق يُفحص على الخادم، وليس اعتماداً على JavaScript فقط." %}</p>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-xs font-black {% if captcha_enabled %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
-                        {% if captcha_enabled %}مفعّل{% else %}معطّل{% endif %}
+                        {% if captcha_enabled %}{% trans "مفعّل" %}{% else %}{% trans "معطّل" %}{% endif %}
                     </span>
                 </div>
                 <form method="POST" action="{% url 'reports:toggle_captcha' %}">
                     {% csrf_token %}
                     <input type="hidden" name="enabled" value="{% if captcha_enabled %}false{% else %}true{% endif %}">
                     <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-xs font-black text-white transition-colors {% if captcha_enabled %}bg-rose-600 hover:bg-rose-700{% else %}bg-emerald-600 hover:bg-emerald-700{% endif %}">
-                        {% if captcha_enabled %}تعطيل CAPTCHA{% else %}تفعيل CAPTCHA{% endif %}
+                        {% if captcha_enabled %}{% trans "تعطيل CAPTCHA" %}{% else %}{% trans "تفعيل CAPTCHA" %}{% endif %}
                     </button>
                 </form>
-                <p class="text-[11px] text-slate-400">هذا الإعداد عام للنظام، لذلك يظهر للمدير الأعلى فقط.</p>
+                <p class="text-[11px] text-slate-400">{% trans "هذا الإعداد عام للنظام، لذلك يظهر للمدير الأعلى فقط." %}</p>
             </div>
             {% endif %}
 
             <!-- Quick administrative links -->
             <div class="bg-white p-6 border border-slate-200/90 shadow-2xs rounded-2xl space-y-4">
-                <h3 class="text-sm font-black text-slate-900 border-b border-slate-100 pb-2.5">أدوات إدارية سريعة</h3>
+                <h3 class="text-sm font-black text-slate-900 border-b border-slate-100 pb-2.5">{% trans "أدوات إدارية سريعة" %}</h3>
                 
                 <div class="space-y-2.5">
                     <a href="{% url 'reports:admin_import_web' %}" class="flex items-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-right justify-between group">
                         <div class="flex items-center space-x-reverse space-x-3">
                             <span class="text-lg">📥</span>
                             <div>
-                                <p class="text-xs font-bold text-slate-800">استيراد الطلاب من Excel</p>
-                                <p class="text-[11px] text-slate-400 font-medium">إضافة قوائم الطلاب دفعة واحدة</p>
+                                <p class="text-xs font-bold text-slate-800">{% trans "استيراد الطلاب من Excel" %}</p>
+                                <p class="text-[11px] text-slate-400 font-medium">{% trans "إضافة قوائم الطلاب دفعة واحدة" %}</p>
                             </div>
                         </div>
                         <span class="text-slate-300 group-hover:text-slate-500">←</span>
@@ -387,8 +373,8 @@
                         <div class="flex items-center space-x-reverse space-x-3">
                             <span class="text-lg">📊</span>
                             <div>
-                                <p class="text-xs font-bold text-slate-800">سجل عمليات التدقيق (Audit)</p>
-                                <p class="text-[11px] text-slate-400 font-medium">مراقبة التعديلات والعمليات الحساسة</p>
+                                <p class="text-xs font-bold text-slate-800">{% trans "سجل عمليات التدقيق (Audit)" %}</p>
+                                <p class="text-[11px] text-slate-400 font-medium">{% trans "مراقبة التعديلات والعمليات الحساسة" %}</p>
                             </div>
                         </div>
                         <span class="text-slate-300 group-hover:text-slate-500">←</span>
@@ -398,8 +384,8 @@
                         <div class="flex items-center space-x-reverse space-x-3">
                             <span class="text-lg">👑</span>
                             <div>
-                                <p class="text-xs font-bold text-indigo-950">لوحة إدارة دجانغو الكاملة</p>
-                                <p class="text-[11px] text-indigo-600 font-medium">تحكم شامل بقاعدة البيانات والإعدادات</p>
+                                <p class="text-xs font-bold text-indigo-950">{% trans "لوحة إدارة دجانغو الكاملة" %}</p>
+                                <p class="text-[11px] text-indigo-600 font-medium">{% trans "تحكم شامل بقاعدة البيانات والإعدادات" %}</p>
                             </div>
                         </div>
                         <span class="text-indigo-400 group-hover:text-indigo-600">↗</span>
@@ -409,8 +395,8 @@
 
             <!-- Footer / Developer Info -->
             <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-400 space-y-1">
-                <p class="font-bold text-slate-600">جامعة بغداد - نظام الحضور الذكي</p>
-                <p>المطور: MUNTADHER HAZIM | 07724978301</p>
+                <p class="font-bold text-slate-600">{% trans "جامعة بغداد - نظام الحضور الذكي" %}</p>
+                <p>{% trans "المطور: MUNTADHER HAZIM | 07724978301" %}</p>
             </div>
 
         </div>

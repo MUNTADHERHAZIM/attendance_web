@@ -26,10 +26,12 @@ from apps.reports.views import admin_import_web_view
 from apps.accounts.views import logout_view, RegisterView, CheckTeacherCodeView
 from apps.core.captcha import captcha_image_view, consume_captcha, is_captcha_enabled
 
-# ─── Customize Django Admin to be fully Arabic ───────────────────────
-admin.site.site_header = "لوحة إدارة نظام الحضور الذكي"
-admin.site.site_title = "نظام الحضور الذكي"
-admin.site.index_title = "إدارة البيانات والعمليات الأكاديمية"
+from django.utils.translation import gettext_lazy as _
+
+# ─── Customize Django Admin with dynamic localization ───────────────────────
+admin.site.site_header = _("لوحة إدارة نظام الحضور الذكي")
+admin.site.site_title = _("نظام الحضور الذكي")
+admin.site.index_title = _("إدارة البيانات والعمليات الأكاديمية")
 
 
 class CaptchaAuthenticationForm(AuthenticationForm):

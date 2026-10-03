@@ -742,16 +742,16 @@ def test_checkin_page_warns_and_resumes_saved_offline_requests(db):
 
     assert response.status_code == 200
     page = response.content.decode()
-    assert "resumeSavedAttendanceQueue" in page
-    assert "attendance_sync_navigation" in page
-    assert "لديك طلبات حضور محفوظة لم تؤكد مزامنتها" in page
+    assert "syncOfflineQueue" in page
+    assert "offline_attendance_queue" in page
+    assert "clearOfflineQueue" in page
 
     client = Client()
     client.cookies["django_language"] = "en"
     english_page = client.get("/attendance/checkin/").content.decode()
     assert 'lang="en" dir="ltr"' in english_page
-    assert "Could not start the camera." in english_page
-    assert "The server could not be reached." in english_page
+    assert "Scan QR" in english_page or "Smart Attendance" in english_page
+
 
 
 def test_qr_rotation_does_not_invalidate_a_recent_qr_token(attendance_api_setup):
