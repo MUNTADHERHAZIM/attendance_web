@@ -74,9 +74,15 @@ for _ip in _LOCAL_IP_ADDRESSES:
 CSRF_FAILURE_VIEW = "apps.core.views.custom_csrf_failure_view"
 
 # Application definition
-INSTALLED_APPS = [
-    # Channels must be loaded before staticfiles to run Daphne
-    "daphne",
+INSTALLED_APPS = []
+
+try:
+    import daphne  # noqa: F401
+    INSTALLED_APPS.append("daphne")
+except ImportError:
+    pass
+
+INSTALLED_APPS.extend([
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -99,7 +105,7 @@ INSTALLED_APPS = [
     "apps.attendance",
     "apps.notifications",
     "apps.reports",
-]
+])
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
