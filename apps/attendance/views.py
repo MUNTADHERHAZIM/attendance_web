@@ -178,41 +178,78 @@ def _get_students_for_session(attendance_session):
 def _get_shared_device_map(attendance_session):
     """
     Identifies students who checked in from the same physical device or browser in this session.
-    Groups by extracted device UUID or (IP + User-Agent).
+    Uses multi-factor clustering:
+      1. Extracted device UUID [DEV:...] (matches identical browser storage)
+      2. Hardware fingerprint [HW:...] + IP or User-Agent (catches incognito / private tabs on same phone)
+      3. Precise IP + Client User-Agent (when on non-loopback network)
     Returns dict: student_id -> list of other student names sharing this device.
     """
     records = AttendanceRecord.objects.filter(
         attendance_session=attendance_session
     ).select_related("student__user")
 
-    device_groups = {}
+    import collections
+    import re
+
+    key_groups = collections.defaultdict(list)
+
     for r in records:
         if not r.student or not r.student.user:
             continue
         student_name = r.student.user.get_full_name() or r.student.user.username
+        student_id = r.student_id
         ua = r.device_user_agent or ""
-        dev_key = None
+        ip = (r.ip_address or "").strip()
+        is_loopback = not ip or ip in ["127.0.0.1", "localhost", "::1"]
 
+        # 1. Device UUID Key
+        dev_uuid = None
         if "[DEV:" in ua:
             try:
-                dev_key = "dev_" + ua.split("[DEV:")[1].split("]")[0].strip()
+                dev_uuid = ua.split("[DEV:")[1].split("]")[0].strip()
             except Exception:
-                dev_key = None
+                dev_uuid = None
+        if dev_uuid:
+            key_groups[f"uuid_{dev_uuid}"].append((student_id, student_name))
 
-        if not dev_key and r.ip_address and r.ip_address not in ["127.0.0.1", "localhost", "::1"]:
-            clean_ua = ua[:120].strip()
-            dev_key = f"ip_{r.ip_address}_{clean_ua}"
+        # 2. Hardware Fingerprint Key
+        hw_fp = None
+        if "[HW:" in ua:
+            try:
+                hw_fp = ua.split("[HW:")[1].split("]")[0].strip()
+            except Exception:
+                hw_fp = None
 
-        if dev_key:
-            device_groups.setdefault(dev_key, []).append((r.student_id, student_name))
+        clean_ua = re.sub(r"\[(DEV|HW):[^\]]+\]\s*", "", ua).strip()
+
+        if hw_fp:
+            if not is_loopback:
+                key_groups[f"hw_ip_{ip}_{hw_fp}"].append((student_id, student_name))
+            elif clean_ua:
+                key_groups[f"hw_ua_{hw_fp}_{clean_ua[:80]}"].append((student_id, student_name))
+
+        # 3. Network + Detailed User-Agent Key (fallback for incognito without matching uuid)
+        if not is_loopback and len(clean_ua) >= 20:
+            key_groups[f"net_ua_{ip}_{clean_ua[:120]}"].append((student_id, student_name))
+
+    # Build bidirectional graph of students sharing any device key
+    graph = collections.defaultdict(set)
+    for dev_key, group in key_groups.items():
+        # Remove duplicates of the same student within the same group
+        unique_group = {}
+        for s_id, s_name in group:
+            unique_group[s_id] = s_name
+
+        if len(unique_group) > 1:
+            for s1_id, s1_name in unique_group.items():
+                for s2_id, s2_name in unique_group.items():
+                    if s1_id != s2_id:
+                        graph[s1_id].add(s2_name)
 
     shared_map = {}
-    for dev_key, group in device_groups.items():
-        if len(group) > 1:
-            for std_id, std_name in group:
-                others = [name for s_id, name in group if s_id != std_id]
-                if others:
-                    shared_map[std_id] = others
+    for s_id, others in graph.items():
+        if others:
+            shared_map[s_id] = sorted(list(others))
 
     return shared_map
 
@@ -883,9 +920,15 @@ class StudentCheckInView(APIView):
         )
 
         device_id = request.data.get("device_id") or request.headers.get("X-Device-Id")
+        hardware_fp = request.data.get("hardware_fingerprint") or ""
         raw_ua = request.META.get("HTTP_USER_AGENT", "")
+        prefixes = []
         if device_id:
-            device_user_agent = f"[DEV:{device_id}] {raw_ua}"
+            prefixes.append(f"[DEV:{str(device_id)[:128]}]")
+        if hardware_fp:
+            prefixes.append(f"[HW:{str(hardware_fp)[:64]}]")
+        if prefixes:
+            device_user_agent = f"{''.join(prefixes)} {raw_ua}"
         else:
             device_user_agent = raw_ua
 
@@ -1266,6 +1309,7 @@ def session_detail_web_view(request, session_id):
             and "يتطلب مراجعة الأستاذ" in item["record"].notes
         )
     )
+    shared_device_count = sum(1 for s in students_list if s["is_shared_device"])
     initial_qr_token = ""
     if attendance_session.is_active and attendance_session.end_time > timezone.now():
         _ensure_attendance_otp(attendance_session)
@@ -1305,6 +1349,7 @@ def session_detail_web_view(request, session_id):
         "late_count": late_cnt,
         "attendance_rate": rate,
         "review_required_count": review_required_count,
+        "shared_device_count": shared_device_count,
         "initial_qr_token": initial_qr_token,
         "primary_hotspot_ip": primary_hotspot_ip,
         "server_port": server_port,
@@ -1400,6 +1445,7 @@ def session_students_list_partial(request, session_id):
             and "يتطلب مراجعة الأستاذ" in item["record"].notes
         )
     )
+    shared_device_count = sum(1 for s in students_list if s["is_shared_device"])
 
     context = {
         "attendance_session": attendance_session,
@@ -1410,6 +1456,7 @@ def session_students_list_partial(request, session_id):
         "total_count": total_cnt,
         "attendance_rate": rate,
         "review_required_count": review_required_count,
+        "shared_device_count": shared_device_count,
         "review_submissions": attendance_session.offline_submissions.filter(
             status=OfflineAttendanceSubmission.Statuses.PENDING
         ).order_by("received_at"),

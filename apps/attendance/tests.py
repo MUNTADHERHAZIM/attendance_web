@@ -380,6 +380,58 @@ def test_same_device_can_register_multiple_students_and_same_name_is_idempotent(
     assert duplicate_response.data["already_recorded"] is True
     assert StudentProfile.objects.filter(student_id__startswith="NEW-").count() == 6
 
+    from apps.attendance.views import _get_shared_device_map
+    shared_map = _get_shared_device_map(attendance_session)
+    assert len(shared_map) == 6
+    for s_id, others in shared_map.items():
+        assert len(others) == 5
+
+
+def test_multi_factor_shared_device_detection(attendance_api_setup):
+    attendance_session, _, _, _, _ = attendance_api_setup
+    from apps.attendance.views import _get_shared_device_map
+
+    token = generate_qr_token(attendance_session)
+    client = APIClient()
+
+    # Student 1: regular tab with hardware fingerprint
+    res1 = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": token,
+            "student_name": "طالب هاتف رئيسي",
+            "device_id": "phone-uuid-1",
+            "hardware_fingerprint": "390x844_24_5_4",
+        },
+        HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)",
+        REMOTE_ADDR="198.51.100.22",
+        format="json",
+    )
+    assert res1.status_code == 200
+
+    # Student 2: incognito on same phone (new random device_id, but same IP, same HW fingerprint, same UA)
+    res2 = client.post(
+        "/attendance/api/checkin/",
+        {
+            "token": token,
+            "student_name": "طالب هاتف متخفي",
+            "device_id": "random-incognito-uuid-2",
+            "hardware_fingerprint": "390x844_24_5_4",
+        },
+        HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)",
+        REMOTE_ADDR="198.51.100.22",
+        format="json",
+    )
+    assert res2.status_code == 200
+
+    shared_map = _get_shared_device_map(attendance_session)
+    assert len(shared_map) == 2
+    # Verify both students are linked to each other
+    names = set()
+    for s_id, others in shared_map.items():
+        names.update(others)
+    assert "طالب هاتف رئيسي" in names or "طالب هاتف متخفي" in names
+
 
 def test_student_from_another_institution_cannot_check_in(attendance_api_setup):
     attendance_session, _, _, _, _ = attendance_api_setup

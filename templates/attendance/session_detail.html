@@ -279,6 +279,7 @@ const sessionDetailI18n = {
      data-server-port="{{ server_port|default:'8001'|escapejs }}"
      data-quick-otp="{{ attendance_session.quick_otp|default:''|escapejs }}"
      data-csrf-token="{{ csrf_token }}"
+     data-shared-count="{{ shared_device_count|default:0 }}"
      class="space-y-6 no-print">
 
 <script>
@@ -333,6 +334,7 @@ function sessionDetailManager() {
         quickOfflineQuery: '',
         offlineMessage: '',
         lastPresentCount: parseInt(ds.presentCount || '0', 10),
+        sharedDeviceCount: parseInt(ds.sharedCount || '0', 10),
         copiedOtp: false,
         copiedLink: false,
         showBulkModal: false,
@@ -701,11 +703,13 @@ function sessionDetailManager() {
                 var name = row.getAttribute('data-name') || '';
                 var id = row.getAttribute('data-id') || '';
                 var rowStatus = row.getAttribute('data-status') || '';
+                var isShared = row.getAttribute('data-shared-device') === '1';
                 
                 var matchesQuery = !query || name.indexOf(query) !== -1 || id.indexOf(query) !== -1;
                 var matchesStatus = (status === 'ALL') || 
                                       (status === 'PRESENT' && (rowStatus === 'PRESENT' || rowStatus === 'LATE')) ||
-                                      (status === 'ABSENT' && rowStatus === 'ABSENT');
+                                      (status === 'ABSENT' && rowStatus === 'ABSENT') ||
+                                      (status === 'SHARED' && isShared);
 
                 if (matchesQuery && matchesStatus) {
                     row.style.display = '';
@@ -941,6 +945,8 @@ function sessionDetailManager() {
                             self.playChime();
                         }
                         self.lastPresentCount = currentPresent;
+                        var currentShared = parseInt(meta.getAttribute('data-shared') || '0', 10);
+                        self.sharedDeviceCount = currentShared;
                     }
                 }
             });
@@ -1405,6 +1411,37 @@ window.addEventListener('keydown', function(e) {
         <div :class="layoutMode === 'full' ? 'lg:col-span-12' : 'lg:col-span-8'" 
              class="bg-white border border-slate-200/90 shadow-sm rounded-2xl p-5 sm:p-6 space-y-4 transition-all duration-300">
             
+            <!-- 🚨 SHARED DEVICE FRAUD DETECTION ALERT BANNER -->
+            <div x-show="sharedDeviceCount > 0" 
+                 x-transition
+                 class="p-4 bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white rounded-2xl border border-purple-500/40 shadow-md flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center text-xl shrink-0 animate-pulse">
+                        📱⚠️
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-black tracking-wide text-purple-300">{% trans "كشف الأجهزة المشتركة (مكافحة التحضير الوهمي)" %}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-purple-500 text-white font-mono" x-text="sharedDeviceCount + ' {% trans "طالب مسجل بنفس الجهاز" %}'"></span>
+                        </div>
+                        <p class="text-xs text-purple-200 font-medium mt-0.5 leading-relaxed">
+                            {% trans "تم رصد تسجيل أكثر من طالب باستخدام نفس الهاتف أو المتصفح. يمكنك عزلهم فورياً للتأكد من حضورهم الفعلي." %}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" @click="filterStatus = 'SHARED'; filterRows()" 
+                            class="px-3.5 py-2 rounded-xl text-xs font-black bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+                        <span>🔍 {% trans "عزل الطلاب المشبوهين" %}</span>
+                    </button>
+                    <button type="button" @click="filterStatus = 'ALL'; filterRows()" 
+                            x-show="filterStatus === 'SHARED'"
+                            class="px-3 py-2 rounded-xl text-xs font-bold text-purple-200 hover:text-white bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
+                        {% trans "إلغاء التصفية" %}
+                    </button>
+                </div>
+            </div>
+
             <!-- Table Header Toolbar: Title + Layout Switcher + Search + Filters -->
             <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 border-b border-slate-100 pb-4">
                 <div class="flex items-center gap-3">
@@ -1442,6 +1479,14 @@ window.addEventListener('keydown', function(e) {
                         <button @click="filterStatus = 'ABSENT'; filterRows()" 
                                 :class="filterStatus === 'ABSENT' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-700 hover:text-rose-900'"
                                 class="px-3 py-1.5 rounded-lg transition-all">{% trans "الغائبون" %}</button>
+                        <button @click="filterStatus = 'SHARED'; filterRows()" 
+                                :class="filterStatus === 'SHARED' ? 'bg-purple-600 text-white shadow-xs' : (sharedDeviceCount > 0 ? 'bg-purple-100 text-purple-900 hover:bg-purple-200' : 'text-slate-500 hover:text-slate-800')"
+                                class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                            <span>📱 {% trans "أجهزة مشتركة" %}</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold"
+                                  :class="filterStatus === 'SHARED' ? 'bg-white/20 text-white' : (sharedDeviceCount > 0 ? 'bg-purple-600 text-white animate-pulse' : 'bg-slate-200 text-slate-700')"
+                                  x-text="sharedDeviceCount"></span>
+                        </button>
                     </div>
                 </div>
             </div>

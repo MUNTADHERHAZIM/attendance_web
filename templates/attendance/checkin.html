@@ -75,6 +75,7 @@ const checkinI18n = {
         mode: 'qr', // 'qr' or 'otp'
         isLoggedIn: {{ is_logged_in|yesno:'true,false' }},
         studentUserName: '{{ user_student_name|default:'' }}',
+        forceGuest: false,
         guestStudentName: '',
         scanning: true,
         loading: false,
@@ -210,7 +211,7 @@ const checkinI18n = {
         },
         
         async submitToken(token) {
-            if (!this.isLoggedIn && !this.guestStudentName.trim()) {
+            if ((!this.isLoggedIn || this.forceGuest) && !this.guestStudentName.trim()) {
                 alert(checkinI18n.guestNameRequired);
                 return;
             }
@@ -245,11 +246,12 @@ const checkinI18n = {
 
             const payload = {
                 token: cleanToken,
-                student_name: this.guestStudentName.trim() || (this.isLoggedIn ? this.studentUserName : null),
+                student_name: this.guestStudentName.trim() || ((this.isLoggedIn && !this.forceGuest) ? this.studentUserName : null),
                 session_id: this.sessionId || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
                 gps_accuracy: this.gpsAccuracy || null,
+                guest_checkin: this.forceGuest ? true : undefined,
             };
 
             await this.sendCheckinPayload(payload);
@@ -260,7 +262,7 @@ const checkinI18n = {
                 alert(checkinI18n.otpRequired);
                 return;
             }
-            if (!this.isLoggedIn && !this.guestStudentName.trim()) {
+            if ((!this.isLoggedIn || this.forceGuest) && !this.guestStudentName.trim()) {
                 alert(checkinI18n.guestNameRequired);
                 return;
             }
@@ -282,29 +284,55 @@ const checkinI18n = {
 
             const payload = {
                 otp: this.otpCode.trim(),
-                student_name: this.guestStudentName.trim() || (this.isLoggedIn ? this.studentUserName : null),
+                student_name: this.guestStudentName.trim() || ((this.isLoggedIn && !this.forceGuest) ? this.studentUserName : null),
                 session_id: this.sessionId || null,
                 latitude: this.gpsCoords?.latitude || null,
                 longitude: this.gpsCoords?.longitude || null,
                 gps_accuracy: this.gpsAccuracy || null,
+                guest_checkin: this.forceGuest ? true : undefined,
             };
 
             await this.sendCheckinPayload(payload);
         },
 
         getDeviceId() {
-            let id = localStorage.getItem('attendance_device_uuid');
+            let id = null;
+            try { id = localStorage.getItem('attendance_device_uuid'); } catch(e){}
+            if (!id) {
+                try {
+                    const match = document.cookie.match(/(?:^|; )attendance_device_uuid=([^;]*)/);
+                    if (match && match[1]) id = decodeURIComponent(match[1]);
+                } catch(e){}
+            }
             if (!id) {
                 id = 'dev_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-                try { localStorage.setItem('attendance_device_uuid', id); } catch(e){}
             }
+            try { localStorage.setItem('attendance_device_uuid', id); } catch(e){}
+            try { document.cookie = "attendance_device_uuid=" + encodeURIComponent(id) + "; path=/; max-age=31536000; SameSite=Lax"; } catch(e){}
             return id;
+        },
+
+        getHardwareFingerprint() {
+            try {
+                const s = window.screen || {};
+                const n = window.navigator || {};
+                return [
+                    s.width || 0,
+                    s.height || 0,
+                    s.colorDepth || 0,
+                    n.hardwareConcurrency || 0,
+                    n.maxTouchPoints || 0
+                ].join('x');
+            } catch(e) {
+                return '';
+            }
         },
 
         async sendCheckinPayload(payload) {
             let response;
             try {
                 payload.device_id = this.getDeviceId();
+                payload.hardware_fingerprint = this.getHardwareFingerprint();
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 response = await fetch('/attendance/api/checkin/', {
                     method: 'POST',
@@ -584,16 +612,28 @@ const checkinI18n = {
     <!-- Top Badge / Header -->
     <div class="space-y-1">
         <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">{% trans "تسجيل حضور المحاضرة" %}</h2>
-        <template x-if="isLoggedIn">
-            <p class="text-xs text-emerald-600 font-bold">{% trans "مرحباً بك:" %} <span x-text="studentUserName"></span></p>
+        <template x-if="isLoggedIn && !forceGuest">
+            <div class="flex items-center justify-center gap-2">
+                <p class="text-xs text-emerald-600 font-bold">{% trans "مرحباً بك:" %} <span x-text="studentUserName"></span></p>
+                <button type="button" @click="forceGuest = true; resetScanner()" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200 transition-colors">
+                    {% trans "تسجيل طالب آخر من هذا الهاتف 👥" %}
+                </button>
+            </div>
         </template>
-        <template x-if="!isLoggedIn">
-            <p class="text-xs text-slate-400 font-semibold">{% trans "تحضير سريع للطلاب بدون حساب عبر مطابقة الاسم الذكية" %}</p>
+        <template x-if="!isLoggedIn || forceGuest">
+            <div class="space-y-1">
+                <p class="text-xs text-slate-400 font-semibold">{% trans "تحضير سريع للطلاب بدون حساب عبر مطابقة الاسم الذكية" %}</p>
+                <template x-if="isLoggedIn && forceGuest">
+                    <button type="button" @click="forceGuest = false; guestStudentName = ''; resetScanner()" class="text-[11px] font-bold text-slate-500 hover:underline">
+                        {% trans "العودة لحسابي (" %}<span x-text="studentUserName"></span>{% trans ")" %}
+                    </button>
+                </template>
+            </div>
         </template>
     </div>
 
-    <!-- Student Name Input (For Guests who don't have an account) -->
-    <div x-show="!isLoggedIn && !resultType"
+    <!-- Student Name Input (For Guests or when checking in another student) -->
+    <div x-show="(!isLoggedIn || forceGuest) && !resultType"
         class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-right space-y-2">
         <div class="flex items-center justify-between">
             <label class="block text-xs font-bold text-indigo-900">
@@ -691,13 +731,17 @@ const checkinI18n = {
             <p class="text-sm font-bold mt-2" x-text="resultMessage"></p>
         </div>
 
-        <div class="flex space-x-reverse space-x-3">
+        <div class="flex flex-wrap gap-2">
             <button @click="resetScanner()"
-                class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
                 {% trans "إعادة المحاولة" %} 🔄
             </button>
+            <button @click="forceGuest = true; guestStudentName = ''; resetScanner()"
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-purple-300 text-sm font-bold rounded-xl text-purple-800 bg-purple-50 hover:bg-purple-100 transition-all shadow-xs">
+                {% trans "تسجيل طالب آخر 👥" %}
+            </button>
             <a href="/"
-                class="flex-grow inline-flex items-center justify-center px-4 py-2.5 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
+                class="inline-flex items-center justify-center px-4 py-2.5 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all">
                 {% trans "الرئيسية" %}
             </a>
         </div>

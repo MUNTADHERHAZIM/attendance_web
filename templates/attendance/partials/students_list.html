@@ -83,10 +83,11 @@
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white text-xs sm:text-sm font-medium" id="studentsTableBody">
             {% for item in students_list %}
-                <tr class="student-row hover:bg-brand-50/40 transition-colors group" 
+                <tr class="student-row hover:bg-brand-50/40 transition-colors group {% if item.is_shared_device %}bg-purple-50/70 border-r-4 border-r-purple-600{% endif %}" 
                     data-name="{{ item.profile.user.get_full_name|lower }}" 
                     data-id="{{ item.profile.student_id|lower }}" 
-                    data-status="{{ item.status }}">
+                    data-status="{{ item.status }}"
+                    data-shared-device="{{ item.is_shared_device|yesno:'1,0' }}">
                     
                     <!-- 1. Student Avatar + Name + Email -->
                     <td class="py-3.5 px-4 whitespace-nowrap">
@@ -96,7 +97,7 @@
                                 {{ item.profile.user.first_name|first|default:item.profile.user.username|first|upper }}
                             </div>
                             <div class="min-w-0">
-                                <div class="text-sm font-black text-slate-900 truncate flex items-center gap-1.5">
+                                <div class="text-sm font-black text-slate-900 truncate flex items-center gap-1.5 flex-wrap">
                                     <span>{{ item.profile.user.get_full_name|default:item.profile.user.username }}</span>
                                     {% if item.record and 'طالب جديد' in item.record.notes or item.profile.student_id|slice:":4" == "NEW-" %}
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="{% trans 'طالب جديد تم تسجيله تلقائياً أثناء المحاضرة' %}">
@@ -111,10 +112,10 @@
                                         </span>
                                     {% endif %}
                                     {% if item.is_shared_device %}
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs" 
-                                              title="{% trans '⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس الجهاز' %} ({{ item.shared_with_names|join:' ، ' }})">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-950 border border-purple-400 shadow-xs" 
+                                              title="{% trans '⚠️ تنبيه للأستاذ: تم تسجيل هذا الطالب من نفس الجهاز مع:' %} {{ item.shared_with_names|join:' ، ' }}">
                                             <span>📱⚠️</span>
-                                            <span>{% blocktrans count count=item.shared_with_names|length %}جهاز مشترك مع {{ count }} طالب{% plural %}جهاز مشترك مع {{ count }} طلاب{% endblocktrans %}</span>
+                                            <span>{% trans "نفس جهاز:" %} {{ item.shared_with_names|join:' ، ' }}</span>
                                         </span>
                                     {% endif %}
                                 </div>
@@ -272,6 +273,7 @@
 <span id="live-total-counter" hx-swap-oob="true">{{ total_count }}</span>
 <span id="live-absent-counter" hx-swap-oob="true">{{ absent_count }}</span>
 <span id="live-late-counter" hx-swap-oob="true">{{ late_count }}</span>
+<span id="live-shared-counter" hx-swap-oob="true">{{ shared_device_count|default:0 }}</span>
 <span id="live-rate-counter" hx-swap-oob="true">{{ attendance_rate }}%</span>
 <div id="live-rate-bar" hx-swap-oob="true" style="width: {{ attendance_rate }}%;"></div>
 
@@ -285,4 +287,5 @@
      hx-swap-oob="true" 
      data-present="{{ present_count }}" 
      data-total="{{ total_count }}"
+     data-shared="{{ shared_device_count|default:0 }}"
      data-time="{% now 'H:i:s' %}"></div>
