@@ -308,7 +308,7 @@ const checkinI18n = {
                 id = 'dev_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
             }
             try { localStorage.setItem('attendance_device_uuid', id); } catch(e){}
-            try { document.cookie = "attendance_device_uuid=" + encodeURIComponent(id) + "; path=/; max-age=31536000; SameSite=Lax"; } catch(e){}
+            try { document.cookie = 'attendance_device_uuid=' + encodeURIComponent(id) + '; path=/; max-age=31536000; SameSite=Lax'; } catch(e){}
             return id;
         },
 

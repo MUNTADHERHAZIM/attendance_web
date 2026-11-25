@@ -1057,3 +1057,38 @@ def test_expired_attendance_session_is_not_extended_by_checkin(attendance_api_se
         attendance_session=attendance_session,
         status__in=[AttendanceRecord.Statuses.PRESENT, AttendanceRecord.Statuses.LATE],
     ).exists()
+
+
+@pytest.mark.django_db
+def test_checkin_page_html_does_not_leak_xdata_attribute():
+    """Ensure the Alpine x-data attribute on /attendance/checkin/ has no unescaped double quotes."""
+    from django.test import Client
+    from html.parser import HTMLParser
+
+    client = Client()
+    resp = client.get("/attendance/checkin/")
+    assert resp.status_code == 200
+    html = resp.content.decode("utf-8")
+
+    # Verify raw JS from x-data does not leak as visible HTML text
+    assert "({ name: item.student_name" not in html.split("x-init=")[1]
+
+    class XDataChecker(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.xdata_values = []
+            self.text_chunks = []
+
+        def handle_starttag(self, tag, attrs):
+            for k, v in attrs:
+                if k == "x-data":
+                    self.xdata_values.append(v)
+
+        def handle_data(self, data):
+            self.text_chunks.append(data)
+
+    parser = XDataChecker()
+    parser.feed(html)
+    assert any("refreshOfflineQueue" in v for v in parser.xdata_values)
+    visible_text = "".join(parser.text_chunks)
+    assert "syncOfflineQueue" not in visible_text
