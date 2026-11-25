@@ -27,4 +27,5 @@ class TeacherProfileAdmin(admin.ModelAdmin):
     list_display = ("teacher_id", "user", "institution", "specialization")
     search_fields = ("teacher_id", "user__username", "user__first_name", "user__last_name")
     list_filter = ("institution",)
+    filter_horizontal = ("courses", "sections")
 

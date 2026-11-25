@@ -3,7 +3,7 @@ from django.test import Client
 from rest_framework.test import APIClient
 
 from apps.accounts.models import StudentProfile, TeacherProfile, User
-from apps.academics.models import ClassSection, Department, Institution
+from apps.academics.models import ClassSection, Course, Department, Institution
 from apps.core.models import SystemSetting
 
 
@@ -388,3 +388,133 @@ def test_teacher_data_isolation_between_different_teachers():
 
     # The new section must start with 0 students
     assert new_att_sess.session.class_section.students.count() == 0
+
+
+@pytest.mark.django_db
+def test_teacher_added_courses_sections_and_scheduled_lectures_appear_in_account():
+    """
+    Regression test: newly added courses, sections (even without an existing session),
+    quick-created entities, and scheduled lectures must appear in the teacher's account
+    and remain isolated from other teachers.
+    """
+    institution = Institution.objects.create(name="جامعة النهرين")
+    department = Department.objects.create(institution=institution, name="هندسة البرمجيات", code="SE")
+
+    teacher_a_user = User.objects.create_user(
+        username="teacher_a_test",
+        password="Password123!",
+        role=User.Roles.TEACHER,
+    )
+    teacher_a = TeacherProfile.objects.create(
+        user=teacher_a_user,
+        teacher_id="T-A-100",
+        institution=institution,
+        department=department,
+    )
+
+    teacher_b_user = User.objects.create_user(
+        username="teacher_b_test",
+        password="Password123!",
+        role=User.Roles.TEACHER,
+    )
+    TeacherProfile.objects.create(
+        user=teacher_b_user,
+        teacher_id="T-B-200",
+        institution=institution,
+        department=department,
+    )
+
+    client_a = Client()
+    client_a.force_login(teacher_a_user)
+
+    # 1. Add a course without linking a section
+    resp_add_course = client_a.post(
+        "/accounts/teacher/courses/add/",
+        {"name": "الذكاء الاصطناعي", "code": "AI401"},
+    )
+    assert resp_add_course.status_code == 302
+    course = Course.objects.get(code="AI401", department=department)
+
+    # 2. Add a section without linking a course
+    resp_add_section = client_a.post(
+        "/accounts/teacher/sections/add/",
+        {"name": "شعبة أ", "level": "المرحلة الرابعة", "shift": "MORNING"},
+    )
+    assert resp_add_section.status_code == 302
+    section = ClassSection.objects.get(name="شعبة أ", level="المرحلة الرابعة", department=department)
+
+    # Both must immediately appear on teacher A's dashboard, students page, and create_custom_session
+    dash_resp = client_a.get("/")
+    assert dash_resp.status_code == 200
+    assert course in dash_resp.context["my_courses"]
+    assert section in dash_resp.context["my_sections"]
+
+    students_resp = client_a.get("/accounts/teacher/students/")
+    assert students_resp.status_code == 200
+    assert section in students_resp.context["my_sections"]
+
+    custom_get_resp = client_a.get("/attendance/session/create-custom/")
+    assert custom_get_resp.status_code == 200
+    assert course in custom_get_resp.context["courses"]
+    assert section in custom_get_resp.context["sections"]
+
+    # 3. Teacher B must NOT see Teacher A's unlinked course or section
+    client_b = Client()
+    client_b.force_login(teacher_b_user)
+    dash_b = client_b.get("/")
+    assert dash_b.status_code == 200
+    assert course not in dash_b.context["my_courses"]
+    assert section not in dash_b.context["my_sections"]
+
+    # 4. Schedule a lecture via the dashboard modal payload (using class_section_id & duration_minutes)
+    from django.utils import timezone
+    tomorrow = (timezone.now().date() + timezone.timedelta(days=1)).strftime("%Y-%m-%d")
+    sched_resp = client_a.post(
+        "/attendance/session/create-custom/",
+        {
+            "action": "schedule",
+            "schedule_only": "true",
+            "course_id": str(course.id),
+            "class_section_id": str(section.id),
+            "session_date": tomorrow,
+            "start_time": "10:00",
+            "duration_minutes": "90",
+            "shift": "MORNING",
+            "room": "قاعة 4",
+        },
+    )
+    assert sched_resp.status_code == 302
+    assert sched_resp.url == "/"
+
+    dash_after_sched = client_a.get("/")
+    assert dash_after_sched.status_code == 200
+    assert dash_after_sched.context["sessions"].filter(course=course, class_section=section).exists()
+    assert dash_after_sched.context["upcoming_scheduled_sessions"].filter(
+        session__course=course,
+        session__class_section=section,
+    ).exists()
+
+    # 5. Quick-create entity endpoint for section & course must work without error and link to teacher
+    qc_sec = client_a.post(
+        "/reports/api/quick-create/",
+        data='{"type": "section", "name": "شعبة ب", "level": "المرحلة الرابعة", "shift": "EVENING"}',
+        content_type="application/json",
+    )
+    assert qc_sec.status_code == 200
+    assert qc_sec.json()["success"] is True
+
+    qc_crs = client_a.post(
+        "/reports/api/quick-create/",
+        data='{"type": "course", "name": "أمن المعلومات"}',
+        content_type="application/json",
+    )
+    assert qc_crs.status_code == 200
+    assert qc_crs.json()["success"] is True
+
+    assert teacher_a.get_sections().filter(name="شعبة ب").exists()
+    assert teacher_a.get_courses().filter(name="أمن المعلومات").exists()
+
+    # 6. Teacher can delete their own course even if no other sections exist in another dept
+    del_resp = client_a.post(f"/accounts/teacher/courses/{qc_crs.json()['entity']['id']}/delete/")
+    assert del_resp.status_code == 302
+    assert not teacher_a.get_courses().filter(name="أمن المعلومات").exists()

@@ -134,6 +134,18 @@ class TeacherProfile(models.Model):
         verbose_name="القسم الأكاديمي"
     )
     specialization = models.CharField(max_length=100, blank=True, null=True, verbose_name="التخصص")
+    courses = models.ManyToManyField(
+        "academics.Course",
+        related_name="teachers",
+        blank=True,
+        verbose_name="المواد الدراسية المسندة"
+    )
+    sections = models.ManyToManyField(
+        "academics.ClassSection",
+        related_name="teachers",
+        blank=True,
+        verbose_name="الشعب الدراسية المسندة"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -142,3 +154,23 @@ class TeacherProfile(models.Model):
 
     def __str__(self):
         return f"معلم: {self.user.get_full_name() or self.user.username}"
+
+    def get_courses(self):
+        """Returns all courses explicitly assigned to this teacher or linked via their sessions."""
+        from django.db.models import Q
+        from apps.academics.models import Course
+        return Course.objects.filter(
+            Q(teachers=self)
+            | Q(sessions__teacher=self)
+            | Q(sessions__attendance_sessions__created_by=self.user)
+        ).distinct()
+
+    def get_sections(self):
+        """Returns all class sections explicitly assigned to this teacher or linked via their sessions."""
+        from django.db.models import Q
+        from apps.academics.models import ClassSection
+        return ClassSection.objects.filter(
+            Q(teachers=self)
+            | Q(sessions__teacher=self)
+            | Q(sessions__attendance_sessions__created_by=self.user)
+        ).distinct()

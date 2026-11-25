@@ -257,17 +257,11 @@ def admin_reports_overview_view(request):
         from apps.academics.models import Session, Course, ClassSection
         
         # Teacher's courses and sections
-        my_course_ids = Session.objects.filter(
-            Q(teacher=teacher_profile) | Q(attendance_sessions__created_by=request.user)
-        ).values_list("course_id", flat=True).distinct()
-        my_courses = Course.objects.filter(id__in=my_course_ids)
+        my_courses = teacher_profile.get_courses().order_by("name") if teacher_profile else Course.objects.none()
         if not my_courses.exists():
             my_courses = Course.objects.filter(department__institution=institution)
 
-        my_section_ids = Session.objects.filter(
-            Q(teacher=teacher_profile) | Q(attendance_sessions__created_by=request.user)
-        ).values_list("class_section_id", flat=True).distinct()
-        my_sections = ClassSection.objects.filter(id__in=my_section_ids)
+        my_sections = teacher_profile.get_sections().order_by("shift", "level", "name") if teacher_profile else ClassSection.objects.none()
         if not my_sections.exists():
             my_sections = ClassSection.objects.filter(department__institution=institution)
 
@@ -910,13 +904,20 @@ def quick_create_academic_entity_view(request):
             department = Department.objects.first()
 
         if not code:
-            code = f"CS{Course.objects.count() + 101}"
+            cnt = Course.objects.filter(department=department).count() + 101
+            code = f"CS{cnt}"
+            while Course.objects.filter(department=department, code=code).exists():
+                cnt += 1
+                code = f"CS{cnt}"
 
         course, created = Course.objects.get_or_create(
             department=department,
             name=name,
             defaults={"code": code}
         )
+
+        if hasattr(request.user, "teacher_profile") and request.user.teacher_profile:
+            request.user.teacher_profile.courses.add(course)
 
         return JsonResponse({
             "success": True,

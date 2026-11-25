@@ -2190,9 +2190,9 @@ def create_custom_session_view(request, timetable_id=None):
     if request.method == "POST":
         course_id = request.POST.get("course_id", "").strip()
         new_course_name = request.POST.get("new_course_name", "").strip()
-        class_section_id = request.POST.get("class_section_id", "").strip()
+        class_section_id = (request.POST.get("class_section_id") or request.POST.get("section_id") or "").strip()
         new_section_name = request.POST.get("new_section_name", "").strip()
-        duration_minutes = int(request.POST.get("duration_minutes", 60))
+        duration_minutes = int(request.POST.get("duration_minutes") or request.POST.get("duration") or 60)
         room = request.POST.get("room", "قاعة مخصصة").strip()
         topic = request.POST.get("topic", "").strip()
         lecture_type = request.POST.get("lecture_type", "نظري").strip()
@@ -2297,6 +2297,10 @@ def create_custom_session_view(request, timetable_id=None):
             messages.error(request, "يرجى تحديد شعبة دراسية أو كتابة اسم شعبة/مرحلة جديدة.")
             return redirect("attendance:create_custom_session")
 
+        # Ensure course and section are linked to the teacher's profile
+        teacher_profile.courses.add(course)
+        teacher_profile.sections.add(class_section)
+
         # Check Academic & Schedule Conflicts (الأستاذ، الطلاب، القاعة، الدوام)
         from apps.academics.conflicts import check_session_conflict
 
@@ -2392,10 +2396,8 @@ def create_custom_session_view(request, timetable_id=None):
     # GET: populate the form with defaults
     if request.user.is_teacher() and teacher_profile:
         # Show teacher's existing courses and sections so other teachers' data doesn't mix
-        teacher_course_ids = Session.objects.filter(teacher=teacher_profile).values_list("course_id", flat=True).distinct()
-        teacher_section_ids = Session.objects.filter(teacher=teacher_profile).values_list("class_section_id", flat=True).distinct()
-        courses = Course.objects.filter(id__in=teacher_course_ids).order_by("name")
-        sections = ClassSection.objects.filter(id__in=teacher_section_ids).order_by("shift", "level", "name")
+        courses = teacher_profile.get_courses().order_by("name")
+        sections = teacher_profile.get_sections().order_by("shift", "level", "name")
     else:
         courses = Course.objects.filter(department__institution=institution).order_by("name")
         sections = ClassSection.objects.filter(
@@ -2621,7 +2623,7 @@ def quick_create_course_view(request):
 
     if not code:
         rand_code = f"CS{random.randint(100, 999)}"
-        while Course.objects.filter(code=rand_code).exists():
+        while Course.objects.filter(department=department, code=rand_code).exists():
             rand_code = f"CS{random.randint(100, 999)}"
         code = rand_code
 
@@ -2630,6 +2632,7 @@ def quick_create_course_view(request):
         department=department,
         defaults={"code": code}
     )
+    teacher_profile.courses.add(course)
 
     return JsonResponse({
         "success": True,

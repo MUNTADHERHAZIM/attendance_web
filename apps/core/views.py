@@ -188,13 +188,11 @@ def dashboard_view(request):
             "session__course", "session__class_section"
         ).order_by("date", "start_time")
 
-        # 3. Courses: Taught by teacher
-        course_ids = list(sessions.values_list("course_id", flat=True).distinct())
-        my_courses = Course.objects.filter(id__in=course_ids).distinct()
+        # 3. Courses: Taught by or assigned to teacher
+        my_courses = teacher_profile.get_courses().order_by("name")
 
-        # 4. Sections: Taught by teacher
-        section_ids = list(sessions.values_list("class_section_id", flat=True).distinct())
-        my_sections = ClassSection.objects.filter(id__in=section_ids).distinct()
+        # 4. Sections: Taught by or assigned to teacher
+        my_sections = teacher_profile.get_sections().order_by("shift", "level", "name")
 
         # 5. Students: Enrolled in teacher's sections strictly within their university
         students_qs = (

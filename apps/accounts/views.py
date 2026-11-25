@@ -447,10 +447,7 @@ def teacher_students_view(request):
         return redirect("dashboard")
 
     if request.user.is_teacher():
-        section_ids = Session.objects.filter(
-            teacher=teacher_profile
-        ).values_list("class_section_id", flat=True).distinct()
-        my_sections = ClassSection.objects.filter(id__in=section_ids)
+        my_sections = teacher_profile.get_sections().order_by("shift", "level", "name")
     else:
         my_sections = _manageable_sections(request.user)
 
@@ -955,27 +952,31 @@ def teacher_add_section_view(request):
         teacher_profile.department = dept
         teacher_profile.save(update_fields=["department"])
 
-    section = ClassSection.objects.create(
+    section, _ = ClassSection.objects.get_or_create(
         department=dept,
         name=name,
         level=level,
         shift=shift
     )
+    teacher_profile.sections.add(section)
 
     # Optional: Link to an existing course
     course_id = request.POST.get("course_id", "").strip()
     if course_id and course_id.isdigit():
         course = Course.objects.filter(id=int(course_id), department__institution=teacher_profile.institution).first()
         if course:
-            Session.objects.create(
+            teacher_profile.courses.add(course)
+            Session.objects.get_or_create(
                 course=course,
                 class_section=section,
                 teacher=teacher_profile,
-                day_of_week=0,
-                start_time=time(9, 0),
-                end_time=time(10, 30),
-                shift=shift,
-                room="القاعة الدراسية"
+                defaults={
+                    "day_of_week": 0,
+                    "start_time": time(9, 0),
+                    "end_time": time(10, 30),
+                    "shift": shift,
+                    "room": "القاعة الدراسية",
+                }
             )
 
     shift_title = "صباحي" if shift == "MORNING" else "مسائي"
@@ -1031,21 +1032,28 @@ def teacher_add_course_view(request):
 
     if not code:
         existing_cnt = Course.objects.filter(department=dept).count() + 1
-        code = f"{dept.code or 'CRS'}{100 + existing_cnt}"
+        prefix = dept.code or "CRS"
+        code = f"{prefix}{100 + existing_cnt}"
+        while Course.objects.filter(department=dept, code=code).exists():
+            existing_cnt += 1
+            code = f"{prefix}{100 + existing_cnt}"
 
     course, created = Course.objects.get_or_create(
         department=dept,
         code=code,
         defaults={"name": name}
     )
-    if not created:
+    if not created and course.name != name:
         course.name = name
         course.save(update_fields=["name"])
+
+    teacher_profile.courses.add(course)
 
     # If linked to a section
     if section_id and section_id.isdigit():
         sec = ClassSection.objects.filter(id=int(section_id), department__institution=teacher_profile.institution).first()
         if sec:
+            teacher_profile.sections.add(sec)
             Session.objects.get_or_create(
                 course=course,
                 class_section=sec,
@@ -1282,15 +1290,24 @@ def teacher_delete_course_view(request, course_id):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
     from apps.academics.models import Course
-    course = get_object_or_404(
-        Course.objects.filter(department__in=_manageable_sections(request.user).values("department_id")),
-        id=course_id,
-    )
-    if request.user.is_teacher() and course.sessions.exclude(
-        teacher__user=request.user
-    ).exists():
-        messages.error(request, "لا يمكن حذف مادة مرتبطة بمحاضرات أساتذة آخرين.")
-        return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    if request.user.is_teacher() and teacher_profile:
+        course = get_object_or_404(teacher_profile.get_courses(), id=course_id)
+    else:
+        course = get_object_or_404(
+            Course.objects.filter(department__in=_manageable_sections(request.user).values("department_id")),
+            id=course_id,
+        )
+    if request.user.is_teacher() and teacher_profile:
+        used_by_others = (
+            course.sessions.exclude(teacher=teacher_profile).exists()
+            or course.teachers.exclude(id=teacher_profile.id).exists()
+        )
+        if used_by_others:
+            teacher_profile.courses.remove(course)
+            course.sessions.filter(teacher=teacher_profile).delete()
+            messages.success(request, f"تمت إزالة المادة الدراسية ({course.name}) من قائمة موادك بنجاح.")
+            return redirect(request.META.get("HTTP_REFERER", "dashboard"))
     cname = course.name
     course.delete()
     messages.success(request, f"تم حذف المادة الدراسية ({cname}) بنجاح.")
@@ -1304,15 +1321,21 @@ def teacher_delete_section_view(request, section_id):
     if not (request.user.is_teacher() or request.user.is_super_admin() or request.user.is_institution_admin()):
         messages.error(request, "غير مصرح لك.")
         return redirect("dashboard")
-    from apps.academics.models import ClassSection
-    section = get_object_or_404(_manageable_sections(request.user), id=section_id)
-    if request.user.is_teacher():
-        from apps.academics.models import Session
-        if Session.objects.filter(class_section=section).exclude(
-            teacher__user=request.user
-        ).exists():
-            messages.error(request, "لا يمكن حذف شعبة يستخدمها أساتذة آخرون.")
+    from apps.academics.models import ClassSection, Session
+    teacher_profile = getattr(request.user, "teacher_profile", None)
+    if request.user.is_teacher() and teacher_profile:
+        section = get_object_or_404(teacher_profile.get_sections(), id=section_id)
+        used_by_others = (
+            Session.objects.filter(class_section=section).exclude(teacher=teacher_profile).exists()
+            or section.teachers.exclude(id=teacher_profile.id).exists()
+        )
+        if used_by_others:
+            teacher_profile.sections.remove(section)
+            Session.objects.filter(class_section=section, teacher=teacher_profile).delete()
+            messages.success(request, f"تمت إزالة الشعبة الدراسية ({section.level} - {section.name}) من قائمة شعبك بنجاح.")
             return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+    else:
+        section = get_object_or_404(_manageable_sections(request.user), id=section_id)
     sname = f"{section.level} - {section.name}"
     section.delete()
     messages.success(request, f"تم حذف الشعبة الدراسية ({sname}) بنجاح.")
