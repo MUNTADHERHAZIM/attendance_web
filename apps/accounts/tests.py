@@ -518,3 +518,69 @@ def test_teacher_added_courses_sections_and_scheduled_lectures_appear_in_account
     del_resp = client_a.post(f"/accounts/teacher/courses/{qc_crs.json()['entity']['id']}/delete/")
     assert del_resp.status_code == 302
     assert not teacher_a.get_courses().filter(name="أمن المعلومات").exists()
+
+
+@pytest.mark.django_db
+def test_teacher_can_bulk_and_single_delete_students_in_their_sections_across_departments():
+    """
+    Regression test: even if a teacher's section belongs to a different department
+    than teacher_profile.department (e.g. after updating profile department),
+    bulk delete and single delete must actually delete the students.
+    """
+    institution = Institution.objects.create(name="جامعة البصرة")
+    general_dept = Department.objects.create(institution=institution, name="القسم العام", code="GEN")
+    english_dept = Department.objects.create(institution=institution, name="اللغة الإنجليزية", code="ENG")
+
+    teacher_user = User.objects.create_user(
+        username="teacher_del_test",
+        password="Password123!",
+        role=User.Roles.TEACHER,
+    )
+    teacher = TeacherProfile.objects.create(
+        user=teacher_user,
+        teacher_id="T-DEL-1",
+        institution=institution,
+        department=english_dept,
+    )
+
+    section = ClassSection.objects.create(
+        department=general_dept,
+        name="شعبة A",
+        level="المرحلة الأولى",
+        shift="MORNING",
+    )
+    teacher.sections.add(section)
+
+    students = []
+    for idx in range(3):
+        u = User.objects.create_user(
+            username=f"std_del_{idx}",
+            password="Password123!",
+            role=User.Roles.STUDENT,
+            first_name=f"طالب {idx}",
+        )
+        sp = StudentProfile.objects.create(
+            user=u,
+            student_id=f"NEW-{idx}",
+            institution=institution,
+            study_shift="MORNING",
+        )
+        sp.sections.add(section)
+        students.append(sp)
+
+    client = Client()
+    client.force_login(teacher_user)
+
+    # Bulk delete first 2 students
+    bulk_resp = client.post(
+        "/accounts/teacher/students/bulk-delete/",
+        {"selected_students": [str(students[0].id), str(students[1].id)]},
+    )
+    assert bulk_resp.status_code == 302
+    assert not StudentProfile.objects.filter(id__in=[students[0].id, students[1].id]).exists()
+    assert StudentProfile.objects.filter(id=students[2].id).exists()
+
+    # Single delete the 3rd student
+    single_resp = client.post(f"/accounts/teacher/students/{students[2].id}/delete/")
+    assert single_resp.status_code == 302
+    assert not StudentProfile.objects.filter(id=students[2].id).exists()

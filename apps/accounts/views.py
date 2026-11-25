@@ -55,8 +55,15 @@ def _manageable_sections(user):
     if not institution_id:
         return queryset.none()
     queryset = queryset.filter(department__institution_id=institution_id)
-    if user.is_teacher() and department_id:
-        queryset = queryset.filter(department_id=department_id)
+    if user.is_teacher() and profile:
+        from django.db.models import Q
+        teacher_section_ids = profile.get_sections().values_list("id", flat=True)
+        if department_id:
+            queryset = queryset.filter(
+                Q(id__in=teacher_section_ids) | Q(department_id=department_id)
+            ).distinct()
+        else:
+            queryset = queryset.filter(id__in=teacher_section_ids).distinct()
     return queryset
 
 
@@ -1390,17 +1397,20 @@ def teacher_bulk_delete_students_view(request):
                 sections__in=_manageable_sections(request.user),
             ).distinct()
             count = students.count()
-            if request.user.is_super_admin():
-                User.objects.filter(student_profile__in=students).delete()
+            if count == 0:
+                messages.warning(request, "لم يتم العثور على طلاب مطابقين للحذف ضمن شعبك.")
             else:
-                for student in students:
-                    managed_sections = list(
-                        student.sections.filter(id__in=_manageable_sections(request.user))
-                    )
-                    student.sections.remove(*managed_sections)
-                    if not student.sections.exists():
-                        student.user.delete()
-            messages.success(request, f"تم حذف {count} طالب بنجاح.")
+                if request.user.is_super_admin():
+                    User.objects.filter(student_profile__in=students).delete()
+                else:
+                    for student in students:
+                        managed_sections = list(
+                            student.sections.filter(id__in=_manageable_sections(request.user))
+                        )
+                        student.sections.remove(*managed_sections)
+                        if not student.sections.exists():
+                            student.user.delete()
+                messages.success(request, f"تم حذف {count} طالب بنجاح.")
         else:
             messages.warning(request, "لم يتم تحديد أي طالب للحذف.")
     return redirect(request.META.get("HTTP_REFERER", "accounts:teacher_students"))
